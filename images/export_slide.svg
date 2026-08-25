@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+
+<svg
+   width="800px"
+   height="800px"
+   viewBox="0 0 24 24"
+   fill="none"
+   version="1.1"
+   id="svg2"
+   sodipodi:docname="export_slide.svg"
+   inkscape:version="1.4 (86a8ad7, 2024-10-11)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="namedview2"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.97125"
+     inkscape:cx="567.31017"
+     inkscape:cy="400"
+     inkscape:window-width="1920"
+     inkscape:window-height="991"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg2" />
+  <path
+     d="M6.75 7C5.7835 7 5 7.7835 5 8.75V15.25C5 16.2165 5.7835 17 6.75 17H17.25C18.2165 17 19 16.2165 19 15.25V8.75C19 7.7835 18.2165 7 17.25 7H6.75ZM6.5 8.75C6.5 8.61193 6.61193 8.5 6.75 8.5H17.25C17.3881 8.5 17.5 8.61193 17.5 8.75V10.5H6.5V8.75ZM10.5 12H17.5V15.25C17.5 15.3881 17.3881 15.5 17.25 15.5H10.5V12ZM9 12V15.5H6.75C6.61193 15.5 6.5 15.3881 6.5 15.25V12H9Z"
+     fill="#212121"
+     id="path1"
+     style="stroke-width:0.71640722;stroke-dasharray:none" />
+  <path
+     d="M4.75 4C3.23122 4 2 5.23122 2 6.75V17.25C2 18.7688 3.23122 20 4.75 20H19.25C20.7688 20 22 18.7688 22 17.25V6.75C22 5.23122 20.7688 4 19.25 4H4.75ZM3.5 6.75C3.5 6.05964 4.05964 5.5 4.75 5.5H19.25C19.9404 5.5 20.5 6.05964 20.5 6.75V17.25C20.5 17.9404 19.9404 18.5 19.25 18.5H4.75C4.05964 18.5 3.5 17.9404 3.5 17.25V6.75Z"
+     fill="#212121"
+     id="path2"
+     style="stroke-width:1.79818209;stroke-dasharray:none" />
+</svg>

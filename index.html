@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PV Super - 太陽光電速排工具</title>
+    <!-- Web Favicon -->
+    <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="style.css?t=20260825_1536">
+</head>
+
+<body>
+    <!-- ==========================================================================
+         1. 頁首導覽列與操作步驟指引區 (Header & Step Navigation)
+         ========================================================================== -->
+    <header>
+        <!-- 曜昇綠能 品牌 Logo 與公司名稱連結 -->
+        <a class="logo logo-link" href="https://www.eco-glisten.com/" target="_blank" rel="noopener noreferrer">
+            <img src="images/logo_web.png" alt="曜昇綠能" class="header-logo-img">
+            <span class="company-title-span">曜昇綠能股份有限公司</span>
+        </a>
+
+        <!-- 案場設計 5 步驟引導操作列 -->
+        <div class="instructions-steps-bar">
+            <div class="step-item" data-step="1" title="定位：請在下方衛星地圖的搜尋框中輸入地址或關鍵字進行定位">
+                <span class="step-number">1</span>
+                <span class="step-label">定位</span>
+            </div>
+            <div class="step-arrow">➜</div>
+            <div class="step-item" data-step="2" title="範圍：請點選左邊淡藍色&quot;案場範圍&quot;按鈕進行操作">
+                <span class="step-number">2</span>
+                <span class="step-label">範圍</span>
+            </div>
+            <div class="step-arrow">➜</div>
+            <div class="step-item" data-step="3" title="參數：請在左側的試算表中編輯 1~19 項的案場各項參數">
+                <span class="step-number">3</span>
+                <span class="step-label">參數</span>
+            </div>
+            <div class="step-arrow">➜</div>
+            <div class="step-item" data-step="4" title="排除:請點選左邊橘色&quot;排除區域&quot;按鈕進行操作">
+                <span class="step-number">4</span>
+                <span class="step-label">排除</span>
+            </div>
+            <div class="step-arrow">➜</div>
+            <div class="step-item" data-step="5" title="障礙:請點選左邊橘色&quot;障礙區域&quot;按鈕進行操作">
+                <span class="step-number">5</span>
+                <span class="step-label">障礙</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==========================================================================
+         2. 主要工作區 (Main Workspace)
+         ========================================================================== -->
+    <main>
+        <!-- ----------------------------------------------------------------------
+             2.1 左側邊欄：Excel 樣式案場參數設計試算表 (Sidebar Spreadsheet)
+             ---------------------------------------------------------------------- -->
+        <aside class="sidebar">
+            <!-- 試算表頂點標題與說明書連結 -->
+            <div class="sidebar-title sidebar-header">
+                <div class="spreadsheet-title-container">
+                    <h2 class="spreadsheet-title-h2">案場設計試算表</h2>
+                    <p class="spreadsheet-subtitle-p">請於下方單元格內編輯參數，系統將即時計算與更新圖面</p>
+                </div>
+                <!-- PV Super 工具標誌 (點擊開啟線上使用說明書) -->
+                <a href="PV_Super 使用說明.html" target="_blank" title="使用說明書" class="pv-super-logo-link">
+                    <img id="pv-super-logo" src="images/pv_super_logo_dark.png" alt="PV Super" class="pv-super-logo-img">
+                </a>
+            </div>
+
+            <!-- Excel 參數控制表格區容器 -->
+            <div class="spreadsheet-container">
+                <table class="excel-table">
+                    <thead>
+                        <tr>
+                            <th class="col-header-blank"></th>
+                            <th class="col-header col-header-a">A(項目)</th>
+                            <th class="col-header col-b">B(數值)</th>
+                            <th class="col-header col-header-unit">單位</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 第 1 項：案場名稱 -->
+                        <tr>
+                            <td class="row-header">1</td>
+                            <td class="cell-label">案場名稱</td>
+                            <td><input id="val-site-name" type="text" value="曜昇綠能 No.1 "></td>
+                            <td class="cell-unit">-</td>
+                        </tr>
+
+                        <!-- 第 2 項：案場類型 (地面型 / 平屋頂 / 斜屋頂) -->
+                        <tr>
+                            <td class="row-header">2</td>
+                            <td class="cell-label">案場類型</td>
+                            <td>
+                                <select id="val-site-type">
+                                    <option value="ground" selected>地面型</option>
+                                    <option value="roof-flat">屋頂型：平屋頂</option>
+                                    <option value="roof-slope">屋頂型：斜屋頂(平舖或架高)</option>
+                                </select>
+                            </td>
+                            <td class="cell-unit">-</td>
+                        </tr>
+
+                        <!-- 第 3 項：坡向型式 (單斜 / 雙斜) -->
+                        <tr>
+                            <td class="row-header">3</td>
+                            <td class="cell-label">坡向型式</td>
+                            <td>
+                                <div class="table-checker-group">
+                                    <label class="table-checker-label">
+                                        <input id="chk-pitch-single" type="checkbox" name="pitch-style-chk" checked>
+                                        <span>單斜</span>
+                                    </label>
+                                    <label class="table-checker-label">
+                                        <input id="chk-pitch-double" type="checkbox" name="pitch-style-chk">
+                                        <span>雙斜</span>
+                                    </label>
+                                </div>
+                                <input id="val-pitch-style" type="hidden" value="single">
+                            </td>
+                            <td class="cell-unit">-</td>
+                        </tr>
+
+                        <!-- 第 4 項：PV 模組擺放方向 (橫放 / 直放) -->
+                        <tr>
+                            <td class="row-header">4</td>
+                            <td class="cell-label">PV 擺放選擇</td>
+                            <td>
+                                <select id="val-pv-orient">
+                                    <option value="landscape">短向傾斜 (橫放)</option>
+                                    <option value="portrait" selected>長向傾斜 (直放)</option>
+                                </select>
+                            </td>
+                            <td class="cell-unit">-</td>
+                        </tr>
+
+                        <!-- 第 5 項：PV 模組品牌規格選擇 -->
+                        <tr>
+                            <td class="row-header">5</td>
+                            <td class="cell-label">PV 模組規格</td>
+                            <td>
+                                <select id="val-pv-select">
+                                    <option value="preset-vsun450" selected>VSUN 450N-108BMH-DG 450W (1722 x 1134 mm)
+                                    </option>
+                                    <option value="preset-longi460">隆基 LONGi LR4-72HBD-460M 460W (2094 x 1038 mm)
+                                    </option>
+                                    <option value="preset-longi425">隆基 LONGi LR5-54HPH-425M 425W (1722 x 1134 mm)
+                                    </option>
+                                    <option value="preset-motech460">茂迪 Motech XN54GH-460-B 460W (1722 x 1133 mm)
+                                    </option>
+                                    <option value="preset-tsec455">元晶 TSEC TS54-CMH-455 H2 455W (1723 x 1134 mm)
+                                    </option>
+                                    <option value="custom">自訂模組尺寸</option>
+                                </select>
+                            </td>
+                            <td class="cell-unit">-</td>
+                        </tr>
+
+                        <!-- 第 6 項：PV 模組長度 L (mm) -->
+                        <tr>
+                            <td class="row-header">6</td>
+                            <td class="cell-label">PV 長度 (L)</td>
+                            <td><input id="val-pv-l" type="number" min="500" max="5000" value="1722"></td>
+                            <td class="cell-unit">mm</td>
+                        </tr>
+
+                        <!-- 第 7 項：PV 模組寬度 W (mm) -->
+                        <tr>
+                            <td class="row-header">7</td>
+                            <td class="cell-label">PV 寬度 (W)</td>
+                            <td><input id="val-pv-w" type="number" min="500" max="5000" value="1134"></td>
+                            <td class="cell-unit">mm</td>
+                        </tr>
+
+                        <!-- 第 8 項：PV 模組單片功率 (W) -->
+                        <tr>
+                            <td class="row-header">8</td>
+                            <td class="cell-label">PV 單片瓦數</td>
+                            <td><input id="val-pv-p" type="number" min="50" max="1000" value="455"></td>
+                            <td class="cell-unit">W</td>
+                        </tr>
+
+                        <!-- 第 9 項：模組朝向方位角 Azimuth (度) -->
+                        <tr class="tr-azimuth-row">
+                            <td class="row-header">9</td>
+                            <td class="cell-label">方位角 (Azimuth)</td>
+                            <td class="slider-cell slider-cell-azimuth">
+                                <input id="val-azimuth" type="number" min="0" max="360" step="0.5" value="180">
+                                <button type="button" class="lock-toggle-btn" id="lock-azimuth" title="鎖定/解鎖方位角" data-param="azimuth">🔓</button>
+                                <button class="slider-btn" id="btn-azimuth-minus" title="微調減少 0.5度">−</button>
+                                <div class="slider-wrapper slider-wrapper-azimuth">
+                                    <div class="slider-nodes-container slider-nodes-top" data-target="azimuth">
+                                        <button type="button" class="slider-node-btn" data-val="135" title="東南 (135°)">135°</button>
+                                        <button type="button" class="slider-node-btn" data-val="225" title="西南 (225°)">225°</button>
+                                    </div>
+                                    <input id="val-azimuth-slider" type="range" min="0" max="360" step="0.5" value="180">
+                                    <div class="slider-nodes-container slider-nodes-bottom" data-target="azimuth">
+                                        <button type="button" class="slider-node-btn" data-val="90" title="正東 (90°)">90°</button>
+                                        <button type="button" class="slider-node-btn active" data-val="180" title="正南 (180°)">180°</button>
+                                        <button type="button" class="slider-node-btn" data-val="270" title="正西 (270°)">270°</button>
+                                    </div>
+                                </div>
+                                <button class="slider-btn" id="btn-azimuth-plus" title="微調增加 0.5度">+</button>
+                            </td>
+                            <td class="cell-unit">度</td>
+                        </tr>
+
+                        <!-- 第 10 項：橫向排列片數 i (列) -->
+                        <tr>
+                            <td class="row-header">10</td>
+                            <td class="cell-label">橫向排列片數 (i)</td>
+                            <td class="slider-cell">
+                                <input id="val-arr-i" type="number" min="1" max="1000" value="20">
+                                <button type="button" class="lock-toggle-btn" id="lock-arr-i" title="鎖定/解鎖橫向片數" data-param="arrI">🔓</button>
+                                <button class="slider-btn" id="btn-arr-i-minus" title="減少1片">−</button>
+                                <div class="slider-wrapper">
+                                    <input id="val-arr-i-slider" type="range" min="1" max="1000" step="1" value="20">
+                                    <div class="slider-nodes-container" data-target="arrI">
+                                        <button type="button" class="slider-node-btn active" data-val="20"
+                                            title="20片">20</button>
+                                        <button type="button" class="slider-node-btn" data-val="40"
+                                            title="40片">40</button>
+                                        <button type="button" class="slider-node-btn" data-val="80"
+                                            title="80片">80</button>
+                                    </div>
+                                </div>
+                                <button class="slider-btn" id="btn-arr-i-plus" title="增加1片">+</button>
+                            </td>
+                            <td class="cell-unit">片</td>
+                        </tr>
+
+                        <!-- 第 11 項：縱向排列片數 j (行) -->
+                        <tr>
+                            <td class="row-header">11</td>
+                            <td class="cell-label">縱向排列片數 (j)</td>
+                            <td class="slider-cell">
+                                <input id="val-arr-j" type="number" min="1" max="1000" value="4">
+                                <button type="button" class="lock-toggle-btn" id="lock-arr-j" title="鎖定/解鎖縱向片數" data-param="arrJ">🔓</button>
+                                <button class="slider-btn" id="btn-arr-j-minus" title="減少1片">−</button>
+                                <div class="slider-wrapper">
+                                    <input id="val-arr-j-slider" type="range" min="1" max="1000" step="1" value="4">
+                                    <div class="slider-nodes-container" data-target="arrJ">
+                                        <button type="button" class="slider-node-btn active" data-val="4"
+                                            title="4片">4</button>
+                                        <button type="button" class="slider-node-btn" data-val="8" title="8片">8</button>
+                                        <button type="button" class="slider-node-btn" data-val="12"
+                                            title="12片">12</button>
+                                    </div>
+                                </div>
+                                <button class="slider-btn" id="btn-arr-j-plus" title="增加1片">+</button>
+                            </td>
+                            <td class="cell-unit">片</td>
+                        </tr>
+
+                        <!-- 第 12 項：組列數量 m -->
+                        <tr>
+                            <td class="row-header">12</td>
+                            <td class="cell-label">組列數量 (m)</td>
+                            <td class="slider-cell">
+                                <input id="val-arr-m" type="number" min="1" max="50" value="1">
+                                <button type="button" class="lock-toggle-btn" id="lock-arr-m" title="鎖定/解鎖組列數量" data-param="arrM">🔓</button>
+                                <button class="slider-btn" id="btn-arr-m-minus" title="減少1組">−</button>
+                                <div class="slider-wrapper">
+                                    <input id="val-arr-m-slider" type="range" min="1" max="50" step="1" value="1">
+                                    <div class="slider-nodes-container" data-target="arrM">
+                                        <button type="button" class="slider-node-btn" data-val="10"
+                                            title="10組">10</button>
+                                        <button type="button" class="slider-node-btn" data-val="30"
+                                            title="30組">30</button>
+                                        <button type="button" class="slider-node-btn" data-val="60"
+                                            title="60組">60</button>
+                                    </div>
+                                </div>
+                                <button class="slider-btn" id="btn-arr-m-plus" title="增加1組">+</button>
+                            </td>
+                            <td class="cell-unit">組</td>
+                        </tr>
+
+                        <!-- 第 13 項：組列前後間距 p (m) -->
+                        <tr>
+                            <td class="row-header">13</td>
+                            <td class="cell-label">組列間距 (p)</td>
+                            <td class="slider-cell">
+                                <input id="val-arr-p" type="number" min="1" max="30" step="0.1" value="1.0">
+                                <button type="button" class="lock-toggle-btn" id="lock-arr-p" title="鎖定/解鎖組列間距" data-param="arrP">🔓</button>
+                                <button class="slider-btn" id="btn-arr-p-minus" title="減少0.1m">−</button>
+                                <input id="val-arr-p-slider" type="range" min="1" max="30" step="0.1" value="1.0">
+                                <button class="slider-btn" id="btn-arr-p-plus" title="增加0.1m">+</button>
+                            </td>
+                            <td class="cell-unit">m</td>
+                        </tr>
+
+                        <!-- 第 14 項：橫向夾縫間距 x (mm) -->
+                        <tr>
+                            <td class="row-header">14</td>
+                            <td class="cell-label">橫向間距 x</td>
+                            <td class="slider-cell">
+                                <input id="val-sp-x" type="number" min="0" max="1000" value="20">
+                                <button type="button" class="lock-toggle-btn" id="lock-sp-x" title="鎖定/解鎖橫向間距" data-param="spX">🔓</button>
+                                <button class="slider-btn" id="btn-sp-x-minus" title="減少1mm">−</button>
+                                <div class="slider-wrapper">
+                                    <input id="val-sp-x-slider" type="range" min="0" max="1000" step="1" value="20">
+                                    <div class="slider-nodes-container" data-target="spX">
+                                        <button type="button" class="slider-node-btn active" data-val="20"
+                                            title="20mm">20</button>
+                                        <button type="button" class="slider-node-btn" data-val="40"
+                                            title="40mm">40</button>
+                                        <button type="button" class="slider-node-btn" data-val="80"
+                                            title="80mm">80</button>
+                                    </div>
+                                </div>
+                                <button class="slider-btn" id="btn-sp-x-plus" title="增加1mm">+</button>
+                            </td>
+                            <td class="cell-unit">mm</td>
+                        </tr>
+
+                        <!-- 第 15 項：縱向夾縫間距 y (mm) -->
+                        <tr>
+                            <td class="row-header">15</td>
+                            <td class="cell-label">縱向間距 y</td>
+                            <td class="slider-cell">
+                                <input id="val-sp-y" type="number" min="0" max="2000" value="20">
+                                <button type="button" class="lock-toggle-btn" id="lock-sp-y" title="鎖定/解鎖縱向間距" data-param="spY">🔓</button>
+                                <button class="slider-btn" id="btn-sp-y-minus" title="減少1mm">−</button>
+                                <div class="slider-wrapper">
+                                    <input id="val-sp-y-slider" type="range" min="0" max="2000" step="1" value="20">
+                                    <div class="slider-nodes-container" data-target="spY">
+                                        <button type="button" class="slider-node-btn active" data-val="20"
+                                            title="20mm">20</button>
+                                        <button type="button" class="slider-node-btn" data-val="26"
+                                            title="26mm">26</button>
+                                        <button type="button" class="slider-node-btn" data-val="50"
+                                            title="50mm">50</button>
+                                    </div>
+                                </div>
+                                <button class="slider-btn" id="btn-sp-y-plus" title="增加1mm">+</button>
+                            </td>
+                            <td class="cell-unit">mm</td>
+                        </tr>
+
+                        <!-- 第 16 項：PV 安裝傾角 θ (度) -->
+                        <tr>
+                            <td class="row-header">16</td>
+                            <td class="cell-label">安裝傾角 (θ)</td>
+                            <td class="slider-cell">
+                                <input id="val-tilt" type="number" min="0" max="60" value="6">
+                                <button type="button" class="lock-toggle-btn" id="lock-tilt" title="鎖定/解鎖安裝傾角" data-param="tilt">🔓</button>
+                                <button class="slider-btn" id="btn-tilt-minus" title="減少1度">−</button>
+                                <div class="slider-wrapper">
+                                    <input id="val-tilt-slider" type="range" min="0" max="60" value="6">
+                                    <div class="slider-nodes-container" data-target="tilt">
+                                        <button type="button" class="slider-node-btn active" data-val="6"
+                                            title="6度">6</button>
+                                        <button type="button" class="slider-node-btn" data-val="8" title="8度">8</button>
+                                        <button type="button" class="slider-node-btn" data-val="10"
+                                            title="10度">10</button>
+                                    </div>
+                                </div>
+                                <button class="slider-btn" id="btn-tilt-plus" title="增加1度">+</button>
+                            </td>
+                            <td class="cell-unit">度</td>
+                        </tr>
+
+                        <!-- 第 17 項：屋頂傾角 (度) (選擇斜屋頂時啟用) -->
+                        <tr>
+                            <td class="row-header">17</td>
+                            <td class="cell-label">屋頂傾角 (Roof θ)</td>
+                            <td class="slider-cell">
+                                <input id="val-roof-tilt" type="number" min="0" max="45" value="0" disabled>
+                                <button type="button" class="lock-toggle-btn" id="lock-roof-tilt" title="鎖定/解鎖屋頂傾角" data-param="roofTilt">🔓</button>
+                                <button class="slider-btn" id="btn-roof-minus" title="減少1度" disabled">−</button>
+                                <div class="slider-wrapper">
+                                    <input id="val-roof-tilt-slider" type="range" min="0" max="45" value="0" disabled>
+                                    <div class="slider-nodes-container" data-target="roofTilt">
+                                        <button type="button" class="slider-node-btn" data-val="6" title="6度"
+                                            disabled>6</button>
+                                        <button type="button" class="slider-node-btn" data-val="8" title="8度"
+                                            disabled>8</button>
+                                        <button type="button" class="slider-node-btn" data-val="10" title="10度"
+                                            disabled>10</button>
+                                    </div>
+                                </div>
+                                <button class="slider-btn" id="btn-roof-plus" title="增加1度" disabled>+</button>
+                            </td>
+                            <td class="cell-unit">度</td>
+                        </tr>
+
+                        <!-- 第 18 項：屋頂建物離地高度 H (m) -->
+                        <tr>
+                            <td class="row-header">18</td>
+                            <td class="cell-label">屋頂高度 (H)</td>
+                            <td class="slider-cell">
+                                <input id="val-roof-h" type="number" step="0.5" value="10" disabled>
+                                <button type="button" class="lock-toggle-btn" id="lock-roof-h" title="鎖定/解鎖屋頂高度" data-param="roofH">🔓</button>
+                                <button class="slider-btn" id="btn-roof-h-minus" title="減少0.5m" disabled">−</button>
+                                <div class="slider-wrapper">
+                                    <input id="val-roof-h-slider" type="range" min="0" max="100" step="0.5" value="10"
+                                        disabled>
+                                    <div class="slider-nodes-container" data-target="roofH">
+                                        <button type="button" class="slider-node-btn" data-val="5" title="5m"
+                                            disabled>5</button>
+                                        <button type="button" class="slider-node-btn active" data-val="10" title="10m"
+                                            disabled>10</button>
+                                        <button type="button" class="slider-node-btn" data-val="20" title="20m"
+                                            disabled>20</button>
+                                    </div>
+                                </div>
+                                <button class="slider-btn" id="btn-roof-h-plus" title="增加0.5m" disabled>+</button>
+                            </td>
+                            <td class="cell-unit">m</td>
+                        </tr>
+
+                        <!-- 第 19 項：支架前端最低離地高度 h (mm) -->
+                        <tr>
+                            <td class="row-header">19</td>
+                            <td class="cell-label">支架高度 (h)</td>
+                            <td class="slider-cell">
+                                <input id="val-support-h" type="number" step="50" value="2000">
+                                <button type="button" class="lock-toggle-btn" id="lock-support-h" title="鎖定/解鎖支架高度" data-param="supportH">🔓</button>
+                                <button class="slider-btn" id="btn-support-minus" title="減少50mm">−</button>
+                                <div class="slider-wrapper">
+                                    <input id="val-support-h-slider" type="range" min="0" max="10000" step="50"
+                                        value="2000">
+                                    <div class="slider-nodes-container" data-target="supportH">
+                                        <button type="button" class="slider-node-btn" data-val="1500"
+                                            title="1500mm">1500</button>
+                                        <button type="button" class="slider-node-btn" data-val="2500"
+                                            title="2500mm">2500</button>
+                                        <button type="button" class="slider-node-btn" data-val="3500"
+                                            title="3500mm">3500</button>
+                                    </div>
+                                </div>
+                                <button class="slider-btn" id="btn-support-plus" title="增加50mm">+</button>
+                            </td>
+                            <td class="cell-unit">mm</td>
+                        </tr>
+
+                        <!-- 第 20 項：案場中心 WGS84 經緯度座標 -->
+                        <tr>
+                            <td class="row-header">20</td>
+                            <td class="cell-label">案場經緯度</td>
+                            <td><input id="val-coords" type="text" value="23°52'12.7&quot;N 120°31'22.8&quot;E"></td>
+                            <td class="cell-unit">-</td>
+                        </tr>
+
+                        <!-- --------------------------------------------------
+                             自動計算輸出項目 (唯讀 Output Cells)
+                             -------------------------------------------------- -->
+                        <!-- 第 21 項：總安裝 PV 模組片數 -->
+                        <tr>
+                            <td class="row-header">21</td>
+                            <td class="cell-label cell-label-output">總片數</td>
+                            <td class="output-cell"><input id="val-total-count" type="number" value="40" readonly></td>
+                            <td class="cell-unit cell-unit-output">片</td>
+                        </tr>
+
+                        <!-- 第 22 項：設置量 (kWp) -->
+                        <tr>
+                            <td class="row-header">22</td>
+                            <td class="cell-label cell-label-output">設置量</td>
+                            <td class="output-cell"><input id="val-total-power" type="text" value="18.20" readonly></td>
+                            <td class="cell-unit cell-unit-output">kWp</td>
+                        </tr>
+
+                        <!-- 第 23 項：陣列總佔地寬度 (X軸, m) -->
+                        <tr>
+                            <td class="row-header">23</td>
+                            <td class="cell-label">佔地寬度 (X)</td>
+                            <td class="output-cell"><input id="val-dim-w" type="text" value="9.21" readonly></td>
+                            <td class="cell-unit">m</td>
+                        </tr>
+
+                        <!-- 第 24 項：陣列總佔地長度 (Y軸, m) -->
+                        <tr>
+                            <td class="row-header">24</td>
+                            <td class="cell-label">佔地長度 (Y)</td>
+                            <td class="output-cell"><input id="val-dim-h" type="text" value="8.64" readonly></td>
+                            <td class="cell-unit">m</td>
+                        </tr>
+
+                        <!-- 第 25 項：佔地面積 (m²) -->
+                        <tr>
+                            <td class="row-header">25</td>
+                            <td class="cell-label">佔地面積</td>
+                            <td class="output-cell"><input id="val-site-area" type="text" value="0.00" readonly></td>
+                            <td class="cell-unit">m²</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ----------------------------------------------------------------------
+                 邊欄下方操作與資料匯出按鈕組 (Sidebar Actions)
+                 ---------------------------------------------------------------------- -->
+            <div class="sidebar-actions">
+                <!-- 桌面版繪圖邊界開關面板插槽 -->
+                <div id="desktop-planning-controls-slot" class="desktop-planning-slot">
+                    <div class="planning-controls-container" id="planning-controls-container">
+                        <!-- 區塊 1: 案場範圍控制 -->
+                        <div class="planning-block block-site" id="planning-block-site">
+                            <div class="planning-slider-wrapper">
+                                <span class="slider-label label-edit" id="lbl-site-edit">編輯</span>
+                                <input type="range" id="slider-site" class="toggle-slider site-theme" min="0" max="1"
+                                    value="1" step="1">
+                                <span class="slider-label label-lock active" id="lbl-site-lock">鎖定</span>
+                            </div>
+                            <button class="planning-btn btn-site" id="btn-site-boundary" title="編輯案場範圍">案場範圍</button>
+                        </div>
+
+                        <!-- 區塊 2: 排除區域控制 -->
+                        <div class="planning-block block-exclusion" id="planning-block-exclusion">
+                            <div class="planning-slider-wrapper">
+                                <span class="slider-label label-edit" id="lbl-ex-edit">編輯</span>
+                                <input type="range" id="slider-exclusion" class="toggle-slider exclusion-theme" min="0"
+                                    max="1" value="1" step="1">
+                                <span class="slider-label label-lock active" id="lbl-ex-lock">鎖定</span>
+                            </div>
+                            <button class="planning-btn btn-exclusion" id="btn-exclusion-zone"
+                                title="編輯排除區域">排除區域</button>
+                        </div>
+
+                        <!-- 區塊 3: 障礙區域控制 -->
+                        <div class="planning-block block-obstacle" id="planning-block-obstacle">
+                            <div class="planning-slider-wrapper">
+                                <span class="slider-label label-edit" id="lbl-obs-edit">編輯</span>
+                                <input type="range" id="slider-obstacle" class="toggle-slider obstacle-theme" min="0"
+                                    max="1" value="1" step="1">
+                                <span class="slider-label label-lock active" id="lbl-obs-lock">鎖定</span>
+                            </div>
+                            <button class="planning-btn btn-obstacle" id="btn-obstacle-zone"
+                                title="編輯障礙區域">障礙區域</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 資料匯出按鈕列 (PDF / JSON) -->
+                <div class="sidebar-action-row sidebar-export-actions-row">
+                    <button class="btn btn-primary btn-export-action" id="btn-export-pdf">
+                        <img src="images/export_slide.svg" class="btn-icon" />
+                        匯出案場簡報</button>
+                    <button class="btn btn-primary btn-export-action btn-export-json-style" id="btn-export-json">
+                        <img src="images/export_text.svg" class="btn-icon" />
+                        匯出案場資料</button>
+                </div>
+
+                <!-- 參數預設值存取按鈕列 (儲存 / 還原) -->
+                <div class="sidebar-action-row sidebar-default-actions-row">
+                    <button class="btn btn-primary btn-default-action" id="btn-save-default">
+                        <img src="images/save.svg" class="btn-icon" />
+                        儲存為預設</button>
+                    <button class="btn btn-primary btn-default-action btn-reset-style" id="btn-reset">
+                        <img src="images/back.svg" class="btn-icon" />
+                        返回預設</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ----------------------------------------------------------------------
+             2.2 右側工作區：Three.js 3D 模擬視圖與 Leaflet 衛星地圖
+             ---------------------------------------------------------------------- -->
+        <section class="workspace-right">
+            <!-- 上半部視圖：Three.js 3D 模擬檢視器 -->
+            <div class="view-wrapper" id="view-wrapper-3d">
+                <div class="touch-scroll-bar"><span>⋮⋮ 按住此處可上下滑動頁面 ⋮⋮</span></div>
+                <div class="view-header">
+                    <div class="view-badge">
+                        <span class="view-icon">
+                            <img src="images/3d_preview.svg" class="btn-icon" />
+                        </span>
+                        <span class="view-title">3D 預覽<span class="hide-small"> (Three.js)</span></span>
+                    </div>
+
+                    <button class="touch-lock-btn" id="btn-touch-lock-3d">🔒 頁面滑動 (點擊操作 3D)</button>
+
+                    <!-- 3D 視角變更與控制工具列 -->
+                    <div class="view-controls">
+                        <button class="control-btn" id="btn-view-reset" title="重設視角">
+                            <img src="images/perspective_view.svg" alt="重設視角圖示" class="btn-icon" />
+                        </button>
+                        <button class="control-btn" id="btn-view-top" title="俯視視角">
+                            <img src="images/top_view.svg" alt="俯視視角圖示" class="btn-icon" />
+                        </button>
+                        <button class="control-btn" id="btn-view-side" title="側視視角">
+                            <img src="images/side_view.svg" alt="俯視視角圖示" class="btn-icon" />
+                        </button>
+                        <button class="control-btn" id="btn-view-normal" title="Normal 視角 (點選某平面以法向檢視並填滿)">
+                            <img src="images/normal_view.svg" alt="俯視視角圖示" class="btn-icon" />
+                        </button>
+                        <button class="control-btn" id="btn-view-fit" title="Zoom to Fit (填滿畫面)">
+                            <img src="images/zoom_to_fit.svg" alt="俯視視角圖示" class="btn-icon" />
+                        </button>
+                        <button class="control-btn" id="btn-measure" title="距離量測(按 Esc 退出清空)">
+                            <img src="images/ruler.svg" alt="俯視視角圖示" class="btn-icon" />
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3D 渲染畫布與浮動調控面板容器 -->
+                <div class="viewer-container">
+                    <!-- 手機端防誤觸頁面滾動遮罩 -->
+                    <div class="touch-shield-overlay" id="touch-shield-3d">
+                        <span class="shield-hint-badge">🔒 雙指/頂部滑動頁面 ‧ 點擊解鎖 3D 操作</span>
+                    </div>
+
+                    <!-- 3D 距離量測工具之標籤懸浮層 -->
+                    <div id="measure-labels-overlay" class="measure-overlay"></div>
+
+                    <!-- 3D 量測軸向鎖定控制浮動面板 -->
+                    <div class="measure-axis-panel" id="measure-axis-panel">
+                        <span class="axis-panel-title">軸向鎖定:</span>
+                        <label class="axis-checkbox-label">
+                            <input type="checkbox" id="chk-lock-x" class="axis-checkbox"> <span
+                                class="axis-name axis-x">X 軸 (紅)</span>
+                        </label>
+                        <label class="axis-checkbox-label">
+                            <input type="checkbox" id="chk-lock-y" class="axis-checkbox"> <span
+                                class="axis-name axis-y">Y 軸 (縱向)</span>
+                        </label>
+                        <label class="axis-checkbox-label">
+                            <input type="checkbox" id="chk-lock-z" class="axis-checkbox"> <span
+                                class="axis-name axis-z">Z 軸 (高度)</span>
+                        </label>
+                    </div>
+
+                    <!-- 太陽日照光影模擬浮動面板 -->
+                    <div class="sun-simulator-panel">
+                        <div class="sim-control">
+                            <span class="sim-label">
+                                <img src="images/calendar.svg" class="btn-icon" />
+                                <span class="hide-small">月份</span></span>
+                            <div class="sim-slider-wrapper">
+                                <button class="slider-btn" id="btn-sun-month-minus" title="減少1個月">−</button>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="sun-month-slider" min="1" max="12" step="1" value="12">
+                                    <div class="slider-nodes-container" data-target="sunMonth" style="margin-top: 2px;">
+                                        <button type="button" class="slider-node-btn" data-val="6" title="夏至 (6/21)">6/21</button>
+                                        <button type="button" class="slider-node-btn" data-val="12" title="冬至 (12/21)">12/21</button>
+                                    </div>
+                                </div>
+                                <button class="slider-btn" id="btn-sun-month-plus" title="增加1個月">+</button>
+                            </div>
+                            <span class="sim-value" id="sun-month-val">12/21 (冬至)</span>
+                        </div>
+                        <div class="sim-control">
+                            <span class="sim-label">
+                                <img src="images/clock.svg" class="btn-icon" />
+                                <span class="hide-small">時間</span></span>
+                            <div class="sim-slider-wrapper">
+                                <button class="slider-btn" id="btn-sun-hour-minus" title="減少15分鐘">−</button>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="sun-hour-slider" min="6.0" max="18.0" step="0.25" value="15.0">
+                                    <div class="slider-nodes-container" data-target="sunHour" style="margin-top: 2px;">
+                                        <button type="button" class="slider-node-btn" data-val="9" title="早上 09:00">09:00</button>
+                                        <button type="button" class="slider-node-btn" data-val="15" title="下午 15:00">15:00</button>
+                                    </div>
+                                </div>
+                                <button class="slider-btn" id="btn-sun-hour-plus" title="增加15分鐘">+</button>
+                            </div>
+                            <span class="sim-value" id="sun-hour-val">15:00</span>
+                        </div>
+                    </div>
+
+                    <!-- 3D 渲染視圖選項浮動設定面板 -->
+                    <div class="viewer-settings-panel">
+                        <div class="viewer-settings-title"><span class="hide-small">
+                             <img src="images/eye.svg" class="btn-icon" />
+                        </span>顯示設定</div>
+                        <div class="viewer-settings-item">
+                            <span class="viewer-settings-label"><span class="hide-mobile">開啟</span>光影</span>
+                            <div class="viewer-toggle-wrapper">
+                                <input type="range" id="slider-3d-shadows" class="toggle-3d-slider" min="0" max="1"
+                                    value="1" step="1">
+                            </div>
+                        </div>
+                        <div class="viewer-settings-item">
+                            <span class="viewer-settings-label"><span class="hide-mobile">開啟</span>支架</span>
+                            <div class="viewer-toggle-wrapper">
+                                <input type="range" id="slider-3d-supports" class="toggle-3d-slider" min="0" max="1"
+                                    value="1" step="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- WebGL Canvas 畫布 -->
+                    <canvas id="three-canvas"></canvas>
+
+                    <!-- 3D 場景加載動畫遮罩 -->
+                    <div class="loading-overlay" id="viewer-loading">
+                        <div class="loading-content loading-content-box">
+                            <div class="loading-hourglass">⏳</div>
+                            <div class="loading-title loading-title-text">載入中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 上下 Splitter 視圖拖曳分隔條 -->
+            <div class="workspace-splitter" id="workspace-splitter" title="上下拖曳調整大小"></div>
+
+            <!-- 移動端繪圖邊界控制面板插槽 -->
+            <div id="mobile-planning-controls-slot" class="mobile-planning-slot"></div>
+
+            <!-- 下半部視圖：Leaflet 衛星地圖 -->
+            <div class="view-wrapper" id="view-wrapper-map">
+                <div class="touch-scroll-bar"><span>⋮⋮ 按住此處可上下滑動頁面 ⋮⋮</span></div>
+                <div class="view-header">
+                    <div class="view-badge">
+                        <span class="view-icon">
+                            <img src="images/map.svg" class="btn-icon" />
+                        </span>
+                        <span class="view-title">衛星地圖<span class="hide-small"> (Leaflet)</span></span>
+                    </div>
+                    <button class="touch-lock-btn" id="btn-touch-lock-map">🔒 頁面滑動 (點擊操作地圖)</button>
+                    <div class="view-controls">
+                        <button class="control-btn" id="btn-map-center" title="將地圖中心對準案場">
+                            <img src="images/re-center.svg" class="btn-icon" />
+                        </button>
+                        <button class="control-btn" id="btn-map-mylocation" title="抓取目前裝置位置">
+                            <img src="images/positioning.svg" class="btn-icon" />
+                        </button>
+                        <button class="control-btn" id="btn-map-measure" title="距離量測">
+                            <img src="images/ruler.svg" class="btn-icon" />
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 地圖容器與浮動繪圖觸發按鈕區 -->
+                <div class="map-container">
+                    <!-- 手機端地圖防誤觸遮罩 -->
+                    <div class="touch-shield-overlay" id="touch-shield-map">
+                        <span class="shield-hint-badge">🔒 雙指/頂部滑動頁面 ‧ 點擊解鎖地圖操作</span>
+                    </div>
+                    <div id="leaflet-map"></div>
+
+                    <!-- 快捷繪圖模式開啟按鈕 (案場 / 排除 / 障礙) -->
+                    <button id="btn-redraw-site-trigger" class="btn-planning-trigger map-trigger-site"><img src="images/area.svg" class="btn-icon" />範圍</button>
+                    <button id="btn-add-exclusion-trigger" class="btn-planning-trigger map-trigger-exclusion"><img src="images/exclude.svg" class="btn-icon" />排除</button>
+                    <button id="btn-add-obstacle-trigger" class="btn-planning-trigger map-trigger-obstacle"><img src="images/obstacle.svg" class="btn-icon" />障礙</button>
+
+                    <!-- ==========================================================================
+                         3. 浮動工具面板與模態框區 (Floating Toolboxes & Modals)
+                         ========================================================================== -->
+                    <!-- 3.1 案場範圍繪製工具箱 (Site Boundary Toolbox) -->
+                    <div id="site-tool-panel" class="floating-toolbox tool-panel-site">
+                        <h3 id="site-tool-header" class="tool-panel-header">
+                            <span><img src="images/area.svg" class="btn-icon" /> 範圍工具</span>
+                            <span class="tool-panel-grip">⋮⋮</span>
+                        </h3>
+                        <div class="toolbox-btn-group">
+                            <button class="site-tool-btn toolbox-btn-item toolbox-btn-active" id="btn-site-polygon">
+                                <img src="images/draw_pencil.svg" class="btn-icon" />手繪多邊形</button>
+                            <button id="btn-site-cancel" class="toolbox-btn-cancel">結束返回</button>
+                        </div>
+                    </div>
+
+                    <!-- 3.2 排除區域繪製工具箱 (Exclusion Zone Toolbox) -->
+                    <div id="exclusion-tool-panel" class="floating-toolbox tool-panel-exclusion">
+                        <h3 id="exclusion-tool-header" class="tool-panel-header">
+                            <span><img src="images/exclude.svg" class="btn-icon" /> 排除工具</span>
+                            <span class="tool-panel-grip">⋮⋮</span>
+                        </h3>
+                        <div class="toolbox-btn-group">
+                            <button class="ex-tool-btn toolbox-btn-item toolbox-btn-active" id="btn-ex-polygon">
+                                <img src="images/draw_pencil.svg" class="btn-icon" />手繪多邊形</button>
+                            <button id="btn-ex-cancel" class="toolbox-btn-cancel">結束返回</button>
+                        </div>
+                    </div>
+
+                    <!-- 3.4 障礙物區域繪製與高度設定工具箱 (Obstacle Toolbox) -->
+                    <div id="obstacle-tool-panel" class="floating-toolbox tool-panel-obstacle">
+                        <h3 id="obstacle-tool-header" class="tool-panel-header">
+                            <span><img src="images/obstacle.svg" class="btn-icon" /> 障礙工具</span>
+                            <span class="tool-panel-grip">⋮⋮</span>
+                        </h3>
+                        <div class="toolbox-btn-group">
+                            <button class="obs-tool-btn toolbox-btn-item toolbox-btn-active" id="btn-obs-polygon">
+                                <img src="images/draw_pencil.svg" class="btn-icon" />手繪多邊形</button>
+                            <label class="obs-height-label">障礙物高度：</label>
+                            <div class="obs-height-container">
+                                <input id="val-obs-h" type="number" min="1" max="100" step="0.5" value="5.0" class="obs-height-input">
+                                <span class="obs-height-unit">m</span>
+                            </div>
+                            <input id="val-obs-h-slider" type="range" min="1" max="20" step="0.5" value="5.0" class="obs-height-slider">
+                            <span class="obs-hint-text">點擊地圖繪製或套索識別，Esc完成。</span>
+                            <button id="btn-obs-cancel" class="toolbox-btn-cancel">結束返回</button>
+                        </div>
+                    </div>
+
+
+                </div>
+
+                <!-- 地圖搜尋與定位輸入框浮動列 -->
+                <div class="map-search-box">
+                    <input type="text" class="map-search-input" id="map-search-input" placeholder="輸入地址或關鍵字進行定位...">
+                    <button id="map-search-btn" class="map-search-btn" title="搜尋">
+                        <img src="images/search.svg" class="btn-icon" />
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ==========================================================================
+         4. 外部函式庫與應用程式腳本 (Script Dependencies)
+         ========================================================================== -->
+    <!-- Leaflet 地圖 SDK -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Three.js (r120 UMD) 3D 繪圖引擎 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r120/three.min.js"></script>
+
+    <!-- OrbitControls for Three.js 3D 視角軌道控制器 -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.120.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- Turf.js 地理空間運算庫 (Union / Intersect) -->
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+    <!-- html2canvas 與 jsPDF 簡報檔 PDF 匯出元件 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- SheetJS (xlsx) Excel 試算表解析庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- PV Super 應用程式主要與資材邏輯腳本 -->
+    <script src="assets.js" defer></script>
+    <script src="app.js?t=20260825_1600" defer></script>
+</body>
+
+</html>
+

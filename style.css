@@ -1,0 +1,3486 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Serif+TC:wght@300;400;500;600;700;900&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --bg-main: rgba(255, 255, 255, 1);
+    --bg-sidebar: rgba(255, 255, 255, 0.8);
+    --bg-card: rgba(255, 255, 255, 0.6);
+    --border-color: rgba(0, 0, 0, 0.1);
+    --border-color-hover: rgba(0, 0, 0, 0.75);
+    --border-accent: rgba(0, 122, 255, 0.2);
+    --bg-surface-secondary: rgba(255, 255, 255, 0.75);
+    
+    --primary: rgba(0, 102, 153, 1);
+    --primary-muted: rgba(0, 51, 102, 1);
+    --primary-gradient: linear-gradient(135deg, rgba(25, 65, 107, 1) 0%, rgba(139, 158, 179, 1) 100%);
+    --solar-orange: rgba(255, 214, 143, 1);
+    --solar-gradient: linear-gradient(135deg, rgba(255, 214, 143, 1) 0%, rgba(255, 248, 225, 1) 100%);
+    
+    --text-main: rgba(255, 255, 255, 1);
+    --text-muted: rgba(51, 51, 51, 1);
+    --text-excel: rgba(0, 51, 102, 1);
+    
+    --excel-header-bg: rgba(255,255,255,0.6);
+    --excel-cell-bg: rgba(255,255,255,0.8);
+    --excel-grid: rgba(148, 163, 184, 0.45);
+    --excel-focus: rgba(255, 125, 163, 1);
+    --excel-readonly-bg: rgba(243, 244, 237, 1);
+    --excel-output-bg: rgba(236, 238, 236, 1);
+    --excel-output-text: rgba(22, 103, 131, 1);
+    
+    --shadow-main: 0 4px 20px rgba(0, 0, 0, 0.1);
+    --font-ui: 'Noto Serif TC', 'PMingLiU', 'MingLiU', 'Songti TC', serif;
+    --font-mono: 'Noto Serif TC', 'PMingLiU', 'MingLiU', 'Songti TC', serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Noto Serif TC', 'PMingLiU', 'MingLiU', 'Songti TC', serif !important;
+}
+
+body {
+    background-color: rgba(16, 37, 66, 0.9);
+    color: var(--text-main);
+    font-family: var(--font-ui);
+    height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    overflow: hidden;
+}
+
+/* Header Styles */
+header {
+    background: rgba(16, 37, 66, 0.9);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 24px;
+    z-index: 100;
+    position: relative; /* 為了讓步驟指引列絕對定位置中 */
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+}
+
+.logo:hover {
+    opacity: 0.85;
+}
+
+
+/* Main Container Layout */
+main {
+    display: grid;
+    grid-template-columns: 410px 1fr;
+    height: 100%;
+    padding: 0 24px 24px 24px;
+    gap: 20px;
+    background-color: rgba(16, 37, 66, 0.9); /* 改為與 Header 一致的深藍色 */
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* Sidebar / Spreadsheet Styles */
+.sidebar {
+    background-color: var(--bg-sidebar);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    border: none;
+}
+
+.sidebar-title {
+    padding: 8px 8px;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.01);
+    flex-shrink: 0;
+    text-align: right;
+}
+
+.sidebar-title h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a !important;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start !important;
+    gap: 8px;
+}
+
+.sidebar-title p {
+    font-size: 0.75rem;
+    color: #334155 !important;
+    margin-top: 2px;
+}
+
+/* Excel Spreadsheet Interface */
+.spreadsheet-container {
+    padding: 10px 12px;
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+.excel-table {
+    width: 100%;
+    min-width: 350px;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    table-layout: fixed;
+    background-color: var(--excel-cell-bg);
+    color: rgba(45, 55, 72, 1);
+}
+
+.excel-table th, .excel-table td {
+    border: 1px solid var(--excel-grid);
+    padding: 0;
+    height: 32px;
+    vertical-align: middle;
+    overflow: hidden; /* Ensures slider and buttons never spill into adjacent columns */
+}
+
+/* Column and Row Headers */
+.excel-table th {
+    background: linear-gradient(180deg, rgba(71, 85, 105, 1) 0%, rgba(30, 41, 59, 1) 100%);
+    color: rgba(248, 250, 252, 1);
+    font-weight: 600;
+    text-align: center;
+    font-family: var(--font-ui);
+    user-select: none;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.excel-table th.col-header {
+    height: 28px;
+    font-size: 0.8rem;
+    border-bottom: 1px solid rgba(15, 23, 42, 1);
+}
+
+.excel-table td.row-header {
+    background: linear-gradient(90deg, rgba(71, 85, 105, 1) 0%, rgba(30, 41, 59, 1) 100%);
+    color: rgba(248, 250, 252, 1);
+    text-align: center;
+    font-weight: 600;
+    width: 32px;
+    font-family: var(--font-ui);
+    user-select: none;
+    border-right: 1px solid rgba(15, 23, 42, 1);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Spreadsheet Cells Content styling */
+.cell-label {
+    padding-left: 6px;
+    color: rgba(45, 55, 72, 1);
+    font-family: var(--font-ui);
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cell-unit {
+    text-align: center;
+    color: var(--text-muted);
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+}
+
+.excel-table td input, .excel-table td select {
+    width: 100%;
+    height: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: rgba(45, 55, 72, 1);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    padding: 0 8px;
+    transition: all 0.15s ease;
+}
+
+.excel-table td input[type="number"],
+.excel-table td.readonly input,
+.excel-table td.output-cell input {
+    text-align: right;
+    -moz-appearance: textfield;
+}
+
+.excel-table td input[type="number"]::-webkit-outer-spin-button,
+.excel-table td input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.excel-table td select {
+    cursor: pointer;
+    font-family: var(--font-ui);
+    padding-right: 20px;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+    background-size: 12px;
+}
+
+.excel-table td select option {
+    background-color: var(--excel-cell-bg);
+    color: rgba(45, 55, 72, 1);
+}
+
+/* Table Checkers (e.g. Row 3 Pitch Style) */
+.table-checker-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 8px;
+    height: 100%;
+}
+
+.table-checker-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-family: var(--font-ui);
+    color: rgba(45, 55, 72, 1);
+    cursor: pointer;
+    user-select: none;
+    font-weight: 500;
+}
+
+.table-checker-label input[type="checkbox"] {
+    accent-color: rgba(2, 132, 199, 1);
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.table-checker-label:hover {
+    color: rgba(2, 132, 199, 1);
+}
+
+/* Interactive States */
+.excel-table td {
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, outline 0.2s ease;
+}
+
+.excel-table td:has(input:focus), .excel-table td:has(select:focus) {
+    outline: 2px solid rgba(14, 165, 233, 1);
+    outline-offset: -1px;
+    z-index: 10;
+    box-shadow: 0 0 12px rgba(14, 165, 233, 0.6), inset 0 0 4px rgba(14, 165, 233, 0.1);
+    background-color: rgba(14, 165, 233, 0.08) !important;
+}
+
+.excel-table td input:focus, .excel-table td select:focus {
+    background-color: transparent;
+}
+
+/* Special Cells Styling */
+.excel-table td.readonly {
+    background: linear-gradient(135deg, rgba(250, 251, 253, 1) 0%, var(--excel-readonly-bg) 100%);
+}
+
+.excel-table td.readonly input {
+    color: rgba(100, 116, 139, 1);
+    cursor: not-allowed;
+}
+
+.excel-table td.readonly input[type="range"],
+.excel-table td.readonly button {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.excel-table td.output-cell {
+    background: linear-gradient(135deg, rgba(240, 253, 244, 1) 0%, rgba(220, 252, 231, 1) 100%);
+    border-color: rgba(134, 239, 172, 1) !important;
+    box-shadow: inset 0 0 4px rgba(74, 222, 128, 0.15);
+}
+
+.excel-table td.output-cell input {
+    color: rgba(22, 101, 52, 1);
+    font-weight: 700;
+    cursor: default;
+}
+
+/* Reset / Action Buttons inside table cell or sidebar */
+.sidebar-actions {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+}
+
+.btn {
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: var(--primary-gradient);
+    color: rgba(255, 255, 255, 1);
+    box-shadow: 0 4px 12px rgba(17, 153, 142, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(17, 153, 142, 0.4);
+}
+
+/* Workspace Right Area Layout */
+.workspace-right {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+#view-wrapper-3d {
+    height: 55%; /* Default ratio */
+    flex: none;  /* Keep exact height when set */
+}
+
+#view-wrapper-map {
+    flex: 1;     /* Fill remaining space */
+    border-top: none;
+}
+
+/* Horizontal drag resizer */
+.workspace-splitter {
+    height: 6px;
+    background: rgba(30, 41, 59, 1); /* Dark slate gray */
+    border-top: 1px solid rgba(51, 65, 85, 1);
+    border-bottom: 1px solid rgba(51, 65, 85, 1);
+    cursor: row-resize;
+    position: relative;
+    z-index: 1010; /* Make sure it's above view headers and overlays */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+}
+
+.workspace-splitter:hover, .workspace-splitter.dragging {
+    background: rgba(14, 165, 233, 1); /* Sky blue when dragged */
+    border-top-color: rgba(56, 189, 248, 1);
+    border-bottom-color: rgba(56, 189, 248, 1);
+    box-shadow: 0 0 10px rgba(14, 165, 233, 0.4);
+}
+
+.workspace-splitter::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 4px;
+    background: transparent;
+    /* Create visual dots as grab handle */
+    background-image: radial-gradient(circle, rgba(100, 116, 139, 1) 1.5px, transparent 2px);
+    background-size: 8px 100%;
+    background-repeat: repeat-x;
+    transition: all 0.2s ease;
+}
+
+.workspace-splitter:hover::after, .workspace-splitter.dragging::after {
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 1) 1.5px, transparent 2px);
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.8));
+}
+
+/* Card Wrapper Styles for Map & 3D Viewer */
+.view-wrapper {
+    position: relative;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.view-wrapper:last-child {
+    border-bottom: none;
+}
+
+.view-header {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1005; /* Higher than Leaflet elements (1000) to prevent occlusion */
+    pointer-events: none; /* Let clicks pass through to map/canvas underneath */
+}
+
+.view-badge {
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-color);
+    padding: 6px 14px;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: auto; /* Re-enable clicks */
+    box-shadow: var(--shadow-main);
+    color: rgba(255, 255, 255, 1);
+}
+
+.view-icon {
+    color: rgba(255, 255, 255, 1);
+}
+
+.view-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.view-controls {
+    display: flex;
+    gap: 8px;
+    pointer-events: auto; /* Re-enable clicks */
+}
+
+.control-btn {
+    /* 預設狀態：深碳黑半透明背景 + 質感深灰邊框 + 淺灰圖示/文字 */
+    background: rgba(24, 24, 27, 0.85); /* 碳黑底色 (Zinc-900) */
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2); /* 細緻淺灰半透明邊框 */
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(161, 161, 170, 1); /* 預設為中性淺灰 (Zinc-400) */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.control-btn:hover {
+    /* 1. 背景改為更亮的淺灰色，拉開與預設深黑色的對比 */
+    background: rgba(82, 82, 91, 0.95); 
+    
+    /* 2. 邊框亮度提高到 50% 不透明度 */
+    border-color: rgba(255, 255, 255, 0.5); 
+    
+    /* 3. 文字與圖示保持純白 */
+    color: rgba(255, 255, 255, 1); 
+    
+    /* 4. 新增：按鈕微微放大 8%，創造「浮起來」的點擊感 */
+    transform: scale(1.08); 
+    
+    /* 5. 新增：加深陰影，增強立體感 */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.6); 
+}
+/* Three.js Viewer Style */
+.viewer-container {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(125, 211, 252, 1) 0%, rgba(186, 230, 253, 1) 60%, rgba(226, 232, 240, 1) 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Semi-transparent vector clouds in background */
+.viewer-container::before {
+    content: "";
+    position: absolute;
+    top: 15%;
+    left: -10%;
+    width: 120%;
+    height: 45%;
+    background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+    filter: blur(25px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.viewer-container::after {
+    content: "";
+    position: absolute;
+    bottom: 20%;
+    right: 15%;
+    width: 350px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.45);
+    border-radius: 120px;
+    filter: blur(35px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+#three-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Map Container Style */
+.map-container {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(13, 17, 23, 1);
+}
+
+#leaflet-map {
+    width: 100%;
+    height: 100%;
+}
+
+/* Custom styles for Leaflet Map */
+.leaflet-container {
+    background: rgba(15, 23, 42, 1) !important;
+}
+
+.leaflet-bar {
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-main) !important;
+}
+
+.leaflet-bar a {
+    background-color: rgba(15, 23, 42, 0.85) !important;
+    backdrop-filter: blur(8px);
+    color: var(--text-main) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    transition: all 0.2s ease;
+}
+
+.leaflet-bar a:hover {
+    background-color: var(--bg-sidebar) !important;
+    color: var(--primary) !important;
+}
+
+.leaflet-popup-content-wrapper {
+    background: rgba(15, 23, 42, 0.9) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    color: rgba(255, 255, 255, 1) !important;
+    border-radius: 8px !important;
+    font-family: var(--font-ui);
+}
+
+.leaflet-popup-tip {
+    background: rgba(15, 23, 42, 0.9) !important;
+    border: 1px solid var(--border-color);
+}
+
+/* Map Search Bar styling */
+.map-search-box {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    z-index: 1005;
+    display: flex;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-color);
+    padding: 6px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-main);
+}
+
+.map-search-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: rgba(30, 41, 59, 1);
+    font-family: var(--font-ui);
+    font-size: 0.85rem;
+    padding: 4px 8px;
+    width: 200px;
+}
+
+.map-search-input::placeholder {
+    color: rgba(100, 116, 139, 1);
+}
+
+.map-search-btn {
+    background: rgba(16, 37, 66, 0.95) !important;
+    border: 1px solid rgba(16, 37, 66, 0.15) !important;
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 1) !important;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.map-search-btn:hover {
+    background: rgba(16, 37, 66, 1) !important;
+    border-color: rgba(16, 37, 66, 0.3) !important;
+}
+
+/* 3D Loading Overlay */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(8, 12, 20, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+
+/* 砂漏呼吸翻轉動畫 */
+.loading-hourglass {
+    font-size: 2.0rem;
+    display: inline-block;
+    filter: drop-shadow(0 0 12px rgba(14, 165, 233, 0.6));
+    animation: flip-hourglass 2.2s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+    user-select: none;
+}
+
+@keyframes flip-hourglass {
+    0% { transform: rotate(0deg); }
+    35% { transform: rotate(0deg); }
+    65% { transform: rotate(180deg); }
+    100% { transform: rotate(180deg); }
+}
+
+/* Custom Scrollbar for Sidebar */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Keyframe Animations */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(74, 222, 128, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+    }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive Overrides */
+@media (max-width: 900px) {
+    body {
+        grid-template-rows: 60px 1fr;
+        height: auto;
+        overflow-y: auto;
+    }
+    main {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    .sidebar {
+        height: 500px;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .workspace-right {
+        grid-template-rows: 400px 400px;
+        height: 800px;
+    }
+}
+
+/* Custom Range Slider inside Excel cells */
+.slider-cell {
+    display: table-cell !important;
+    vertical-align: middle !important;
+    padding: 0 !important;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+.slider-cell-inner {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 2.5px !important;
+    padding: 0 3px !important;
+    box-sizing: border-box !important;
+    height: 100% !important;
+    width: 100% !important;
+}
+
+.slider-cell .slider-btn {
+    width: 18px !important;
+    height: 19px !important;
+    min-width: 18px !important;
+    padding: 0 !important;
+    flex-shrink: 0;
+    font-size: 0.8rem !important;
+}
+
+.slider-cell .slider-btn.slider-btn-large {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    font-size: 0.95rem !important;
+    font-weight: 900 !important;
+    background: rgba(2, 132, 199, 1) !important;
+    color: rgba(255, 255, 255, 1) !important;
+    border-color: rgba(2, 132, 199, 1) !important;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(2, 132, 199, 0.35);
+    line-height: 1;
+}
+
+.slider-cell .slider-btn.slider-btn-large:hover:not(:disabled) {
+    background: rgba(3, 105, 161, 1) !important;
+    border-color: rgba(3, 105, 161, 1) !important;
+    color: rgba(255, 255, 255, 1) !important;
+    transform: scale(1.08);
+}
+
+.slider-cell .slider-btn.slider-btn-large:active:not(:disabled) {
+    background: rgba(7, 89, 133, 1) !important;
+    transform: scale(0.95);
+}
+
+.slider-cell input[type="number"] {
+    width: 46px !important;
+    height: 23px;
+    flex-shrink: 0;
+    padding: 0 2px !important;
+    text-align: right;
+    border: 1.5px solid rgba(2, 132, 199, 1) !important; /* Distinct blue border prompting direct user typing */
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 1) !important;
+    color: rgba(15, 23, 42, 1) !important;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 600;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(2, 132, 199, 0.15);
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.slider-cell input[type="number"]:hover:not(:disabled) {
+    border-color: rgba(3, 105, 161, 1) !important;
+    box-shadow: 0 0 6px rgba(2, 132, 199, 0.35);
+}
+
+.slider-cell input[type="number"]:focus:not(:disabled) {
+    border-color: rgba(14, 165, 233, 1) !important;
+    box-shadow: 0 0 8px rgba(14, 165, 233, 0.5);
+    outline: none !important;
+    background-color: rgba(255, 255, 255, 1) !important;
+}
+
+.excel-table td.readonly .slider-cell input[type="number"],
+.slider-cell input[type="number"]:disabled {
+    border-color: rgba(203, 213, 225, 1) !important;
+    background-color: rgba(241, 245, 249, 1) !important;
+    color: rgba(148, 163, 184, 1) !important;
+    box-shadow: none !important;
+    cursor: not-allowed;
+}
+
+.slider-cell input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 20px;
+    width: 100%;
+    height: 14px;
+    background: transparent !important;
+    outline: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+}
+
+/* Webkit Track */
+.slider-cell input[type="range"]::-webkit-slider-runnable-track {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 3px !important;
+    background: rgba(15, 23, 42, 0.15) !important;
+    border-radius: 1.5px !important;
+    border: none !important;
+    transition: background 0.3s;
+}
+
+.slider-cell input[type="range"]:hover::-webkit-slider-runnable-track {
+    background: rgba(15, 23, 42, 0.25) !important;
+}
+
+/* Firefox Track */
+.slider-cell input[type="range"]::-moz-range-track {
+    width: 100%;
+    height: 3px !important;
+    background: rgba(15, 23, 42, 0.15) !important;
+    border-radius: 1.5px !important;
+    border: none !important;
+    transition: background 0.3s;
+}
+
+.slider-cell input[type="range"]:hover::-moz-range-track {
+    background: rgba(15, 23, 42, 0.25) !important;
+}
+
+.slider-cell input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 1.5px solid rgba(255, 255, 255, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    margin-top: -3px; /* Center 9px thumb on 3px track */
+    transition: transform 0.1s;
+}
+
+.slider-cell input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.3);
+}
+
+.slider-cell input[type="range"]::-moz-range-thumb {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 1.5px solid rgba(255, 255, 255, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    transition: transform 0.1s;
+    cursor: pointer;
+}
+
+.slider-cell input[type="range"]::-moz-range-thumb:hover {
+    transform: scale(1.3);
+}
+
+/* Universal Slider Nodes Container & Shortcut Buttons */
+.slider-wrapper,
+.azimuth-slider-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    flex-grow: 1;
+    min-width: 48px;
+    height: 100%;
+    padding: 1px 0;
+    margin: 0 3px;
+    gap: 1px;
+    position: relative;
+    z-index: 1;
+}
+
+.slider-wrapper input[type="range"],
+.azimuth-slider-wrapper input[type="range"] {
+    margin: 0;
+    width: 100%;
+}
+
+.slider-nodes-container,
+.azimuth-nodes-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    width: 100%;
+    height: 12px;
+    margin-top: 1px;
+    padding: 0 5px; /* Inset from boundaries so 90° and 270° nodes never touch/overlap - + buttons */
+    box-sizing: border-box;
+}
+
+.slider-node-btn,
+.azimuth-node-btn {
+    background: rgba(241, 245, 249, 1);
+    border: 1px solid rgba(203, 213, 225, 1);
+    border-radius: 3px;
+    font-size: 0.58rem;
+    font-family: var(--font-mono);
+    color: rgba(100, 116, 139, 1);
+    padding: 0 2px;
+    line-height: 1.1;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    z-index: 1;
+}
+
+/* Dynamic Lock Toggle Button */
+.lock-toggle-btn {
+    background: rgba(15, 23, 42, 0.05) !important;
+    border: 1px solid rgba(15, 23, 42, 0.15) !important;
+    border-radius: 4px !important;
+    color: rgba(71, 85, 105, 1) !important;
+    cursor: pointer !important;
+    margin-right: 4px !important;
+    transition: all 0.2s ease !important;
+    user-select: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 22px !important;
+    width: 22px !important;
+    min-width: 22px !important;
+    flex-shrink: 0 !important;
+    padding: 2px !important;
+}
+
+.lock-toggle-btn svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+    transition: transform 0.2s ease;
+}
+
+.lock-toggle-btn:hover {
+    background: rgba(15, 23, 42, 0.1) !important;
+    border-color: rgba(15, 23, 42, 0.3) !important;
+}
+
+.lock-toggle-btn.is-locked {
+    background: rgba(239, 68, 68, 1) !important; /* solid red for strong locked feedback */
+    border-color: rgba(239, 68, 68, 1) !important;
+    color: rgba(255, 255, 255, 1) !important;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.35) !important;
+}
+
+.lock-toggle-btn.is-locked svg {
+    transform: scale(1.05);
+}
+
+/* Azimuth Row 2-Tier Node Layout */
+tr.tr-azimuth-row {
+    height: 72px !important;
+}
+
+tr.tr-azimuth-row td {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+    vertical-align: middle !important;
+}
+
+.slider-cell-azimuth {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+}
+
+.slider-wrapper-azimuth {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: stretch !important;
+    gap: 2px !important;
+}
+
+.slider-nodes-top {
+    display: flex !important;
+    justify-content: space-evenly !important;
+    width: 100% !important;
+    margin-bottom: 2px !important;
+    height: 14px !important;
+}
+
+.slider-nodes-bottom {
+    display: flex !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    margin-top: 2px !important;
+    height: 14px !important;
+}
+
+.slider-node-btn:hover:not(:disabled),
+.azimuth-node-btn:hover:not(:disabled) {
+    background: rgba(224, 242, 254, 1);
+    border-color: rgba(2, 132, 199, 1);
+    color: rgba(2, 132, 199, 1);
+    font-weight: 700;
+    transform: scale(1.08);
+}
+
+.slider-node-btn.active,
+.azimuth-node-btn.active {
+    background: rgba(2, 132, 199, 1);
+    border-color: rgba(2, 132, 199, 1);
+    color: rgba(255, 255, 255, 1);
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(2, 132, 199, 0.35);
+}
+
+.excel-table td.readonly .slider-node-btn,
+.slider-node-btn:disabled,
+.azimuth-node-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Slider fine-tuning buttons */
+.slider-btn {
+    position: relative;
+    z-index: 2; /* Always ensure - and + buttons stay above nodes */
+    background: rgba(15, 23, 42, 0.05) !important;
+    border: 1px solid rgba(15, 23, 42, 0.15) !important;
+    color: rgba(15, 23, 42, 0.8) !important;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s;
+    padding: 0;
+    margin: 0;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.slider-btn:hover:not(:disabled) {
+    background: rgba(2, 132, 199, 0.1) !important;
+    border-color: rgba(2, 132, 199, 0.6) !important;
+    color: rgba(2, 132, 199, 1) !important;
+    transform: scale(1.1);
+}
+
+.slider-btn:active:not(:disabled) {
+    background: rgba(2, 132, 199, 0.2) !important;
+    transform: scale(0.95);
+}
+
+.slider-btn:disabled {
+    opacity: 0.25 !important;
+    cursor: not-allowed !important;
+    border-color: rgba(15, 23, 42, 0.05) !important;
+    background: rgba(15, 23, 42, 0.02) !important;
+    color: rgba(15, 23, 42, 0.3) !important;
+}
+
+
+
+/* Sun Simulator Panel (Floating on 3D Viewer Container) */
+.sun-simulator-panel {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    top: auto;
+    transform: none;
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 18px;
+    z-index: 100;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    user-select: none;
+    transition: background 0.3s, border-color 0.3s;
+}
+
+.sun-simulator-panel:hover {
+    background: rgba(15, 23, 42, 0.95);
+    border-color: rgba(20, 184, 166, 0.4);
+}
+
+.sim-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.sim-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(148, 163, 184, 1);
+    white-space: nowrap;
+    width: 85px;
+    flex-shrink: 0;
+}
+
+.sim-slider-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-grow: 1;
+}
+
+.sim-control input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 90px;
+    height: 14px;
+    background: transparent !important;
+    outline: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+.sim-control input[type="range"]::-webkit-slider-runnable-track {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 3px !important;
+    background: rgba(255, 255, 255, 0.18) !important;
+    border-radius: 1.5px !important;
+    border: none !important;
+}
+
+.sim-control input[type="range"]::-moz-range-track {
+    width: 100%;
+    height: 3px !important;
+    background: rgba(255, 255, 255, 0.18) !important;
+    border-radius: 1.5px !important;
+    border: none !important;
+}
+
+.sim-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 1px solid rgba(255, 255, 255, 1);
+    cursor: pointer;
+    margin-top: -2px; /* Center thumb vertically on 3px track */
+    box-shadow: 0 0 5px rgba(20, 184, 166, 0.5);
+    transition: transform 0.1s, background-color 0.2s;
+}
+
+.sim-control input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.3);
+    background: rgba(45, 212, 191, 1);
+}
+
+.sim-control input[type="range"]::-moz-range-thumb {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 1px solid rgba(255, 255, 255, 1);
+    cursor: pointer;
+    box-shadow: 0 0 5px rgba(20, 184, 166, 0.5);
+    transition: transform 0.1s, background-color 0.2s;
+}
+
+.sim-control input[type="range"]::-moz-range-thumb:hover {
+    transform: scale(1.3);
+    background: rgba(45, 212, 191, 1);
+}
+
+.sim-value {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 1);
+    width: 100px;
+    text-align: right;
+    white-space: nowrap;
+    overflow: visible;
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+}
+
+/* Snapping & Measure Tape Label Styles */
+.control-btn.active {
+    background: rgba(14, 165, 233, 1) !important; /* Sky blue when active */
+    border-color: rgba(56, 189, 248, 1) !important;
+    box-shadow: 0 0 12px rgba(14, 165, 233, 0.6);
+    transform: scale(1.1);
+}
+
+.measure-label {
+    position: absolute;
+    transform: translate(-50%, -120%);
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(4px);
+    border: 1.5px solid rgba(239, 68, 68, 1); /* High contrast red boundary */
+    color: rgba(254, 240, 138, 1); /* Soft bright yellow text */
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    z-index: 60;
+    transition: opacity 0.15s ease;
+}
+
+/* Floating Measure Axis Panel */
+.measure-axis-panel {
+    position: absolute;
+    top: 68px; /* Below the view controls badge */
+    right: 16px;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-color);
+    padding: 8px 14px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 1005;
+    box-shadow: var(--shadow-main);
+    pointer-events: auto;
+    font-family: var(--font-ui);
+    font-size: 0.8rem;
+}
+
+.axis-panel-title {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.axis-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    color: var(--text-excel);
+    user-select: none;
+}
+
+.axis-checkbox-label:hover {
+    color: rgba(255, 255, 255, 1);
+}
+
+.axis-checkbox {
+    cursor: pointer;
+    accent-color: rgba(14, 165, 233, 1); /* Sky blue checkbox */
+}
+
+.axis-name {
+    font-weight: 700;
+}
+.axis-x { color: rgba(248, 113, 113, 1); } /* Light red */
+.axis-y { color: rgba(74, 222, 128, 1); } /* Light green */
+.axis-z { color: rgba(96, 165, 250, 1); } /* Light blue */
+
+/* Sun Simulator panel buttons styling */
+.sim-slider-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.sim-control .slider-btn {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    border-radius: 3px;
+}
+.sim-control input[type="range"] {
+    width: 80px !important;
+}
+
+/* Exclusion Tool Panel buttons hover state */
+.ex-tool-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Planning Mode Buttons & Sliders */
+.planning-controls-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.planning-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.4);
+    border: 3px solid var(--border-color);
+    border-radius: 10px;
+    padding: 8px 4px;
+    box-sizing: border-box;
+    transition: all 0.25s ease;
+}
+
+.planning-block.active-edit.edit-site {
+    background: rgba(14, 165, 233, 0.15) !important;
+    border-color: rgba(14, 165, 233, 0.65) !important;
+    box-shadow: 0 0 8px rgba(14, 165, 233, 0.15), inset 0 1px 3px rgba(0,0,0,0.12);
+}
+
+.planning-block.active-edit.edit-exclusion {
+    background: rgba(249, 115, 22, 0.15) !important;
+    border-color: rgba(249, 115, 22, 0.65) !important;
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.15), inset 0 1px 3px rgba(0,0,0,0.12);
+}
+
+.planning-block.active-edit.edit-obstacle {
+    background: rgba(239, 68, 68, 0.15) !important;
+    border-color: rgba(239, 68, 68, 0.65) !important;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.15), inset 0 1px 3px rgba(0,0,0,0.12);
+}
+
+.planning-block .slider-wrapper,
+.planning-slider-wrapper {
+    display: flex;
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    width: 100%;
+}
+
+.slider-label {
+    font-size: 0.5rem;
+    font-weight: 500;
+    color: var(--text-main);
+    user-select: none;
+    white-space: nowrap;
+    transition: color 0.2s, font-weight 0.2s;
+    line-height: 1;
+}
+
+.slider-label.active {
+    color: var(--text-muted);
+    font-weight: bold;
+}
+
+/* Custom Sliding Switch style for range inputs - Shortened for compact edit/lock toggle */
+.toggle-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 12px;
+    border-radius: 6px;
+    background: rgba(203, 213, 225, 1);
+    outline: none;
+    margin: 0;
+    cursor: pointer;
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.12);
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+}
+
+/* Style thumb */
+.toggle-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.toggle-slider::-moz-range-thumb {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+/* Different color schemes for slider when in EDIT state (value = 0) */
+/* When value is 0 (EDIT), slider points to the left */
+.toggle-slider.site-theme[value="0"] {
+    background: rgba(0, 210, 255, 1); /* Light blue */
+}
+.toggle-slider.exclusion-theme[value="0"] {
+    background: rgba(234, 88, 12, 1); /* Orange */
+}
+.toggle-slider.obstacle-theme[value="0"] {
+    background: rgba(239, 68, 68, 1); /* Red */
+}
+
+/* Style the buttons */
+.planning-btn {
+    width: 95%;
+    padding: 8px 2px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.planning-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.planning-btn:active {
+    transform: translateY(0);
+}
+
+.btn-site {
+    background: linear-gradient(135deg, rgba(0, 203, 255, 1), rgba(0, 233, 255, 1));
+}
+.btn-exclusion {
+    background: linear-gradient(135deg, rgba(230, 145, 56, 1), rgba(207, 130, 50, 1));
+}
+.btn-obstacle {
+    background: linear-gradient(135deg, rgba(219, 40, 28, 1), rgba(213, 0, 113, 1));
+}
+
+/* Highlight style when in edit state */
+.planning-block.edit-site {
+    border-color: rgba(0, 210, 255, 1);
+}
+.planning-block.edit-exclusion {
+    border-color: rgba(234, 88, 12, 1);
+}
+.planning-block.edit-obstacle {
+    border-color: rgba(239, 68, 68, 1);
+}
+
+/* Floating Action Trigger Buttons */
+.btn-planning-trigger {
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+    font-family: var(--font-ui);
+    display: none; /* Controlled by JS */
+}
+.btn-planning-trigger .btn-icon {
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+.btn-planning-trigger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    filter: brightness(1.1);
+}
+
+.btn-planning-trigger:active {
+    transform: translateY(0);
+}
+
+/* Floating Toolboxes (Scaled down 40%, Non-blocking, Draggable) */
+.floating-toolbox {
+    box-sizing: border-box;
+    user-select: none;
+    touch-action: none;
+}
+
+.floating-toolbox h3 {
+    cursor: move !important;
+}
+
+.site-tool-btn, .obs-tool-btn {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: var(--font-ui);
+}
+
+.site-tool-btn.active, .obs-tool-btn.active {
+    background: rgba(255, 255, 255, 0.2) !important;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 1) !important;
+}
+
+/* AI Auto-detect Floating Confirmation Card */
+
+
+@keyframes pulseGlow {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(56, 189, 248, 1)); }
+    50% { transform: scale(1.15); filter: drop-shadow(0 0 8px rgba(56, 189, 248, 1)); }
+}
+
+@keyframes fadeInSlideUp {
+    from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* 3D Viewer Settings Panel (Floating on 3D Viewer Container, bottom-right) */
+.viewer-settings-panel {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    z-index: 1000;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: auto;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+}
+
+.viewer-settings-panel:hover {
+    background: rgba(15, 23, 42, 0.85);
+    border-color: rgba(20, 184, 166, 0.4);
+}
+
+.viewer-settings-title {
+    font-size: 0.75rem;
+    color: rgba(148, 163, 184, 1);
+    font-family: var(--font-ui);
+    font-weight: bold;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.viewer-settings-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 1);
+    font-family: var(--font-ui);
+}
+
+.viewer-settings-label {
+    white-space: nowrap;
+}
+
+.viewer-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 3D Viewer Settings Toggles */
+.toggle-3d-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 32px;
+    height: 16px;
+    border-radius: 8px;
+    background: rgba(203, 213, 225, 1); /* Gray when inactive/0 */
+    outline: none;
+    margin: 0;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s ease;
+}
+
+.toggle-3d-slider[value="1"] {
+    background: rgba(14, 165, 233, 1); /* Bright Sky Blue when active/1 */
+}
+
+.toggle-3d-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    cursor: pointer;
+}
+
+.toggle-3d-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    border: none;
+    cursor: pointer;
+}
+
+/* ==========================================
+   5. RESPONSIVE TOOLBAR OVERRIDES (FIX FOR SQUEEZED LAYOUTS)
+   ========================================== */
+
+/* 1. Large-to-Medium Screen Transition (Window Width <= 1600px) */
+@media (max-width: 1600px) {
+    .sun-simulator-panel {
+        gap: 15px;
+        padding: 6px 18px;
+    }
+    .sim-control {
+        gap: 6px;
+    }
+    .sim-control input[type="range"] {
+        width: 70px !important;
+    }
+    .sim-value {
+        min-width: 75px;
+    }
+    #sun-hour-val {
+        min-width: 42px;
+    }
+}
+
+/* 2. Medium Screen Breakpoint: Hide extra text to save space (Window Width <= 1450px) */
+@media (max-width: 1450px) {
+    .hide-small {
+        display: none !important;
+    }
+    .sun-simulator-panel {
+        gap: 12px;
+        padding: 6px 12px;
+    }
+    .sim-value {
+        font-size: 0.75rem;
+    }
+}
+
+/* 3. Small-Medium Screen Breakpoint: Move Sun Simulator to Bottom Left (Window Width <= 1300px) */
+@media (max-width: 1300px) {
+    .sun-simulator-panel {
+        top: auto;
+        bottom: 15px;
+        left: 15px;
+        transform: none;
+        flex-direction: column;
+        gap: 6px;
+        padding: 8px 12px;
+        border-radius: 12px;
+        background: rgba(15, 23, 42, 0.85); /* Darker backdrop at bottom corner */
+    }
+    
+    .sim-control {
+        justify-content: space-between;
+        width: 100%;
+        gap: 10px;
+    }
+    
+    .sim-control input[type="range"] {
+        width: 65px !important;
+    }
+}
+
+/* 4. Small Screen / Mobile Breakpoint (Window Width <= 600px) */
+@media (max-width: 600px) {
+    .hide-mobile {
+        display: none !important;
+    }
+    
+    /* Make top controls and badge more compact */
+    .view-header {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+    }
+    
+    .view-badge {
+        padding: 4px 8px;
+        gap: 4px;
+    }
+    
+    .view-badge .view-title {
+        display: none !important; /* Only show icon on mobile */
+    }
+    
+    .view-controls {
+        gap: 4px;
+    }
+    
+    .control-btn {
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+    }
+    
+    /* Sun Simulator Panel on mobile screens */
+    .sun-simulator-panel {
+        bottom: 10px;
+        left: 10px;
+        padding: 6px 10px;
+        gap: 4px;
+    }
+    
+    .sim-control input[type="range"] {
+        width: 55px !important;
+    }
+    
+    .viewer-settings-panel {
+        display: none !important;
+    }
+    
+    .viewer-settings-item {
+        gap: 8px;
+        font-size: 0.7rem;
+    }
+    
+    .toggle-3d-slider {
+        width: 28px;
+        height: 14px;
+    }
+    
+    .toggle-3d-slider::-webkit-slider-thumb {
+        width: 10px;
+        height: 10px;
+    }
+    
+    .toggle-3d-slider::-moz-range-thumb {
+        width: 10px;
+        height: 10px;
+    }
+    
+    /* Map Search Box responsiveness */
+    .map-search-box {
+        bottom: 10px;
+        left: 10px;
+        padding: 4px;
+        width: calc(100% - 20px);
+        box-sizing: border-box;
+    }
+    .map-search-input {
+        width: 100%;
+        font-size: 0.75rem;
+    }
+    .map-search-btn {
+        width: 24px;
+        height: 24px;
+    }
+}
+
+/* ==========================================
+   6. CUSTOM CONTEXT MENU STYLES (GLASSMORPHISM)
+   ========================================== */
+.context-menu {
+    position: fixed;
+    z-index: 10000;
+    background: rgba(15, 23, 42, 0.9); /* Dark Slate */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 4px 0;
+    min-width: 150px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    font-family: var(--font-ui), system-ui, -apple-system, sans-serif;
+    animation: contextMenuFadeIn 0.12s ease-out;
+}
+
+@keyframes contextMenuFadeIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    color: rgba(203, 213, 225, 1);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.context-menu-item:hover {
+    background: rgba(20, 184, 166, 0.15); /* Light translucent teal matching the theme */
+    color: rgba(45, 212, 191, 1); /* Active teal color */
+}
+
+.context-menu-item .menu-icon {
+    font-size: 1rem;
+}
+
+/* ==========================================
+ * 4. STEP-BY-STEP OPERATION INSTRUCTIONS BAR
+ * ========================================== */
+.instructions-steps-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.8); /* 亮色透明玻璃，貼合亮底色主題 */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 2px 6px;
+    position: absolute; /* 在 header 內絕對定位 */
+    left: 524px; /* 切齊 3D 預覽左邊界 (24px padding + 480px sidebar + 20px gap) */
+    z-index: 10;
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.step-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 20px;
+    transition: all 0.2s ease;
+}
+
+.step-item:hover {
+    background: rgba(8, 84, 116, 0.1);
+}
+
+.step-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background-color: rgba(00, 33, 66, 1); /* 圖片中深藍色圓圈 */
+    color: rgba(255, 255, 255, 1);
+    border-radius: 50%;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border: 1.5px solid rgba(0, 17, 37, 1);
+    transition: all 0.2s ease;
+}
+
+.step-item:hover .step-number {
+    background-color: rgba(0, 170, 255, 1);
+    border-color: rgba(255, 255, 255, 1);
+    box-shadow: 0 0 10px rgba(14, 165, 233, 0.3);
+    transform: scale(1.1);
+}
+
+.step-label {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: rgba(0, 51, 102, 1); /* 深色字體 */
+    transition: color 0.2s;
+}
+
+.step-item:hover .step-label {
+    color: rgba(15, 23, 42, 1);
+}
+
+.step-arrow {
+    color: rgba(16, 37, 66, 1); /* 箭頭深藍色 */
+    font-weight: bold;
+    font-size: 1.1rem;
+    user-select: none;
+}
+
+/* 七彩變換呼吸閃爍動畫 (解決霓虹藍不夠明顯的問題，循環七種顏色) */
+@keyframes rainbow-glow-pulse {
+    0% {
+        box-shadow: 0 0 16px 4px rgba(239, 68, 68, 0.95), 0 0 0 6px rgba(239, 68, 68, 0.5);
+        outline: 4px solid rgba(239, 68, 68, 1);
+        border-color: rgba(239, 68, 68, 1);
+        background-color: rgba(239, 68, 68, 0.15);
+    }
+    14% {
+        box-shadow: 0 0 16px 4px rgba(249, 115, 22, 0.95), 0 0 0 6px rgba(249, 115, 22, 0.5);
+        outline: 4px solid rgba(249, 115, 22, 1);
+        border-color: rgba(249, 115, 22, 1);
+        background-color: rgba(249, 115, 22, 0.15);
+    }
+    28% {
+        box-shadow: 0 0 16px 4px rgba(234, 179, 8, 0.95), 0 0 0 6px rgba(234, 179, 8, 0.5);
+        outline: 4px solid rgba(234, 179, 8, 1);
+        border-color: rgba(234, 179, 8, 1);
+        background-color: rgba(234, 179, 8, 0.15);
+    }
+    42% {
+        box-shadow: 0 0 16px 4px rgba(34, 197, 94, 0.95), 0 0 0 6px rgba(34, 197, 94, 0.5);
+        outline: 4px solid rgba(34, 197, 94, 1);
+        border-color: rgba(34, 197, 94, 1);
+        background-color: rgba(34, 197, 94, 0.15);
+    }
+    56% {
+        box-shadow: 0 0 16px 4px rgba(6, 182, 212, 0.95), 0 0 0 6px rgba(6, 182, 212, 0.5);
+        outline: 4px solid rgba(6, 182, 212, 1);
+        border-color: rgba(6, 182, 212, 1);
+        background-color: rgba(6, 182, 212, 0.15);
+    }
+    70% {
+        box-shadow: 0 0 16px 4px rgba(59, 130, 246, 0.95), 0 0 0 6px rgba(59, 130, 246, 0.5);
+        outline: 4px solid rgba(59, 130, 246, 1);
+        border-color: rgba(59, 130, 246, 1);
+        background-color: rgba(59, 130, 246, 0.15);
+    }
+    84% {
+        box-shadow: 0 0 16px 4px rgba(168, 85, 247, 0.95), 0 0 0 6px rgba(168, 85, 247, 0.5);
+        outline: 4px solid rgba(168, 85, 247, 1);
+        border-color: rgba(168, 85, 247, 1);
+        background-color: rgba(168, 85, 247, 0.15);
+    }
+    100% {
+        box-shadow: 0 0 16px 4px rgba(239, 68, 68, 0.95), 0 0 0 6px rgba(239, 68, 68, 0.5);
+        outline: 4px solid rgba(239, 68, 68, 1);
+        border-color: rgba(239, 68, 68, 1);
+        background-color: rgba(239, 68, 68, 0.15);
+    }
+}
+
+.element-flash {
+    animation: rainbow-glow-pulse 2s infinite linear !important;
+    transition: all 0.2s ease;
+    z-index: 10099 !important; /* 確保閃爍時在最上層 */
+}
+
+/* 針對輸入框與地圖特化樣式，避免被遮擋 */
+.map-search-box.element-flash {
+    z-index: 10099 !important;
+}
+
+/* 為了更好的跨平台顯示，當寬度小於 1080px 時自動縮減/隱藏文字以防碰撞 */
+@media (max-width: 1080px) {
+    .instructions-steps-bar {
+        position: static; /* 寬度不夠時取消絕對定位，改為 flex 流動排版，防止與 Logo 覆蓋 */
+        transform: none;
+        left: auto;
+        padding: 4px 12px;
+        gap: 6px;
+        background: transparent;
+        box-shadow: none;
+        border: none;
+    }
+    .step-label {
+        display: none; /* 隱藏文字，僅保留數字圓圈 */
+    }
+    .step-item {
+        padding: 2px;
+    }
+}
+
+/* 矩形吸附鎖定閃爍與高亮樣式 (閃亮洋紅色 Sparkling Magenta) */
+@keyframes rubberband-flash {
+    0% { opacity: 0.5; stroke-width: 3px; filter: drop-shadow(0 0 3px rgba(255, 0, 128, 0.7)); }
+    50% { opacity: 1.0; stroke-width: 4.5px; filter: drop-shadow(0 0 10px rgba(255, 0, 128, 1)); }
+    100% { opacity: 0.5; stroke-width: 3px; filter: drop-shadow(0 0 3px rgba(255, 0, 128, 0.7)); }
+}
+.rubberband-rect-locked {
+    animation: rubberband-flash 0.75s infinite ease-in-out !important;
+    stroke: rgba(255, 0, 128, 1) !important;
+    stroke-dasharray: none !important;
+}
+
+/* 亮白閃爍提示樣式 (全多邊形 / 單一邊選取) */
+@keyframes white-flash-glow {
+    0% {
+        stroke: #ffffff !important;
+        stroke-width: 4px;
+        filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+        opacity: 0.85;
+    }
+    50% {
+        stroke: #ffffff !important;
+        stroke-width: 6px;
+        filter: drop-shadow(0 0 8px rgba(255, 255, 255, 1)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.95));
+        opacity: 1.0;
+    }
+    100% {
+        stroke: #ffffff !important;
+        stroke-width: 4px;
+        filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+        opacity: 0.85;
+    }
+}
+.polygon-selected-flash {
+    animation: white-flash-glow 1.0s infinite ease-in-out !important;
+    stroke: #ffffff !important;
+}
+.edge-selected-flash {
+    animation: white-flash-glow 0.8s infinite ease-in-out !important;
+    stroke: #ffffff !important;
+}
+
+/* 閃亮洋紅吸附提示標籤與圖示樣式 */
+@keyframes snap-pulse {
+    0% { transform: scale(1); filter: drop-shadow(0 0 3px rgba(255, 0, 128, 0.8)); }
+    50% { transform: scale(1.25); filter: drop-shadow(0 0 10px rgba(255, 0, 128, 1)); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 3px rgba(255, 0, 128, 0.8)); }
+}
+.snap-icon-endpoint {
+    background: rgba(255, 0, 128, 1);
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(255, 0, 128, 1), 0 0 2px #ffffff;
+    animation: snap-pulse 1.2s infinite ease-in-out;
+}
+.snap-icon-midpoint {
+    background: #ffffff;
+    border: 2.5px solid rgba(255, 0, 128, 1);
+    transform: rotate(45deg);
+    box-shadow: 0 0 8px rgba(255, 0, 128, 1), 0 0 2px #ffffff;
+    animation: snap-pulse 1.2s infinite ease-in-out;
+}
+.snap-guide-tooltip {
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(4px);
+    border: 1.5px solid rgba(255, 0, 128, 1);
+    color: #ffffff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(255, 0, 128, 0.7);
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+/* Touch Scroll Protection Styles */
+.touch-scroll-bar {
+    display: none;
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+    color: rgba(148, 163, 184, 1);
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 6px 0;
+    letter-spacing: 0.5px;
+    user-select: none;
+    cursor: grab;
+    touch-action: pan-y;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.touch-lock-btn {
+    display: none;
+    background: rgba(14, 165, 233, 0.2);
+    border: 1px solid rgba(14, 165, 233, 0.5);
+    color: rgba(2, 132, 199, 1);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: all 0.2s ease;
+    user-select: none;
+    pointer-events: auto;
+}
+
+.touch-lock-btn.unlocked {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: rgba(220, 38, 38, 1);
+}
+
+.touch-shield-overlay {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1004;
+    background: rgba(0, 0, 0, 0.02);
+    touch-action: pan-y;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+}
+
+.shield-hint-badge {
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(248, 250, 252, 1);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+/* ==========================================
+   MOBILE & TOUCH SCREEN OPTIMIZATIONS
+   ========================================== */
+@media (max-width: 992px) {
+    .touch-scroll-bar {
+        display: block;
+    }
+    .touch-lock-btn {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .touch-shield-overlay.active {
+        display: flex;
+    }
+
+    main {
+        display: flex;
+        flex-direction: column-reverse;
+        height: auto;
+        padding: 12px;
+        gap: 20px;
+        overflow-y: auto;
+    }
+
+    /* 1. Parameter Table (Sidebar): Expand height to show full table without cramped 2-row scrolling */
+    .sidebar {
+        height: auto !important;
+        max-height: none !important;
+        border-radius: 14px;
+        overflow: visible;
+        flex-shrink: 0;
+    }
+
+    .spreadsheet-container {
+        height: auto !important;
+        max-height: none !important;
+        overflow-y: visible;
+        overflow-x: auto;
+    }
+
+    /* 2. Workspace Right: Unshare fixed container height, make windows independent */
+    .workspace-right {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        height: auto !important;
+        min-height: 0 !important;
+        border-radius: 0;
+        box-shadow: none;
+        background: transparent;
+        overflow: visible;
+        flex-shrink: 0;
+    }
+
+    .workspace-splitter {
+        display: none !important; /* Hide resizer line on mobile since windows stack independently */
+    }
+
+    /* 3. 3D Viewer Window: Dedicated 450px Operating Height */
+    #view-wrapper-3d {
+        height: 450px !important;
+        min-height: 400px !important;
+        border-radius: 14px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        border: 1px solid var(--border-color);
+        position: relative;
+        flex: none;
+    }
+
+    /* 4. Satellite Map Window: Dedicated 450px Operating Height */
+    #view-wrapper-map {
+        height: 450px !important;
+        min-height: 400px !important;
+        border-radius: 14px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        border: 1px solid var(--border-color);
+        position: relative;
+        flex: none;
+    }
+
+    header {
+        padding: 8px 12px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    /* Hide top 1~5 step guide and user guide button on mobile */
+    .instructions-steps-bar,
+    .user-guide-link {
+        display: none !important;
+    }
+
+    /* Hide bottom JSON export, save default, and reset default buttons on mobile */
+    #btn-export-json,
+    #btn-save-default,
+    #btn-reset,
+    .sidebar-default-actions-row {
+        display: none !important;
+    }
+
+    .logo span {
+        font-size: 0.8rem !important;
+    }
+
+    /* Table slider cell buttons on mobile: keep compact so multi-button rows (e.g. Row 18, 19) never overflow or crowd */
+    .slider-cell {
+        display: table-cell !important;
+        vertical-align: middle !important;
+        padding: 0 !important;
+    }
+    .slider-cell-inner {
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        gap: 2px !important;
+        padding: 0 2px !important;
+        min-width: 0 !important;
+    }
+
+    .slider-cell .slider-btn {
+        width: 17px !important;
+        height: 19px !important;
+        min-width: 17px !important;
+        font-size: 0.75rem !important;
+        padding: 0 !important;
+        border-radius: 3px !important;
+        flex-shrink: 0 !important;
+        position: relative !important;
+        z-index: 2 !important;
+    }
+
+    .slider-cell .slider-btn.slider-btn-large {
+        width: 18px !important;
+        height: 19px !important;
+        min-width: 18px !important;
+        font-size: 0.8rem !important;
+        font-weight: 900 !important;
+        border-radius: 3px !important;
+        flex-shrink: 0 !important;
+        position: relative !important;
+        z-index: 2 !important;
+    }
+
+    /* 手機版 "B(數值)" 欄寬縮小 20% (175px -> 140px) */
+    .excel-table th.col-b,
+    .excel-table th:nth-child(3),
+    .excel-table td:nth-child(3) {
+        min-width: 140px !important;
+        width: 140px !important;
+    }
+
+    .excel-table {
+        min-width: 310px !important;
+    }
+
+    .slider-cell input[type="number"] {
+        width: 44px !important;
+        height: 22px !important;
+        font-size: 12px !important;
+        padding: 0 2px !important;
+        text-align: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    #val-azimuth {
+        width: 54px !important;
+    }
+
+    .slider-wrapper {
+        min-width: 48px !important;
+        flex: 1 1 auto !important;
+        gap: 0px !important;
+        margin: 0 2px !important;
+        position: relative !important;
+        z-index: 1 !important;
+    }
+
+    .slider-nodes-container {
+        height: 11px !important;
+        margin-top: 0px !important;
+        padding: 0 3px !important; /* 確保 90°、180°、270° 節點縮在滑桿內，絕不覆蓋到兩側 - + 按鈕 */
+        box-sizing: border-box !important;
+    }
+
+    .slider-node-btn {
+        font-size: 0.52rem !important;
+        padding: 0 1.5px !important;
+        line-height: 1 !important;
+        border-radius: 2px !important;
+        z-index: 1 !important;
+    }
+
+    .excel-table th.col-header:nth-child(3),
+    .excel-table td:nth-child(3) {
+        min-width: 330px !important;
+        width: 330px !important;
+    }
+
+    .excel-table td, .excel-table th {
+        padding: 3px 3px !important;
+    }
+
+    .excel-table tr {
+        height: 32px !important;
+    }
+
+    /* Desktop & Mobile Planning Controls Slots */
+    #mobile-planning-controls-slot {
+        display: none;
+    }
+
+    #desktop-planning-controls-slot {
+        display: block;
+        width: 100%;
+    }
+
+    /* 5. Mobile Planning Controls Container (Placed between 3D Viewer & Satellite Map) */
+    #mobile-planning-controls-slot {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        flex-shrink: 0 !important;
+    }
+
+    #desktop-planning-controls-slot {
+        display: none !important;
+    }
+
+    .planning-controls-container {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 4px !important;
+        margin: 0 !important;
+        padding: 4px 8px !important;
+        background: rgba(15, 23, 42, 0.92) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .planning-block {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        padding: 4px 2px !important;
+    }
+
+    .planning-btn {
+        font-size: 1rem !important;
+        padding: 2px 2px !important;
+        height: 18px !important;
+        border-radius: 6px !important;
+        white-space: nowrap !important;
+    }
+
+    .planning-slider-wrapper {
+        margin-bottom: 3px !important;
+    }
+
+    .slider-label {
+        font-size: 0.5rem !important;
+    }
+
+    /* 6. Scaling down all floating tool windows & dialogs on mobile */
+    #exclusion-tool-panel {
+        top: 44px !important;
+        left: 8px !important;
+        width: 108px !important;
+        padding: 6px 8px !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important;
+        z-index: 1010 !important;
+    }
+
+    #exclusion-tool-panel h3 {
+        font-size: 0.68rem !important;
+        margin-bottom: 4px !important;
+    }
+
+    #exclusion-tool-panel .ex-tool-btn {
+        padding: 3px 5px !important;
+        font-size: 0.64rem !important;
+        border-radius: 4px !important;
+    }
+
+    #btn-ex-cancel {
+        padding: 3px 5px !important;
+        font-size: 0.62rem !important;
+        margin-top: 2px !important;
+    }
+
+    /* Mobile: Hide Smart Contour (智慧圈選) buttons across all toolboxes, keep Manual Polygon (手繪多邊形) */
+    #btn-site-ai,
+    #btn-ex-ai,
+    #btn-obs-ai,
+    #ai-detect-confirm-card,
+    #btn-ex-walkway,
+    #btn-ex-path-1,
+    #btn-ex-path-4 {
+        display: none !important;
+    }
+
+    #obstacle-tool-panel {
+        top: 44px !important;
+        left: 8px !important;
+        width: 112px !important;
+        padding: 6px 8px !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important;
+        z-index: 1010 !important;
+    }
+
+    #obstacle-tool-panel h3 {
+        font-size: 0.68rem !important;
+        margin-bottom: 4px !important;
+    }
+
+    #obstacle-tool-panel label {
+        font-size: 0.62rem !important;
+    }
+
+    #val-obs-h {
+        width: 38px !important;
+        padding: 1px 3px !important;
+        font-size: 0.66rem !important;
+        height: 18px !important;
+    }
+
+    #obstacle-tool-panel span {
+        font-size: 0.56rem !important;
+        line-height: 1.1 !important;
+    }
+
+    #btn-obs-cancel {
+        padding: 3px 5px !important;
+        font-size: 0.62rem !important;
+        margin-top: 2px !important;
+    }
+
+    .btn-planning-trigger {
+        top: 44px !important;
+        left: 8px !important;
+        padding: 4px 8px !important;
+        font-size: 0.68rem !important;
+        border-radius: 5px !important;
+        z-index: 1010 !important;
+    }
+
+    /* De-clutter & scale 3D View Badges & Sun Simulator Panel */
+    .view-header {
+        top: 8px !important;
+        left: 8px !important;
+        right: 8px !important;
+        flex-wrap: wrap;
+        gap: 4px !important;
+    }
+
+    .view-badge {
+        padding: 3px 8px !important;
+        font-size: 0.72rem !important;
+    }
+
+    .control-btn {
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 0.75rem !important;
+    }
+
+    .touch-lock-btn {
+        padding: 2px 6px !important;
+        font-size: 0.68rem !important;
+    }
+
+    /* Hide 3D Shadows & Supports settings panel on mobile/tablet (default both ON) */
+    .viewer-settings-panel {
+        display: none !important;
+    }
+
+    .sun-simulator-panel {
+        bottom: 8px !important;
+        left: 8px !important;
+        padding: 5px 8px !important;
+        border-radius: 10px !important;
+        gap: 3px !important;
+        flex-direction: column !important;
+        flex-wrap: nowrap !important;
+        max-width: calc(100% - 16px) !important;
+    }
+
+    .sim-control {
+        gap: 4px !important;
+        width: 100% !important;
+        justify-content: flex-start !important;
+    }
+
+    .sim-label {
+        width: 18px !important;
+        font-size: 0.7rem !important;
+    }
+
+    .sim-slider-wrapper {
+        gap: 3px !important;
+        flex-grow: 1 !important;
+    }
+
+    .sim-control input[type="range"] {
+        width: 48px !important;
+    }
+
+    .sim-value {
+        width: 72px !important;
+        font-size: 0.68rem !important;
+        text-align: right !important;
+    }
+
+
+
+    .measure-axis-panel {
+        top: 44px !important;
+        right: 8px !important;
+        padding: 3px 6px !important;
+        font-size: 0.68rem !important;
+    }
+
+    .map-search-box {
+        position: absolute !important;
+        top: auto !important;
+        bottom: 8px !important;
+        left: 8px !important;
+        right: 8px !important;
+        width: auto !important;
+        max-width: calc(100% - 16px) !important;
+        height: auto !important;
+        padding: 3px 8px !important;
+        border-radius: 18px !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+        z-index: 1005 !important;
+    }
+
+    .map-search-input {
+        width: 100% !important;
+        height: 26px !important;
+        font-size: 12px !important;
+    }
+
+    .map-search-btn {
+        width: 26px !important;
+        height: 26px !important;
+        font-size: 11px !important;
+        flex-shrink: 0;
+        border-radius: 50% !important;
+    }
+
+
+}
+
+@media (max-width: 768px) {
+    .guide-label {
+        display: none !important;
+    }
+    .user-guide-link {
+        padding: 6px 10px;
+    }
+
+    main {
+        padding: 8px;
+        gap: 14px;
+    }
+
+    #view-wrapper-3d, #view-wrapper-map {
+        height: 380px !important;
+        min-height: 350px !important;
+    }
+}
+
+/* Floating Notification Toast */
+.pv-toast-notification {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(15, 23, 42, 0.94);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: rgba(255, 255, 255, 1);
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.15);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pv-toast-notification.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+
+.pv-toast-notification.success {
+    border-left: 4px solid rgba(16, 185, 129, 1);
+}
+
+.pv-toast-notification.error {
+    border-left: 4px solid rgba(239, 68, 68, 1);
+}
+/* 控制 SVG 圖示尺寸與指標穿透 */
+.btn-icon {
+  width: 16px;
+  height: 16px;
+  filter: invert(1);
+  pointer-events: none; /* 防止點擊到圖片時事件冒泡受阻 */
+}
+
+/* ==========================================================================
+   以下 8/23 Gemini生成
+   1. 響應式規劃插槽 (Responsive Planning Slots)
+   ========================================================================== */
+.desktop-planning-slot {
+  display: block;
+  width: 100%;
+}
+
+.mobile-planning-slot {
+  display: none;
+  width: 100%;
+}
+
+/* 行動裝置斷點切換 (依專案斷點調整，預設為 768px) */
+@media (max-width: 768px) {
+  .desktop-planning-slot {
+    display: none;
+  }
+  .mobile-planning-slot {
+    display: block;
+  }
+}
+
+/* ==========================================================================
+   2. 側邊欄匯出按鈕列 (Sidebar Export Actions Row)
+   ========================================================================== */
+.sidebar-export-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+}
+
+/* ==========================================================================
+   3. 規劃控制子塊 (Planning Control Sub-blocks)
+   ========================================================================== */
+.block-site,
+.block-exclusion,
+.block-obstacle {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background-color: var(--bg-surface-secondary);
+  border: 1px solid var(--border-color);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* 個別子區塊的狀態或識別微調 */
+.block-site {
+  border-left: 6px solid var(--color-site-theme, rgba(59, 130, 246, 1));
+}
+
+.block-exclusion {
+  border-left: 6px solid var(--color-exclusion-theme, rgba(245, 158, 11, 1));
+}
+
+.block-obstacle {
+  border-left: 6px solid var(--color-obstacle-theme, rgba(239, 68, 68, 1));
+}
+
+/* ==========================================================================
+   4. 開關文字標籤 (Slider Label Variants)
+   ========================================================================== */
+.label-edit,
+.label-lock {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-muted, rgba(0, 51, 102, 1));
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+
+.label-edit.active {
+  color:rgba(102, 102, 102, 1);
+}
+
+.label-lock.active {
+  color:rgba(51, 51, 51, 1);
+}
+
+/* ==========================================================================
+   5. 載入遮罩文字與標題 (Loading Overlay Content & Title)
+   ========================================================================== */
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.loading-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-primary, rgba(30, 41, 59, 1));
+  letter-spacing: 0.025em;
+}
+
+/* 案場中心旋轉方向箭頭把手 (Arrow Rotation Handle) */
+.arrow-handle {
+    background: transparent;
+    border: none;
+    cursor: move;
+}
+/* ==========================================================================
+   11. 從行內樣式抽離之語意化 CSS 類別與狀態類別 (Extracted Inline & State Classes)
+   ========================================================================== */
+
+/* 11.1 頁首 Logo 與標題語意類別 */
+.logo-link {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-decoration: none;
+    padding: 0;
+    margin: 2px;
+}
+.header-logo-img {
+    height: 32px;
+    width: auto;
+    object-fit: contain;
+}
+.company-title-span {
+    font-size: 1.0rem;
+    font-weight: 600;
+    color: rgba(255, 190, 0, 1);
+    font-family: var(--font-ui);
+    white-space: nowrap;
+    letter-spacing: 1px;
+}
+
+/* 11.2 試算表邊欄頂部 Header 語意類別 */
+.sidebar-header {
+    background-color: rgba(255, 255, 255, 0.6);
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+.spreadsheet-title-container {
+    text-align: left;
+}
+.spreadsheet-title-h2 {
+    font-size: 1.0rem;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    margin: 0;
+    font-family: var(--font-ui);
+    white-space: nowrap;
+}
+.spreadsheet-subtitle-p {
+    font-size: 0.9rem;
+    color: #334155;
+    margin: 4px 0 0 0;
+    font-family: var(--font-ui);
+    line-height: 1.4;
+}
+.pv-super-logo-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    cursor: pointer;
+}
+.pv-super-logo-img {
+    height: 72px;
+    width: auto;
+    object-fit: contain;
+    cursor: pointer;
+}
+
+/* 11.3 表格欄寬與輸出單元格標籤類別 */
+.col-header-blank { width: 24px; }
+.col-header-a { width: 106px; }
+.col-b { width: 215px !important; }
+.col-header-unit { width: 32px; }
+.cell-label-output { font-weight: 600; }
+.cell-unit-output { font-weight: 600; }
+
+/* 11.4 邊欄動作按鈕列語意類別 */
+.sidebar-action-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    width: 100%;
+}
+.btn-export-action {
+    flex: 1;
+    margin: 0;
+    font-size: 0.8rem;
+    padding: 8px 4px;
+    background: linear-gradient(135deg, rgba(25, 65, 107, 1), rgba(22, 58, 96, 1));
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+    justify-content: center;
+}
+.btn-export-json-style {
+    background: linear-gradient(135deg, rgba(22, 58, 96, 1), rgba(25, 65, 107, 1));
+}
+.btn-default-action {
+    flex: 1;
+    margin: 0;
+    font-size: 0.8rem;
+    padding: 8px 4px;
+    background: linear-gradient(135deg, rgba(25, 65, 107, 1), rgba(22, 58, 96, 1));
+    border: none;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    justify-content: center;
+}
+.btn-reset-style {
+    background: linear-gradient(135deg, rgba(22, 58, 96, 1), rgba(25, 65, 107, 1));
+}
+
+/* 11.5 地圖觸發按鈕懸浮定位類別 */
+.map-trigger-site {
+    position: absolute;
+    top: 98px;
+    left: 60px;
+    z-index: 1010;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 1), rgba(2, 132, 199, 1));
+    color: white;
+    padding: 4px 8px;
+    font-size: 0.68rem;
+    border-radius: 5px;
+}
+.map-trigger-exclusion {
+    position: absolute;
+    top: 98px;
+    left: 60px;
+    z-index: 1010;
+    background: linear-gradient(135deg, rgba(234, 88, 12, 1), rgba(194, 65, 12, 1));
+    color: white;
+    padding: 4px 8px;
+    font-size: 0.68rem;
+    border-radius: 5px;
+}
+.map-trigger-obstacle {
+    position: absolute;
+    top: 98px;
+    left: 60px;
+    z-index: 1010;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 1), rgba(220, 38, 38, 1));
+    color: white;
+    padding: 4px 8px;
+    font-size: 0.68rem;
+    border-radius: 5px;
+}
+
+/* 11.6 浮動規劃工具箱共通面板類別 */
+.tool-panel-site,
+.tool-panel-exclusion {
+    position: absolute;
+    top: 48px;
+    left: 10px;
+    z-index: 1010;
+    display: none;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 6px 8px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-main);
+    width: 108px;
+    pointer-events: auto;
+}
+.tool-panel-obstacle {
+    position: absolute;
+    top: 48px;
+    left: 10px;
+    z-index: 1010;
+    display: none;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 6px 8px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-main);
+    width: 112px;
+    pointer-events: auto;
+}
+.tool-panel-header {
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 1);
+    font-family: var(--font-ui);
+    margin-top: 0;
+    margin-bottom: 4px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: move;
+    user-select: none;
+}
+.tool-panel-grip {
+    font-size: 0.55rem;
+    color: rgba(100, 116, 139, 1);
+    font-weight: normal;
+}
+.toolbox-btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.toolbox-btn-item {
+    text-align: left;
+    padding: 3px 5px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 1);
+    font-size: 0.64rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: var(--font-ui);
+    width: 100%;
+}
+.toolbox-btn-active {
+    background: rgba(255, 255, 255, 0.15);
+    font-weight: bold;
+}
+
+.toolbox-btn-cancel {
+    margin-top: 2px;
+    padding: 3px 5px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 1);
+    font-size: 0.62rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: var(--font-ui);
+    width: 100%;
+    font-weight: 500;
+}
+.obs-height-label {
+    font-size: 0.62rem;
+    color: rgba(148, 163, 184, 1);
+    font-family: var(--font-ui);
+    margin-top: 2px;
+}
+.obs-height-container {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+.obs-height-input {
+    width: 60px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    color: rgba(255, 255, 255, 1);
+    padding: 1px 3px;
+    font-size: 0.66rem;
+    font-family: var(--font-ui);
+    text-align: center;
+    height: 18px;
+}
+.obs-height-unit {
+    font-size: 0.66rem;
+    color: rgba(255, 255, 255, 1);
+    font-family: var(--font-ui);
+}
+.obs-height-slider {
+    width: 100%;
+    cursor: pointer;
+}
+.obs-hint-text {
+    font-size: 0.56rem;
+    color: rgba(203, 213, 225, 1);
+    font-family: var(--font-ui);
+    line-height: 1.1;
+    margin-top: 1px;
+    display: block;
+}
+
+
+
+/* 11.8 AI 圈選確認卡片類別 */
+
+.ai-confirm-content-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ai-confirm-icon {
+    font-size: 1.1rem;
+    animation: pulseGlow 1.5s infinite;
+}
+.ai-confirm-text-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+.ai-confirm-title {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: rgba(56, 189, 248, 1);
+}
+.ai-confirm-subtitle {
+    font-size: 0.62rem;
+    color: rgba(203, 213, 225, 1);
+}
+.ai-confirm-btn-row {
+    display: flex;
+    gap: 6px;
+}
+.ai-confirm-btn-keep {
+    padding: 4px 10px;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 1), rgba(5, 150, 105, 1));
+    border: none;
+    border-radius: 5px;
+    color: rgba(255, 255, 255, 1);
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+    transition: all 0.2s;
+}
+.ai-confirm-btn-discard {
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    color: rgba(203, 213, 225, 1);
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+/* 11.9 3D 量測工具與加載動畫載入類別 */
+.measure-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 50;
+    overflow: hidden;
+}
+.loading-content-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    color: rgba(255, 255, 255, 1);
+    font-family: var(--font-ui);
+}
+.loading-title-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    letter-spacing: 0.5px;
+}
+
+/* 11.10 JS 動態與狀態切換 Utility Classes */
+.is-hidden {
+    display: none !important;
+}
+.is-visible {
+    display: block !important;
+}
+.is-flex-visible {
+    display: flex !important;
+}
+.cursor-wait {
+    cursor: wait !important;
+}
+.cursor-crosshair {
+    cursor: crosshair !important;
+}
+.toolbox-drag-handle {
+    cursor: move;
+    user-select: none;
+}
+
+/* 11.11 檔案與圖像格式標籤輔助類別 */
+.pdf, .png, .jpg, .jpeg, .json, .svg {
+    display: inline-block;
+}
+
+/* 11.12 Leaflet 自訂圖層與控制介面樣式 */
+.leaflet-control-container .leaflet-control {
+    border-radius: 6px;
+}
+.leaflet-interactive {
+    transition: stroke 0.2s ease, fill 0.2s ease;
+}
+.leaflet-marker-pane,
+.leaflet-popup-pane {
+    z-index: 600;
+}
+
+
+
+
+
+/* ==========================================================================
+   10. 響應式網頁設計與行動端適應 (Responsive Web Design - RWD)
+   ========================================================================== */
+
+/* 10.1 大型至中型螢幕與平版轉折點 (1600px ~ 992px) */
+@media (max-width: 1600px) {
+    .sun-simulator-panel {
+        gap: 15px;
+        padding: 6px 18px;
+    }
+}
+
+@media (max-width: 1450px) {
+    .hide-small {
+        display: none !important;
+    }
+    .sun-simulator-panel {
+        gap: 12px;
+        padding: 6px 14px;
+    }
+}
+
+@media (max-width: 1300px) {
+    .sun-simulator-panel {
+        top: auto;
+        bottom: 15px;
+        left: 15px;
+        transform: none;
+    }
+}
+
+@media (max-width: 1080px) {
+    .instructions-steps-bar {
+        position: static;
+        transform: none;
+        left: auto;
+        padding: 4px 12px;
+    }
+}
+
+@media (max-width: 992px) {
+    .touch-scroll-bar {
+        display: block;
+    }
+    .touch-lock-btn {
+        display: flex;
+    }
+}
+
+@media (max-width: 900px) {
+    body {
+        grid-template-rows: auto 1fr;
+        height: auto;
+        overflow-y: auto;
+    }
+    main {
+        grid-template-columns: 1fr;
+        height: auto;
+        padding: 12px;
+        gap: 16px;
+        overflow: visible;
+    }
+    .sidebar {
+        height: auto;
+        max-height: none;
+    }
+    .workspace-right {
+        height: auto;
+    }
+}
+
+/* 10.2 平版與手機端主要適應轉折點 (@media (max-width: 768px)) */
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px 14px;
+    }
+    .company-title-span {
+        font-size: 0.88rem;
+    }
+    .instructions-steps-bar {
+        width: 100%;
+        justify-content: center;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+    .step-item {
+        padding: 2px 6px;
+    }
+
+    .desktop-planning-slot {
+        display: none !important;
+    }
+    .mobile-planning-slot {
+        display: block !important;
+        margin: 10px 0;
+    }
+
+    .spreadsheet-container {
+        padding: 8px;
+        overflow-x: auto;
+    }
+    .excel-table {
+        min-width: 320px;
+    }
+    .slider-btn {
+        width: 22px;
+        height: 22px;
+        font-size: 0.75rem;
+    }
+
+    .floating-toolbox {
+        max-width: calc(100vw - 20px);
+    }
+
+}
+
+/* 10.3 小型手機端極致適應 (max-width: 600px) */
+@media (max-width: 600px) {
+    .hide-mobile {
+        display: none !important;
+    }
+    .view-header {
+        padding: 6px 10px;
+    }
+    .view-title {
+        font-size: 0.8rem;
+    }
+    .control-btn {
+        width: 28px;
+        height: 28px;
+        padding: 4px;
+    }
+}
+
+
+/* 手繪多邊形完成 (保留 / 放棄) 確認浮動卡片類別 */
+.floating-confirm-modal {
+    position: absolute;
+    z-index: 1050;
+    background: rgba(15, 23, 42, 0.96);
+    backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(56, 189, 248, 1);
+    border-radius: 6px;
+    padding: 3px 5px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 10px rgba(56, 189, 248, 0.35);
+    color: rgba(255, 255, 255, 1);
+    font-family: var(--font-ui);
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    width: fit-content;
+    height: auto;
+    max-height: 40px;
+    box-sizing: border-box;
+}
+
+
+.ai-confirm-card {
+    display: none;
+}
+
+/* Custom minimum padding/margin for toolbox popup */
+.toolbox-popup .leaflet-popup-content-wrapper {
+    background: rgba(15, 23, 42, 0.98) !important; /* Extremely dark black/slate background */
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2) !important; /* Thin white border */
+    color: rgba(255, 255, 255, 1) !important;
+    border-radius: 8px !important;
+    padding: 0 !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+}
+.toolbox-popup .leaflet-popup-content {
+    margin: 6px !important;
+    padding: 0 !important;
+    width: auto !important;
+}
+.toolbox-popup .leaflet-popup-tip {
+    background: rgba(15, 23, 42, 0.98) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: none !important;
+}
+
+/* Unified styling for black and white buttons inside the toolbox */
+.toolbox-btn {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 4px !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+    padding: 5px !important;
+    font-size: 0.68rem !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    outline: none;
+    font-family: var(--font-ui) !important;
+    box-shadow: none !important;
+}
+.toolbox-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.18) !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
+}
+.toolbox-btn:disabled {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.28) !important;
+    cursor: not-allowed !important;
+}
+
+/* Custom background images for Leaflet map controls and plus/minus buttons */
+.leaflet-control-layers-toggle,
+.leaflet-retina .leaflet-control-layers-toggle {
+    background-image: url("images/layer.svg") !important;
+    background-size: 20px 20px !important;
+    background-position: center !important;
+}
+
+/* Replace text characters + and - with SVGs on standard buttons */
+.slider-btn[id$="-minus"]:not(.slider-btn-large) {
+    background-image: url("images/minus.svg") !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: transparent !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size: contain !important;
+    width: 20px !important;
+    height: 20px !important;
+}
+.slider-btn[id$="-plus"]:not(.slider-btn-large) {
+    background-image: url("images/plus.svg") !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: transparent !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size: contain !important;
+    width: 20px !important;
+    height: 20px !important;
+}
+.slider-btn[id$="-minus"]:hover:not(:disabled),
+.slider-btn[id$="-plus"]:hover:not(:disabled) {
+    transform: scale(1.1) !important;
+}
+.slider-btn[id$="-minus"]:active:not(:disabled),
+.slider-btn[id$="-plus"]:active:not(:disabled) {
+    transform: scale(0.95) !important;
+}
+.slider-btn[id$="-minus"]:disabled,
+.slider-btn[id$="-plus"]:disabled {
+    opacity: 0.3 !important;
+    cursor: not-allowed !important;
+}
+
+/* Invert plus/minus buttons in the dark sun-simulator panel so they appear white */
+.sun-simulator-panel .slider-btn {
+    filter: invert(1) !important;
+}
+
