@@ -3633,25 +3633,26 @@ tr.tr-azimuth-row td {
         font-size: 0.62rem !important;
     }
 
-    /* 4. 試算表 9~19 項：取消中間 slider bar 與藍點，保留 數值、鎖頭、負號、節點、正號 */
+        /* 4. 試算表 9~19 項：取消中間 slider bar 與藍點，保留 數值、鎖頭、負號、節點、正號，允許微幅左右拖移 */
     .spreadsheet-container {
-        padding: 4px 2px !important;
-        overflow-x: hidden !important;
+        padding: 6px 4px !important;
+        overflow-x: auto !important; /* 允許試算表做微幅的左右滑動/拖移 */
+        -webkit-overflow-scrolling: touch !important;
         width: 100% !important;
         box-sizing: border-box !important;
     }
 
     .excel-table {
         width: 100% !important;
-        min-width: 100% !important;
-        table-layout: fixed !important;
+        min-width: 360px !important; /* 確保 4 欄均有足夠寬度展開，不擠壓正號與單位欄 */
+        table-layout: auto !important;
     }
 
     .excel-table th.col-header-blank,
     .excel-table td.row-header {
         width: 22px !important;
         min-width: 22px !important;
-        max-width: 22px !important;
+        max-width: 24px !important;
         padding: 4px 1px !important;
         font-size: 0.70rem !important;
         text-align: center !important;
@@ -3659,9 +3660,9 @@ tr.tr-azimuth-row td {
 
     .excel-table th.col-header-a,
     .excel-table td.cell-label {
-        width: 82px !important;
-        min-width: 78px !important;
-        max-width: 86px !important;
+        width: 84px !important;
+        min-width: 80px !important;
+        max-width: 90px !important;
         padding: 4px 2px !important;
         font-size: 0.72rem !important;
         white-space: normal !important;
@@ -3673,18 +3674,19 @@ tr.tr-azimuth-row td {
     .excel-table td.slider-cell,
     .excel-table td:nth-child(3) {
         width: auto !important;
-        min-width: 0 !important;
+        min-width: 215px !important;
         padding: 2px 2px !important;
     }
 
     .excel-table th.col-header-unit,
     .excel-table td.cell-unit {
-        width: 28px !important;
-        min-width: 28px !important;
-        max-width: 28px !important;
-        padding: 4px 1px !important;
-        font-size: 0.68rem !important;
+        width: 32px !important;
+        min-width: 32px !important;
+        max-width: 36px !important;
+        padding: 4px 2px !important;
+        font-size: 0.70rem !important;
         text-align: center !important;
+        font-weight: 600 !important;
     }
 
     /* 隱藏 9~19 項的中間 range slider bar 與藍點 */
@@ -3696,8 +3698,9 @@ tr.tr-azimuth-row td {
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
-        gap: 2px !important;
+        gap: 3px !important;
         width: 100% !important;
+        min-width: 210px !important;
         padding: 2px 0 !important;
         box-sizing: border-box !important;
     }
@@ -3770,7 +3773,7 @@ tr.tr-azimuth-row td {
     .slider-node-btn {
         flex: 1 1 0 !important;
         min-width: 0 !important;
-        max-width: 42px !important;
+        max-width: 44px !important;
         height: 24px !important;
         font-size: 0.65rem !important;
         padding: 1px 1px !important;

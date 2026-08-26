@@ -6316,6 +6316,46 @@ function updateSupportHLockState() {
     }
 }
 
+function getBaseArrP() {
+    const isPortrait = state.pvOrient === 'portrait';
+    const pvW_term = isPortrait ? state.pvL : state.pvW; // in mm
+    
+    const isSpecialRoofSlopeFlatLandscape = 
+        state.siteType === 'roof-slope' && 
+        Math.abs(state.tilt - state.roofTilt) < 0.01 && 
+        state.pvOrient === 'landscape';
+
+    let totalSpY = 0;
+    for (let r = 1; r < state.arrJ; r++) {
+        totalSpY += (isSpecialRoofSlopeFlatLandscape && r % 10 === 0) ? 600 : state.spY;
+    }
+    
+    let blockLength_sloped_mm = 0;
+    if (state.pitchStyle === 'double') {
+        const ridgeSp = (state.siteType === 'roof-slope') ? 1200 : 200; // dynamic ridge spacing in mm
+        const numNeg = Math.ceil(state.arrJ / 2);
+        const numPos = Math.floor(state.arrJ / 2);
+        
+        let totalSpY_neg = 0;
+        for (let r = 1; r < numNeg; r++) {
+            totalSpY_neg += (isSpecialRoofSlopeFlatLandscape && r % 10 === 0) ? 600 : state.spY;
+        }
+        let totalSpY_pos = 0;
+        for (let r = 1; r < numPos; r++) {
+            totalSpY_pos += (isSpecialRoofSlopeFlatLandscape && r % 10 === 0) ? 600 : state.spY;
+        }
+
+        const s_outer_neg = (numNeg > 0) ? -(ridgeSp / 2 + numNeg * pvW_term + totalSpY_neg) : ridgeSp / 2;
+        const s_outer_pos = (numPos > 0) ? +(ridgeSp / 2 + numPos * pvW_term + totalSpY_pos) : -ridgeSp / 2;
+        blockLength_sloped_mm = s_outer_pos - s_outer_neg;
+    } else {
+        blockLength_sloped_mm = state.arrJ * pvW_term + totalSpY;
+    }
+    
+    const blockLength_m = blockLength_sloped_mm / 1000;
+    return Number(blockLength_m.toFixed(1));
+}
+
 function updateArrPSliderRange() {
     if (!elements.arrP || !elements.arrPSlider) return;
     
@@ -7446,6 +7486,13 @@ function setupEventListeners() {
                         elements.arrM.value = targetVal;
                         elements.arrMSlider.value = targetVal;
                         state.arrM = targetVal;
+                    } else if (targetKey === 'arrP') {
+                        const mult = parseFloat(btn.getAttribute('data-mult')) || (btn.getAttribute('data-val') === '1x' ? 1.0 : btn.getAttribute('data-val') === '1.3x' ? 1.3 : btn.getAttribute('data-val') === '1.6x' ? 1.6 : 1.0);
+                        const baseP = getBaseArrP();
+                        const newP = Number((mult * baseP).toFixed(1));
+                        state.arrP = newP;
+                        if (elements.arrP) elements.arrP.value = newP;
+                        if (elements.arrPSlider) elements.arrPSlider.value = newP;
                     } else if (targetKey === 'spX') {
                         elements.spX.value = targetVal;
                         elements.spXSlider.value = targetVal;
