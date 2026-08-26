@@ -2882,6 +2882,10 @@ tr.tr-azimuth-row td {
     width: auto;
     object-fit: contain;
     cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), filter 0.2s ease;
+}
+.pv-super-logo-link:hover .pv-super-logo-img {
+    transform: scale(1.03);
 }
 
 /* 11.3 表格欄寬與輸出單元格標籤類別 */

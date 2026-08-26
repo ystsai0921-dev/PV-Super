@@ -1,9 +1,8 @@
-
-/**
- * 敶?鼓憭?敶Ｗ???銋?(蝣箏?靽? / ?暹?) 蝣箄?撠店?∠?
- * @param {string} typeName - ?拐辣憿??迂 (憒?'獢蝭?', '????, '?????)
- * @param {Function} onKeep - 蝣箏?靽?暺??矽
- * @param {Function} onDiscard - ?暹?暺??矽
+﻿/**
+ * 繪製多邊形完成後之 (確定保留 / 刪除) 浮動確認對話框
+ * @param {string} typeName - 物件類型名稱 (如 '案場邊界', '排除區域', '障礙物')
+ * @param {Function} onKeep - 確定保留點擊回呼
+ * @param {Function} onDiscard - 刪除點擊回呼
  */
 function promptPolygonKeepOrDiscard(typeName, onKeep, onDiscard, polygon) {
     const oldModal = document.getElementById('polygon-confirm-modal');
@@ -174,13 +173,13 @@ const EARTH_RADIUS = 6378137;
  * Initialize Leaflet Map with Esri World Imagery (Satellite)
  */
 /* ==========================================================================
-   2. Leaflet ?蛔??????豲??謘???對? (Leaflet Map Initialization & Controls)
+   2. Leaflet 地圖模組與控制器 (Leaflet Map Initialization & Controls)
    ========================================================================== */
 /**
- * ?豲???Leaflet ?蛔?????
- * @param {number} lat - ?箄瞍?
- * @param {number} lng - ?秋瞍?
- * @param {Function} onMarkerDrag - ????謘踐??豯抒
+ * 初始化 Leaflet 地圖模組
+ * @param {number} lat - 緯度
+ * @param {number} lng - 經度
+ * @param {Function} onMarkerDrag - 拖曳標記回呼函式
  */
 function initMap(lat, lng, onMarkerDrag) {
     // 1. Initialize Map (disable default zoomControl to prevent layout overlap)
@@ -207,7 +206,7 @@ function initMap(lat, lng, onMarkerDrag) {
 
     // Taiwan NLSC Orthophoto (Taiwan local sub-meter aerial survey - ultra high resolution locally)
     const nlscPhoto = L.tileLayer('https://wmts.nlsc.gov.tw/wmts/PHOTO2/default/GoogleMapsCompatible/{z}/{y}/{x}', {
-        attribution: '&copy; ?扳?典??葫蝜芯葉敹?',
+        attribution: '&copy; 內政部國土測繪中心',
         maxNativeZoom: 19,
         maxZoom: 20,
         crossOrigin: 'anonymous'
@@ -231,7 +230,7 @@ function initMap(lat, lng, onMarkerDrag) {
 
     // NLSC Electronic Map (Taiwan Local Street Map)
     const nlscEmap = L.tileLayer('https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}', {
-        attribution: '&copy; ?扳?典??葫蝜芯葉敹?',
+        attribution: '&copy; 內政部國土測繪中心',
         maxNativeZoom: 19,
         maxZoom: 20,
         crossOrigin: 'anonymous'
@@ -348,12 +347,12 @@ function initMap(lat, lng, onMarkerDrag) {
         if (el) L.DomEvent.disableClickPropagation(el);
     });
     
-    // 銵??啣?暺??喲?詨 (?交蝜芸?銝哨?????箏?瘨??
+    // 地圖右鍵點擊事件（若在繪製中則取消吸附／顯示選單）
     map.on('contextmenu', (e) => {
         if (e.originalEvent) {
             e.originalEvent.preventDefault();
             
-            // 憒??賊???銝哨??喲?其????賊?嚗?雿輻??望?蝺?
+            // 若正處於直角吸附中，右鍵點擊可取消吸附並切換為自由線段
             if (isRightAngleSnapActive || isRectangleSnapActive) {
                 isRightAngleSnapBypassed = true;
                 isRightAngleSnapActive = false;
@@ -681,10 +680,10 @@ let snappedPoint = null;
 let isNormalMode = false;
 
 /* ==========================================================================
-   3. Three.js 3D ?秋□???拐??鞈??嗆???????(Three.js 3D Scene & Sun Simulation)
+   3. Three.js 3D 視圖與太陽光影模擬模組 (Three.js 3D Scene & Sun Simulation)
    ========================================================================== */
 /**
- * ?豲???Three.js 3D ?潘撩???賃僮????剛謒???
+ * 初始化 Three.js 3D 視圖與日照模擬
  */
 function initViewer(canvasId) {
     const canvas = document.getElementById(canvasId);
@@ -774,21 +773,21 @@ function initViewer(canvasId) {
     scene.add(obstacleGroup);
     
     // ------------------------------------------
-    // 3D Compass & North Arrow (HUD 璅∪?嚗?摰撌虫?閫?銝??格?)
+    // 3D Compass & North Arrow (HUD 羅盤，固定於視窗左上方)
     // ------------------------------------------
     compassGroup = new THREE.Group();
-    compassGroup.scale.set(0.15, 0.15, 0.15); // 蝮桀???HUD 蝢
-    scene.add(camera); // 蝣箔??豢???湔?葉隞交葡???拐辣
-    camera.add(compassGroup); // 蝬??潛璈?
+    compassGroup.scale.set(0.15, 0.15, 0.15); // 縮放羅盤 HUD 尺寸
+    scene.add(camera); // 將相機加入場景中以容納 HUD 子物件
+    camera.add(compassGroup); // 綁定至相機
     
-    // 1. Compass Flat Ring (蝢?啣??嚗??楛摨行葫閰佗?雿踹瘞賊??銝惜)
+    // 1. Compass Flat Ring (羅盤外環圓盤)
     const ringGeo = new THREE.RingGeometry(1.8, 2.0, 32);
     const ringMat = new THREE.MeshStandardMaterial({ color: 0x475569, side: THREE.DoubleSide, depthTest: false, depthWrite: false });
     const ring = new THREE.Mesh(ringGeo, ringMat);
     ring.rotation.x = -Math.PI / 2;
     compassGroup.add(ring);
     
-    // 2. North Pointer (蝝??閫?)
+    // 2. North Pointer (紅色北向指針)
     const coneNorthGeo = new THREE.ConeGeometry(0.3, 1.6, 4);
     const coneNorthMat = new THREE.MeshStandardMaterial({ color: 0xef4444, depthTest: false, depthWrite: false });
     const coneNorth = new THREE.Mesh(coneNorthGeo, coneNorthMat);
@@ -796,7 +795,7 @@ function initViewer(canvasId) {
     coneNorth.position.set(0, 0.08, -0.8);
     compassGroup.add(coneNorth);
     
-    // 3. South Pointer (?質??閫?)
+    // 3. South Pointer (白色南向指針)
     const coneSouthGeo = new THREE.ConeGeometry(0.3, 1.6, 4);
     const coneSouthMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, depthTest: false, depthWrite: false });
     const coneSouth = new THREE.Mesh(coneSouthGeo, coneSouthMat);
@@ -804,7 +803,7 @@ function initViewer(canvasId) {
     coneSouth.position.set(0, 0.08, 0.8);
     compassGroup.add(coneSouth);
     
-    // 4. 蝡?蝝摮? "N" (?曉蝢?垢)
+    // 4. 立體北向文字 "N" (朝向北方)
     const nLetterGroup = new THREE.Group();
     nLetterGroup.position.set(0, 0.08, -2.6);
     compassGroup.add(nLetterGroup);
@@ -830,14 +829,14 @@ function initViewer(canvasId) {
     diagBar.position.set(0, 0, 0);
     nLetterGroup.add(diagBar);
 
-    // ?風閮剖?????斤雯?潔?皜脫??? (RenderOrder)嚗?霅??遙雿?舐隞園??
+    // 強制設定所有 HUD 網格之渲染順序 (RenderOrder)，讓其永遠顯示在最上層
     compassGroup.traverse((child) => {
         if (child.isMesh) {
             child.renderOrder = 9999;
         }
     });
     
-    // Snapping indicator box (鈭桃??脣???撖血? Box + ?質蝺? outline)
+    // Snapping indicator box (直角吸附半透明綠色 Box + 邊線 outline)
     const indicatorGeo = new THREE.BoxGeometry(0.24, 0.24, 0.24);
     const indicatorMat = new THREE.MeshBasicMaterial({
         color: 0x22c55e,
@@ -862,6 +861,7 @@ function initViewer(canvasId) {
     
     snapIndicator.visible = false;
     scene.add(snapIndicator);
+    scene.add(snapIndicator);
     
     initMaterials();
     
@@ -869,7 +869,7 @@ function initViewer(canvasId) {
     
     animate();
 
-    // ?? Setup Context Menu for 3D Viewer right-click
+    // Setup Context Menu for 3D Viewer right-click
     let rightClickStart = { x: 0, y: 0 };
     let rightClickTime = 0;
 
@@ -904,12 +904,12 @@ function showContextMenu(x, y) {
         menu.className = 'context-menu';
         menu.innerHTML = `
             <div class="context-menu-item" id="menu-capture-3d">
-                <span class="menu-icon">?</span>
-                <span class="menu-text">頛詨暺??(PNG)</span>
+                <span class="menu-icon">📷</span>
+                <span class="menu-text">擷取3D圖片 (PNG)</span>
             </div>
             <div class="context-menu-item" id="menu-export-svg">
-                <span class="menu-icon">??</span>
-                <span class="menu-text">頛詨????(SVG)</span>
+                <span class="menu-icon">📐</span>
+                <span class="menu-text">匯出向量圖 (SVG)</span>
             </div>
         `;
         document.body.appendChild(menu);
@@ -1015,62 +1015,38 @@ async function saveFileWithPicker(content, defaultFilename, mimeType) {
         try {
             const pickerOptions = {
                 suggestedName: defaultFilename,
-                id: 'pv-super-export-dir', // 蝯曹? ID嚗蝙?汗?刻?雿?PDF?SON??????撓?箇??格?鞈?憭?
+                id: 'pv-super-export-dir', // 目錄記憶 ID，讓使用者在匯出 PDF、JSON、圖片時記住同一資料夾路徑
                 types: []
             };
             
             if (mimeType === 'application/json') {
                 pickerOptions.types.push({
-                    description: 'JSON 獢鞈?瑼?(*.json)',
+                    description: 'JSON 專案資料檔 (*.json)',
                     accept: { 'application/json': ['.json'] }
                 });
             } else if (mimeType === 'application/pdf') {
                 pickerOptions.types.push({
-                    description: 'PDF 獢蝪∪ (*.pdf)',
+                    description: 'PDF 專案報告書 (*.pdf)',
                     accept: { 'application/pdf': ['.pdf'] }
                 });
             } else if (mimeType === 'image/png') {
                 pickerOptions.types.push({
-                    description: 'PNG 敶勗?瑼?(*.png)',
+                    description: 'PNG 影像圖檔 (*.png)',
                     accept: { 'image/png': ['.png'] }
                 });
             } else if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
                 pickerOptions.types.push({
-                    description: 'JPEG 敶勗?瑼?(*.jpg, *.jpeg)',
+                    description: 'JPEG 影像圖檔 (*.jpg, *.jpeg)',
                     accept: { 'image/jpeg': ['.jpg', '.jpeg'] }
                 });
             } else if (mimeType === 'image/svg+xml') {
                 pickerOptions.types.push({
-                    description: 'SVG ???? (*.svg)',
+                    description: 'SVG 向量圖檔 (*.svg)',
                     accept: { 'image/svg+xml': ['.svg'] }
                 });
             }
             
-            // 敺??園???IndexedDB ??銝活?脣????冗?批隞?Ⅳ
-            if (!lastFileHandle) {
-                lastFileHandle = await getStoredExportDir();
-            }
-            if (lastFileHandle) {
-                pickerOptions.startIn = lastFileHandle;
-            }
-            
-            let handle;
-            try {
-                handle = await window.showSaveFilePicker(pickerOptions);
-            } catch (pickerErr) {
-                if (pickerErr.name === 'AbortError') {
-                    return 'aborted';
-                }
-                // ?亙葆??startIn 憭望?嚗?憒楊蝤????批隞?Ⅳ??嚗?蝘駁 startIn ?岫銝甈?
-                if (pickerOptions.startIn) {
-                    delete pickerOptions.startIn;
-                    handle = await window.showSaveFilePicker(pickerOptions);
-                } else {
-                    throw pickerErr;
-                }
-            }
-            
-            lastFileHandle = handle;
+            // 從 IndexedDB 讀取上次選擇的目錄
             await setStoredExportDir(handle);
             
             const writable = await handle.createWritable();
@@ -1081,11 +1057,11 @@ async function saveFileWithPicker(content, defaultFilename, mimeType) {
             if (err.name === 'AbortError') {
                 return 'aborted';
             }
-            console.warn('showSaveFilePicker 憭望?嚗?其??砌?頛???', err);
+            console.warn('showSaveFilePicker 失敗，切換為傳統下載方式', err);
         }
     }
 
-    // ????寞?嚗蝯梁? <a> 璅惜銝?
+    // 傳統相容模式：透過 <a> 標籤下載
     const downloadAnchor = document.createElement('a');
     const url = isBlob ? URL.createObjectURL(blob) : `data:${mimeType};charset=utf-8,` + encodeURIComponent(content);
     downloadAnchor.href = url;
@@ -1102,21 +1078,21 @@ async function saveFileWithPicker(content, defaultFilename, mimeType) {
 async function capture3DImage() {
     if (!renderer || !scene || !camera) return;
     
-    // 1. ?????怠?撠箏站??蝝?靘?
+    // 1. 記錄原始視窗大小與像素比
     const originalWidth = renderer.domElement.clientWidth;
     const originalHeight = renderer.domElement.clientHeight;
     const originalPixelRatio = renderer.getPixelRatio();
     
-    // 2. 閮剖?擃圾?漲?格?撠箏站 (靘? 4K 撖砍漲 3840px嚗?頛詨??PNG 璆萇蝎曄敦)
+    // 2. 設定高解析度目標像素 (4K 寬度 3840px，輸出超清晰 PNG 圖片)
     const targetWidth = 3840;
     const targetHeight = Math.round(targetWidth * (originalHeight / originalWidth));
     
-    // 3. ?急?隤踵皜脫??典偕撖貉??豢? aspect
+    // 3. 暫時調整渲染器與相機 aspect
     renderer.setSize(targetWidth, targetHeight, false);
     camera.aspect = targetWidth / targetHeight;
     camera.updateProjectionMatrix();
     
-    // 4. ?急?隤踵 HUD 蝢??蝵桐誑???啁?擃圾?漲撖祇?瘥?
+    // 4. 暫時調整 HUD 羅盤位置以符合高解析度長寬比
     if (compassGroup) {
         const aspect = targetWidth / targetHeight;
         const distance = 5.0;
@@ -1130,19 +1106,38 @@ async function capture3DImage() {
         );
     }
     
-    // 5. ?脰?擃圾?漲皜脫?
+    // 5. 執行高解析度渲染
     renderer.render(scene, camera);
     
-    // 6. 撠?⊥? PNG ?澆? (?釭?擃?
+    // 6. 導出為 PNG 影像
     const dataUrl = renderer.domElement.toDataURL('image/png');
-        // 10. 建立預設檔案名稱
+    
+    // 7. 復原原始相機與渲染器設定
+    renderer.setSize(originalWidth, originalHeight, false);
+    renderer.setPixelRatio(originalPixelRatio);
+    camera.aspect = originalWidth / originalHeight;
+    camera.updateProjectionMatrix();
+    if (compassGroup) {
+        const aspect = originalWidth / originalHeight;
+        const distance = 5.0;
+        const fovRad = (camera.fov * Math.PI) / 180;
+        const visibleHeight = 2 * distance * Math.tan(fovRad / 2);
+        const visibleWidth = visibleHeight * aspect;
+        compassGroup.position.set(
+            -visibleWidth / 2 + 0.55,
+            visibleHeight / 2 - 0.55,
+            -distance
+        );
+    }
+    
+    // 8. 建立預設檔案名稱
     const siteName = (state && state.siteName) ? state.siteName.trim() : '曜昇綠能 1號場';
     const now = new Date();
     const yyyymmdd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
     const hhmmss = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
     const fileName = `${siteName}_${yyyymmdd}_${hhmmss}.png`;
     
-    // 11. 儲存影像並交由使用者選擇路徑
+    // 9. 儲存影像並交由使用者選擇路徑
     const response = await fetch(dataUrl);
     const blob = await response.blob();
     await saveFileWithPicker(blob, fileName, 'image/png');
@@ -1350,15 +1345,15 @@ function updateSunPosition(lat, lng, month, hour) {
     const declination = 23.45 * Math.sin((360 / 365) * (284 + N) * Math.PI / 180);
     const decRad = (declination * Math.PI) / 180;
     
-    // Hour angle H (??)
+    // Hour angle H (時角)
     const hourAngle = (hour - 12) * 15;
     const hourAngleRad = (hourAngle * Math.PI) / 180;
     
-    // Solar Altitude alpha (擃漲閫?
+    // Solar Altitude alpha (高度角)
     const sinAltitude = Math.sin(latRad) * Math.sin(decRad) + Math.cos(latRad) * Math.cos(decRad) * Math.cos(hourAngleRad);
     const altitudeRad = Math.asin(Math.max(-1.0, Math.min(1.0, sinAltitude)));
     
-    // Solar Azimuth (?嫣?閫?
+    // Solar Azimuth (太陽方位角)
     let cosAzimuth = (Math.sin(decRad) - Math.sin(latRad) * Math.sin(altitudeRad)) / (Math.cos(latRad) * Math.cos(altitudeRad));
     cosAzimuth = Math.max(-1.0, Math.min(1.0, cosAzimuth));
     let azimuthRad = Math.acos(cosAzimuth);
@@ -2479,18 +2474,18 @@ function inferParametersFromSiteBoundary(polygon, keepCurrentAzimuth = false) {
     const latlngs = getOuterRingLatLngs(polygon);
     if (!latlngs || latlngs.length < 3) return;
 
-    // 1. ?湔獢銝剖?蝬楝摨?
+    // 1. 更新案場中心經緯度
     updateSiteCenterFromBoundary(polygon);
 
     const refLat = state.lat;
     const refLng = state.lng;
 
-    // 2. ?刻??活 19: ?嫣?閫?(Azimuth)
+    // 2. 推算方位角 (Azimuth)
     let inferredAzimuth = parseFloat(state.azimuth) || 180;
     
     if (!keepCurrentAzimuth) {
         if (state.siteType === 'roof-slope') {
-            // ?????寞?憭?敶Ｘ??琿??刻?撅??Ｚ粥??
+            // 斜屋頂模式依最長邊幾何推算方位角
             let maxDist = 0;
             let bestAngle = inferredAzimuth;
             const metersPerLatDegree = 111320;
@@ -2512,14 +2507,14 @@ function inferParametersFromSiteBoundary(polygon, keepCurrentAzimuth = false) {
             }
             inferredAzimuth = Math.round(bestAngle * 2) / 2;
         } else {
-            // ?圈??撟喳???閮剜?雿喃? 180簞
+            // 地面與平屋頂預設朝南 180°
             if (state.azimuth === undefined) {
                 inferredAzimuth = 180;
             }
         }
     }
 
-    // 3. 閮?獢蝭??刻府?嫣?閫????祝摨?X ?摨?Y (?砍偕)
+    // 3. 計算案場邊界在該方位角下的投影寬度 X 與長度 Y (米)
     let minX = Infinity, maxX = -Infinity;
     let minZ = Infinity, maxZ = -Infinity;
     for (const pt of latlngs) {
@@ -2532,31 +2527,31 @@ function inferParametersFromSiteBoundary(polygon, keepCurrentAzimuth = false) {
     const widthX = Math.max(0.1, maxX - minX);
     const lengthY = Math.max(0.1, maxZ - minZ);
 
-    // 4. ???桃?璅∠??函??暸???祝擃?(?桐?: ?砍偕)
+    // 4. 計算單片模組在當前排布方向下的尺寸 (米)
     const isPortrait = state.pvOrient === 'portrait';
-    // X 頠詨?芋蝯祝摨? ?湔(portrait)? short side (pvW)嚗帖??landscape)? long side (pvL)
+    // X 軸方向尺寸: 直向(portrait)為短邊 (pvW)，橫向(landscape)為長邊 (pvL)
     const pvW_m = (isPortrait ? state.pvW : state.pvL) / 1000;
-    // Y 頠詨?芋蝯摨? ?湔(portrait)? long side (pvL)嚗帖??landscape)? short side (pvW)
+    // Y 軸方向尺寸: 直向(portrait)為長邊 (pvL)，橫向(landscape)為短邊 (pvW)
     const pvL_m = (isPortrait ? state.pvL : state.pvW) / 1000;
     const spX_m = (parseFloat(state.spX) || 20) / 1000;
     const spY_m = (parseFloat(state.spY) || 20) / 1000;
     const arrP_m = parseFloat(state.arrP) || 1.0;
 
-    // 5. ?芸??刻??活 9 (arrI)??0 (arrJ)??1 (arrM)
-    // ?活 9: 璈怠???? (arrI)嚗?銝??渡Ⅱ靽項?獢撌血?拙??嚗????芋蝯???isModuleExcluded ?芸?鋆?嚗?
+    // 5. 自動推算 arrI, arrJ, arrM
+    // arrI: 陣列行數（滿版覆蓋，由 isModuleExcluded 自動剔除）
     let inferredI = Math.max(1, Math.ceil((widthX + spX_m) / (pvW_m + spX_m)));
     let inferredJ = 4;
     let inferredM = 1;
 
     if (state.siteType === 'roof-slope') {
-        // ????蝯???arrM ?箏???1嚗萵????arrJ 憛急遛?瑕漲 Y
+        // 斜屋頂模式 arrM 固定為 1，由 arrJ 填滿長度 Y
         inferredM = 1;
         inferredJ = Math.max(1, Math.ceil((lengthY + spY_m) / (pvL_m + spY_m)));
     } else {
-        // ?圈??撟喳????活 10 (arrJ) ?箏???4嚗蝯 (arrM) 憓???蝮勗?皛輸
+        // 地面與平屋頂 arrJ 固定為 4，以 arrM 增加總列數
         inferredJ = 4;
 
-        // 閮? 1 蝯?4 ?????銋?摨?
+        // 計算單桌 4 片之高度
         const tableHeight = 4 * pvL_m + 3 * spY_m;
         if (lengthY >= tableHeight) {
             inferredM = 1 + Math.ceil((lengthY - tableHeight) / arrP_m);
@@ -2566,7 +2561,7 @@ function inferParametersFromSiteBoundary(polygon, keepCurrentAzimuth = false) {
         inferredM = Math.max(1, Math.min(50, inferredM));
     }
 
-    // 6. ?湔 UI 頛詨獢? Slider ?詨?(撌脤?摰??頝喲??芸?敺拙神)
+    // 6. 更新 UI 輸入框與 Slider 數值
     if (elements.arrI && !lockedParams['arrI']) {
         elements.arrI.value = inferredI;
         if (elements.arrISlider) elements.arrISlider.value = inferredI;
@@ -3388,7 +3383,7 @@ function makePolygonSelectable(poly) {
         if (poly.isObstacle) {
             heightControlsHtml = `
                 <div style="display: flex; gap: 4px; justify-content: center; margin-bottom: 4px;">
-                    <button id="btn-toolbox-height-down" class="toolbox-btn" style="flex: 1;">降高</button>
+                    <button id="btn-toolbox-height-down" class="toolbox-btn" style="flex: 1;">降低</button>
                     <button id="btn-toolbox-height-up" class="toolbox-btn" style="flex: 1;">升高</button>
                 </div>
             `;
@@ -3493,6 +3488,10 @@ function makePolygonSelectable(poly) {
                 if (handle) {
                     handle.innerHTML = `障礙物 (${poly.obstacleHeight.toFixed(1)}m) ⋮⋮`;
                 }
+                const hInput = document.getElementById('val-obs-h');
+                const hSlider = document.getElementById('val-obs-h-slider');
+                if (hInput) hInput.value = poly.obstacleHeight.toFixed(1);
+                if (hSlider && poly.obstacleHeight >= 1 && poly.obstacleHeight <= 20) hSlider.value = poly.obstacleHeight;
                 calculateOutputs();
                 updateAllVisuals(true);
             });
@@ -3504,16 +3503,20 @@ function makePolygonSelectable(poly) {
                 if (handle) {
                     handle.innerHTML = `障礙物 (${poly.obstacleHeight.toFixed(1)}m) ⋮⋮`;
                 }
+                const hInput = document.getElementById('val-obs-h');
+                const hSlider = document.getElementById('val-obs-h-slider');
+                if (hInput) hInput.value = poly.obstacleHeight.toFixed(1);
+                if (hSlider && poly.obstacleHeight >= 1 && poly.obstacleHeight <= 20) hSlider.value = poly.obstacleHeight;
                 calculateOutputs();
                 updateAllVisuals(true);
             });
         }
         
-        // 閮?銝???Ｗ??耦???澆??耦???憭?摨扳?嚗甇Ｗ極?瑞拳?格?甈脰矽?渡??拐辣
+        // 計算 Popup 浮動工具列的最佳定位點（位於多邊形北側上方）
         const bounds = poly.getBounds();
         const northLat = bounds.getNorth();
         const centerLng = (bounds.getWest() + bounds.getEast()) / 2;
-        const latOffset = (bounds.getNorth() - bounds.getSouth()) * 0.18 + 0.00008; // ???宏憭?敶ａ?摨衣? 18% + 敺桀???
+        const latOffset = (bounds.getNorth() - bounds.getSouth()) * 0.18 + 0.00008; // 多邊形高度的 18% + 基礎位移
         const popupLatLng = L.latLng(northLat + latOffset, centerLng);
         
         const popup = L.popup({
@@ -3524,21 +3527,21 @@ function makePolygonSelectable(poly) {
         .setLatLng(popupLatLng)
         .setContent(popupContent);
         
-        // ??甇?Popup ??remove 鈭辣嚗撌亙蝞梯◤????靘?暺? X ????征?質?嚗???日????
+        // 監聽 Popup 的 remove 事件
         popup.on('remove', () => {
-            // ?芣??函??隞嗡??嗆?嗅?憭?敶ｇ?銝府????Popup 蝣箏祕?舐??瘣餉??極?瑞拳???脰?皜???
-            // ?摰?銝?甇亙?脫迫???詨????暺?????甇?close 鈭辣撠???隤斗捏??
+            // 檢查當前選取的物件是否為該多邊形
+            // 若仍為當前選取物件則清除選取狀態
             if (activeSelectedPolygon === poly && activeSelectedPolygonPopup === popup) {
                 clearActivePolygonSelection();
             }
         });
         
-        // 撠??popup ?拐辣??蝯血???賂?隞乩噶?其?銝甈⊿??????鋡怨圾蝬?賢
+        // 記錄當前 activeSelectedPolygonPopup
         activeSelectedPolygonPopup = popup;
         
         popup.openOn(map);
         
-        // ? L.Draggable 雿?Popup ?臭誑鋡思蝙?刻???憿??喟宏??蝵?
+        // 使用 L.Draggable 使 Popup 可被使用者自由拖曳移動
         setTimeout(() => {
             const popupElement = popup.getElement();
             if (popupElement) {
@@ -3553,7 +3556,7 @@ function makePolygonSelectable(poly) {
                     
                     draggable.on('dragend', () => {
                         map.dragging.enable();
-                        // ???敺??航???銝行??Popup ?祕擃?蝺臬漲?券?嚗甇Ｗ?葬?暹? Popup 頝喳???
+                        // 拖曳結束後更新 Popup 位置
                         const rect = popupElement.getBoundingClientRect();
                         const mapRect = map.getContainer().getBoundingClientRect();
                         const x = rect.left - mapRect.left + (rect.width / 2);
@@ -4000,20 +4003,49 @@ function updateViewer(params) {
     const systemLength = (arrM - 1) * arrP + 2 * halfLen;
     
     // Effective support height for slope roof (force 0.2m when parallel to roof, otherwise use supportH)
-    const effSupportH = (siteType === 'roof-slope' && Math.abs(tilt - roofTilt) < 0.01) ? 0.2 : supportH;
-    
-    // Y coordinates of the tilted racking rails (top surface of rails/bottom of pv)
-    const frontRailY = siteType === 'roof-slope' ? effSupportH : (supportH - arrayLength * Math.sin(totalTiltRad));
-    const backRailY = siteType === 'roof-slope' ? (effSupportH + arrayLength * Math.sin(totalTiltRad)) : supportH;
+    const isFlatLaid = (siteType === 'roof-slope' && Math.abs(tilt - roofTilt) < 0.01);
+    const effSupportH = isFlatLaid ? 0.2 : supportH;
     
     // ------------------------------------------
-    // 1. Create Roof Plane
+    // 1. Calculate Boundary Bounds and Roof Profile
     // ------------------------------------------
-    let roofFrontY = 0;
-    let roofBackY = 0;
-    let roofCenterY = 0;
-    let roofCenterZ = 0;
-    
+    let minZ_bound = Infinity;
+    let maxZ_bound = -Infinity;
+    if (customSiteBoundary) {
+        const latlngs = getOuterRingLatLngs(customSiteBoundary);
+        if (latlngs && latlngs.length >= 3) {
+            for (let i = 0; i < latlngs.length; i++) {
+                const localPt = latLngToLocal(latlngs[i], state.lat, state.lng, params.azimuth);
+                minZ_bound = Math.min(minZ_bound, localPt.z);
+                maxZ_bound = Math.max(maxZ_bound, localPt.z);
+            }
+        }
+    }
+
+    const len_neg = Math.abs(s_outer_neg);
+    const L_neg_ext = len_neg + 1.0;
+    const len_pos = s_outer_pos;
+    const L_pos_ext = len_pos + 1.0;
+    const z_ridge = -zOffset;
+    const Y_ridge = L_neg_ext * Math.sin(roofTiltRad);
+
+    const z_front = (minZ_bound !== Infinity) ? minZ_bound : (zCenterOffset - halfLen - 1.0);
+    const z_back = (maxZ_bound !== -Infinity) ? maxZ_bound : (zCenterOffset + halfLen + 1.0);
+    const L_ext = Math.max(0.1, (z_back - z_front) / (Math.cos(roofTiltRad) || 1));
+    const Y_high = (z_back - z_front) * Math.tan(roofTiltRad);
+
+    const getRoofY = (zVal) => {
+        if (siteType !== 'roof-slope') return 0;
+        if (pitchStyle === 'double') {
+            return Math.max(0, Y_ridge - Math.abs(zVal - z_ridge) * Math.tan(roofTiltRad));
+        } else {
+            return Math.max(0, (zVal - z_front) * Math.tan(roofTiltRad));
+        }
+    };
+
+    // ------------------------------------------
+    // 2. Create Roof Plane and Building Walls
+    // ------------------------------------------
     const localGroup = new THREE.Group();
     
     if (customSiteBoundary) {
@@ -4026,7 +4058,6 @@ function updateViewer(params) {
             }
 
             if (siteType === 'roof-slope' && pitchStyle === 'double') {
-                const z_ridge = -zOffset;
                 const subdivPoints = [];
                 for (let i = 0; i < localPoints.length; i++) {
                     const p1 = localPoints[i];
@@ -4049,11 +4080,6 @@ function updateViewer(params) {
             }
             shape.closePath();
 
-            const len_neg = Math.abs(s_outer_neg);
-            const L_neg_ext = len_neg + 1.0;
-            const z_ridge = -zOffset;
-            const Y_ridge = L_neg_ext * Math.sin(roofTiltRad);
-
             if (siteType === 'roof-slope' || siteType === 'roof-flat') {
                 // 1. Create Roof Plane / Slab matching boundary shape
                 const slabGeo = new THREE.ExtrudeBufferGeometry(shape, { depth: 0.15, bevelEnabled: false });
@@ -4067,11 +4093,7 @@ function updateViewer(params) {
                     
                     let y_roof = 0;
                     if (siteType === 'roof-slope') {
-                        if (pitchStyle === 'double') {
-                            y_roof = Y_ridge - Math.abs(z - z_ridge) * Math.tan(roofTiltRad);
-                        } else {
-                            y_roof = z * Math.sin(roofTiltRad);
-                        }
+                        y_roof = getRoofY(z);
                     }
                     
                     if (y > -0.075) {
@@ -4091,21 +4113,7 @@ function updateViewer(params) {
                 // 2. Create Building Body walls under the roof matching boundary shape
                 const roofH = params.roofH || 0;
                 if (roofH > 0.05) {
-                    let maxRoofH = 0;
-                    if (siteType === 'roof-slope') {
-                        if (pitchStyle === 'double') {
-                            maxRoofH = Y_ridge;
-                        } else {
-                            let maxZ = -Infinity;
-                            let minZ = Infinity;
-                            for (let i = 0; i < latlngs.length; i++) {
-                                const localPt = latLngToLocal(latlngs[i], state.lat, state.lng, params.azimuth);
-                                maxZ = Math.max(maxZ, localPt.z);
-                                minZ = Math.min(minZ, localPt.z);
-                            }
-                            maxRoofH = Math.max(minZ * Math.sin(roofTiltRad), maxZ * Math.sin(roofTiltRad), 0);
-                        }
-                    }
+                    const maxRoofH = (pitchStyle === 'double') ? Y_ridge : Y_high;
                     const extrudeH = roofH + maxRoofH + 2.0;
                     const buildingGeo = new THREE.ExtrudeBufferGeometry(shape, { depth: extrudeH, bevelEnabled: false });
                     buildingGeo.rotateX(-Math.PI / 2);
@@ -4117,11 +4125,7 @@ function updateViewer(params) {
                         
                         let y_roof = 0;
                         if (siteType === 'roof-slope') {
-                            if (pitchStyle === 'double') {
-                                y_roof = Y_ridge - Math.abs(z - z_ridge) * Math.tan(roofTiltRad);
-                            } else {
-                                y_roof = z * Math.sin(roofTiltRad);
-                            }
+                            y_roof = getRoofY(z);
                         }
                         
                         if (y > 0.001) {
@@ -4156,14 +4160,6 @@ function updateViewer(params) {
     } else {
         if (siteType === 'roof-slope') {
             if (pitchStyle === 'double') {
-                const len_neg = Math.abs(s_outer_neg);
-                const L_neg_ext = len_neg + 1.0;
-                const len_pos = s_outer_pos;
-                const L_pos_ext = len_pos + 1.0;
-                
-                const z_ridge = -zOffset;
-                const Y_ridge = L_neg_ext * Math.sin(roofTiltRad);
-                
                 roofPlane = new THREE.Group();
                 
                 // Negative slope roof plane
@@ -4200,20 +4196,20 @@ function updateViewer(params) {
                 
                 localGroup.add(roofPlane);
             } else {
-                // Flat reference: Roof top surface at front leg (localZ = -halfLen) is local y = 0
-                roofCenterY = zCenterOffset * Math.sin(roofTiltRad);
-                roofCenterZ = zCenterOffset;
-                
-                const roofGeo = new THREE.BoxGeometry(arrayWidth + 3, 0.15, arrayLength + 2);
+                // Single Slope Roof Plane: Slopes down from z_back towards z_front
+                const roofGeo = new THREE.BoxGeometry(arrayWidth + 3, 0.15, L_ext);
                 roofPlane = new THREE.Mesh(roofGeo, materials.roofTile);
                 roofPlane.receiveShadow = true;
                 roofPlane.castShadow = true;
                 
                 roofPlane.rotation.x = -roofTiltRad;
-                // Shift downwards by 0.075 along local Y direction (slab half thickness)
                 const dyOffset = -0.075 * Math.cos(roofTiltRad);
                 const dzOffset = 0.075 * Math.sin(roofTiltRad);
-                roofPlane.position.set(xCenterOffset, roofCenterY + dyOffset, roofCenterZ + dzOffset);
+                roofPlane.position.set(
+                    xCenterOffset,
+                    Y_high / 2 + dyOffset,
+                    (z_front + z_back) / 2 + dzOffset
+                );
                 
                 localGroup.add(roofPlane);
             }
@@ -4223,18 +4219,10 @@ function updateViewer(params) {
             if (roofH > 0.05) {
                 const shape = new THREE.Shape();
                 if (pitchStyle === 'double') {
-                    const len_neg = Math.abs(s_outer_neg);
-                    const L_neg_ext = len_neg + 1.0;
-                    const len_pos = s_outer_pos;
-                    const L_pos_ext = len_pos + 1.0;
-                    
-                    const z_ridge = -zOffset;
                     const zFront = z_ridge - L_neg_ext * Math.cos(roofTiltRad);
                     const zBack = z_ridge + L_pos_ext * Math.cos(roofTiltRad);
-                    
-                    const Y_ridge = L_neg_ext * Math.sin(roofTiltRad);
-                    const Y_front = 0;
-                    const Y_back = Y_ridge - L_pos_ext * Math.sin(roofTiltRad);
+                    const Y_front = getRoofY(zFront);
+                    const Y_back = getRoofY(zBack);
                     
                     shape.moveTo(zFront, -roofH);
                     shape.lineTo(zBack, -roofH);
@@ -4242,11 +4230,10 @@ function updateViewer(params) {
                     shape.lineTo(z_ridge, Y_ridge);
                     shape.lineTo(zFront, Y_front);
                 } else {
-                    const zFront = zCenterOffset - halfLen - 1.0;
-                    const zBack = zCenterOffset + halfLen + 1.0;
-                    
-                    const yFrontSlope = zFront * Math.sin(roofTiltRad);
-                    const yBackSlope = zBack * Math.sin(roofTiltRad);
+                    const zFront = z_front;
+                    const zBack = z_back;
+                    const yFrontSlope = getRoofY(zFront);
+                    const yBackSlope = getRoofY(zBack);
                     
                     shape.moveTo(zFront, -roofH);
                     shape.lineTo(zBack, -roofH);
@@ -4292,48 +4279,56 @@ function updateViewer(params) {
         }
     }
     
-    // For slope-roof double-pitch, compute lift to avoid roof collision
+    // ------------------------------------------
+    // 3. Compute High Point Heights & Clearance
+    // ------------------------------------------
     let ridgeY = supportH;
-    let y_roof_ridge = 0;
+    let singleHighY = supportH;
     
     if (siteType === 'roof-slope') {
         if (pitchStyle === 'double') {
-            const len_neg = Math.abs(s_outer_neg);
-            const L_neg_ext = len_neg + 1.0;
-            y_roof_ridge = L_neg_ext * Math.sin(roofTiltRad);
-            
-            const nominalRidgeY = y_roof_ridge + effSupportH;
-            
-            // Check clearance at 3 leg positions
-            // Outer negative leg
-            const s_leg_neg = (numNeg > 0) ? s_outer_neg * 0.8 : -ridgeSp / 2;
-            const z_leg_neg = s_leg_neg * Math.cos(totalTiltRad) - zOffset;
-            const y_roof_leg_neg = y_roof_ridge - Math.abs(s_leg_neg) * Math.sin(totalTiltRad);
-            const nominalY_neg = nominalRidgeY - Math.abs(s_leg_neg) * Math.sin(totalTiltRad);
-            const clearance_neg = nominalY_neg - y_roof_leg_neg;
-            
-            // Center leg
-            const clearance_center = effSupportH;
-            
-            // Outer positive leg
-            const s_leg_pos = (numPos > 0) ? s_outer_pos * 0.8 : ridgeSp / 2;
-            const z_leg_pos = s_leg_pos * Math.cos(totalTiltRad) - zOffset;
-            const y_roof_leg_pos = y_roof_ridge - Math.abs(s_leg_pos) * Math.sin(totalTiltRad);
-            const nominalY_pos = nominalRidgeY - Math.abs(s_leg_pos) * Math.sin(totalTiltRad);
-            const clearance_pos = nominalY_pos - y_roof_leg_pos;
-            
-            const minClearance = Math.min(clearance_neg, clearance_center, clearance_pos);
-            const lift = (minClearance < effSupportH) ? (effSupportH - minClearance) : 0;
-            ridgeY = nominalRidgeY + lift;
+            if (isFlatLaid) {
+                // 平鋪時: 模組底面離屋脊 200mm (0.2m)
+                ridgeY = Y_ridge + 0.20;
+            } else {
+                // 架高時: 19 的支架高度 (supportH) 為最高點 (屋脊) 支架高度
+                const nominalRidgeY = Y_ridge + supportH;
+                
+                const s_leg_neg = (numNeg > 0) ? s_outer_neg * 0.8 : -ridgeSp / 2;
+                const z_leg_neg = s_leg_neg * Math.cos(totalTiltRad) - zOffset;
+                const clearance_neg = (nominalRidgeY - Math.abs(s_leg_neg) * Math.sin(totalTiltRad)) - getRoofY(z_leg_neg);
+                
+                const s_leg_pos = (numPos > 0) ? s_outer_pos * 0.8 : ridgeSp / 2;
+                const z_leg_pos = s_leg_pos * Math.cos(totalTiltRad) - zOffset;
+                const clearance_pos = (nominalRidgeY - s_leg_pos * Math.sin(totalTiltRad)) - getRoofY(z_leg_pos);
+                
+                const minClearance = Math.min(clearance_neg, supportH, clearance_pos);
+                const lift = (minClearance < 0.1) ? (0.1 - minClearance) : 0;
+                ridgeY = nominalRidgeY + lift;
+            }
         } else {
-            const z_ridge = -zOffset;
-            y_roof_ridge = (z_ridge + halfLen) * Math.sin(roofTiltRad);
-            ridgeY = effSupportH;
+            // 單斜: 最高點在後端 (z_back_arr)
+            const z_back_arr = zCenterOffset + halfLen * Math.cos(totalTiltRad);
+            const z_front_arr = zCenterOffset - halfLen * Math.cos(totalTiltRad);
+            const y_roof_back = getRoofY(z_back_arr);
+            const y_roof_front = getRoofY(z_front_arr);
+            
+            if (isFlatLaid) {
+                // 平鋪時: 模組底面離屋面固定 200mm (0.2m)
+                singleHighY = y_roof_back + 0.20;
+            } else {
+                // 架高時: 19 的支架高度 (supportH) 為最高點 (後端) 支架高度
+                const nominalHighY = y_roof_back + supportH;
+                const mod_front_Y = nominalHighY - 2 * halfLen * Math.sin(totalTiltRad);
+                const clearance_front = mod_front_Y - y_roof_front;
+                const lift = (clearance_front < 0.1) ? (0.1 - clearance_front) : 0;
+                singleHighY = nominalHighY + lift;
+            }
         }
     }
     
     // ------------------------------------------
-    // 2. Create Solar Panels (Optimized with InstancedMesh)
+    // 4. Create Solar Panels (Optimized with InstancedMesh)
     // ------------------------------------------
     const panelOffset = (siteType === 'roof-slope') ? 0.0 : (0.075 + 0.20);
     const panelsToDraw = [];
@@ -4398,7 +4393,7 @@ function updateViewer(params) {
                         const localZ_actual = (rowZ - blockZ) / Math.cos(totalTiltRad);
                         let tiltedY = 0;
                         if (siteType === 'roof-slope') {
-                            tiltedY = effSupportH + (localZ_actual + halfLen) * Math.sin(totalTiltRad);
+                            tiltedY = singleHighY - (halfLen - localZ_actual) * Math.sin(totalTiltRad);
                         } else {
                             tiltedY = supportH - (halfLen - localZ_actual) * Math.sin(totalTiltRad);
                         }
@@ -4454,7 +4449,7 @@ function updateViewer(params) {
     }
     
     // ------------------------------------------
-    // 3. Create Racking, Legs & Foundations (Optimized with InstancedMesh)
+    // 5. Create Racking, Legs & Foundations (Optimized with InstancedMesh)
     // ------------------------------------------
     const xPositions = [];
     const startX = xCenterOffset - arrayWidth / 2 + pvL / 2;
@@ -4483,10 +4478,8 @@ function updateViewer(params) {
     const aluminumBoxes = [];
     const aluminumFeet = [];
     
-    // Support pruning filter helpers (when showSupports is false, prune supports with no active panels above them)
-    const isSupportsPruned = (state.showSupports === false || (params && params.showSupports === false));
+    // Support pruning filter helpers (prune supports with no active panels above them)
     const hasPanelNear = (x, z, radX = 2.2, radZ = 2.0) => {
-        if (!isSupportsPruned) return true;
         if (!panelsToDraw || panelsToDraw.length === 0) return false;
         for (let i = 0; i < panelsToDraw.length; i++) {
             const p = panelsToDraw[i];
@@ -4498,7 +4491,6 @@ function updateViewer(params) {
     };
     
     const hasPanelInSpan = (x, zCenter, halfSpanZ, radX = 2.2) => {
-        if (!isSupportsPruned) return true;
         if (!panelsToDraw || panelsToDraw.length === 0) return false;
         const zMin = zCenter - halfSpanZ - 0.4;
         const zMax = zCenter + halfSpanZ + 0.4;
@@ -4513,13 +4505,212 @@ function updateViewer(params) {
     
     const xBayRad = Math.max(pvL / 2 + 0.3, 2.2);
 
-    for (let k = 0; k < xPositions.length; k++) {
-        const xRack = xPositions[k];
-        
-        for (let g = 0; g < arrM; g++) {
-            const blockZ = (g - (arrM - 1) / 2) * arrP;
+    if (siteType === 'roof-slope') {
+        if (isFlatLaid) {
+            // 平鋪時: 模組底面離屋面 200mm，每片模組底下 2支鋁支架，分配在離兩邊各自 1/5L (1/5 PV長度) 的位置
+            const pvLength = params.pvL / 1000;
+            const pvWidth = params.pvW / 1000;
+            const isPortrait = params.pvOrient === 'portrait';
             
-            if (siteType === 'ground' || siteType === 'roof-flat') {
+            panelsToDraw.forEach(panel => {
+                const bottomY = panel.y - 0.015;
+                
+                if (!isPortrait) {
+                    // Landscape: PV 長度 L 在 X 軸方向，寬度 W 沿斜坡 Z 軸方向
+                    const offsetL = 0.3 * pvLength; // 離兩邊各 1/5L => 距離中心 0.3L
+                    const x1 = panel.x - offsetL;
+                    const x2 = panel.x + offsetL;
+                    
+                    [x1, x2].forEach(xRail => {
+                        aluminumBoxes.push({
+                            pos: [xRail, bottomY - 0.02, panel.z],
+                            rot: [panel.rotX, 0, 0],
+                            scale: [0.04, 0.04, pvWidth]
+                        });
+                        
+                        // L-feet 固定件 (前端與後端各一個)
+                        const offsetW = 0.3 * pvWidth;
+                        [-offsetW, offsetW].forEach(dz => {
+                            const zFoot = panel.z + dz * Math.cos(panel.rotX);
+                            const yRailBottom = (bottomY - 0.04) - dz * Math.sin(panel.rotX);
+                            const yRoofFoot = getRoofY(zFoot);
+                            const hFoot = yRailBottom - yRoofFoot;
+                            if (hFoot > 0.005) {
+                                aluminumFeet.push({
+                                    pos: [xRail, yRoofFoot + hFoot / 2, zFoot],
+                                    rot: [0, 0, 0],
+                                    scale: [0.03, hFoot, 0.03]
+                                });
+                            }
+                        });
+                    });
+                } else {
+                    // Portrait: PV 長度 L 沿斜坡 Z 軸方向，寬度 W 在 X 軸方向
+                    const offsetL = 0.3 * pvLength; // 沿斜坡方向離兩邊各 1/5L
+                    [-offsetL, offsetL].forEach(ds => {
+                        const zRail = panel.z + ds * Math.cos(panel.rotX);
+                        const yRail = (bottomY - 0.02) - ds * Math.sin(panel.rotX);
+                        
+                        aluminumBoxes.push({
+                            pos: [panel.x, yRail, zRail],
+                            rot: [panel.rotX, 0, 0],
+                            scale: [pvWidth, 0.04, 0.04]
+                        });
+                        
+                        // L-feet 固定件 (左端與右端各一個)
+                        const offsetW = 0.3 * pvWidth;
+                        [-offsetW, offsetW].forEach(dx => {
+                            const xFoot = panel.x + dx;
+                            const yRailBottom = yRail - 0.02;
+                            const yRoofFoot = getRoofY(zRail);
+                            const hFoot = yRailBottom - yRoofFoot;
+                            if (hFoot > 0.005) {
+                                aluminumFeet.push({
+                                    pos: [xFoot, yRoofFoot + hFoot / 2, zRail],
+                                    rot: [0, 0, 0],
+                                    scale: [0.03, hFoot, 0.03]
+                                });
+                            }
+                        });
+                    });
+                }
+            });
+        } else {
+            // 架高時 (Elevated): 19 的支架高度 (supportH) 代表最高點支架高度
+            if (pitchStyle === 'double') {
+                const local_s_outer_neg = s_outer_neg;
+                const local_s_outer_pos = s_outer_pos;
+                
+                for (let k = 0; k < xPositions.length; k++) {
+                    const xRack = xPositions[k];
+                    for (let g = 0; g < arrM; g++) {
+                        const blockZ = (g - (arrM - 1) / 2) * arrP;
+                        
+                        // Z-negative rail
+                        const len_neg = Math.abs(local_s_outer_neg);
+                        if (len_neg > 0.05) {
+                            const s_center = local_s_outer_neg / 2;
+                            const railY = ridgeY - Math.abs(s_center) * Math.sin(totalTiltRad) - 0.025;
+                            const railZ = s_center * Math.cos(totalTiltRad) - zOffset + blockZ;
+                            if (hasPanelInSpan(xRack, railZ, len_neg / 2, xBayRad)) {
+                                aluminumBoxes.push({
+                                    pos: [xRack, railY, railZ],
+                                    rot: [-totalTiltRad, 0, 0],
+                                    scale: [0.05, 0.05, len_neg]
+                                });
+                            }
+                        }
+                        
+                        // Z-positive rail
+                        const len_pos = local_s_outer_pos;
+                        if (len_pos > 0.05) {
+                            const s_center = local_s_outer_pos / 2;
+                            const railY = ridgeY - s_center * Math.sin(totalTiltRad) - 0.025;
+                            const railZ = s_center * Math.cos(totalTiltRad) - zOffset + blockZ;
+                            if (hasPanelInSpan(xRack, railZ, len_pos / 2, xBayRad)) {
+                                aluminumBoxes.push({
+                                    pos: [xRack, railY, railZ],
+                                    rot: [+totalTiltRad, 0, 0],
+                                    scale: [0.05, 0.05, len_pos]
+                                });
+                            }
+                        }
+                        
+                        const s_leg_neg = (numNeg > 0) ? s_outer_neg * 0.8 : -ridgeSp / 2;
+                        const s_leg_pos = (numPos > 0) ? s_outer_pos * 0.8 : ridgeSp / 2;
+                        
+                        const legZ_neg = s_leg_neg * Math.cos(totalTiltRad) - zOffset + blockZ;
+                        const legZ_pos = s_leg_pos * Math.cos(totalTiltRad) - zOffset + blockZ;
+                        const legZ_center = -zOffset + blockZ;
+                        
+                        const y_roof_neg = getRoofY(legZ_neg);
+                        const y_roof_pos = getRoofY(legZ_pos);
+                        const y_roof_center = getRoofY(legZ_center);
+                        
+                        const hFoot_neg = (ridgeY - Math.abs(s_leg_neg) * Math.sin(totalTiltRad) - 0.05) - y_roof_neg;
+                        const hFoot_center = (ridgeY - 0.05) - y_roof_center;
+                        const hFoot_pos = (ridgeY - Math.abs(s_leg_pos) * Math.sin(totalTiltRad) - 0.05) - y_roof_pos;
+                        
+                        const feet = [
+                            { z: legZ_neg, h: hFoot_neg, y_base: y_roof_neg },
+                            { z: legZ_center, h: hFoot_center, y_base: y_roof_center },
+                            { z: legZ_pos, h: hFoot_pos, y_base: y_roof_pos }
+                        ];
+                        
+                        feet.forEach(f => {
+                            if (f.h > 0.005 && hasPanelNear(xRack, f.z, xBayRad, 2.0)) {
+                                aluminumFeet.push({
+                                    pos: [xRack, f.y_base + f.h / 2, f.z],
+                                    rot: [0, 0, 0],
+                                    scale: [0.03, f.h, 0.03]
+                                });
+                            }
+                        });
+                    }
+                }
+            } else {
+                // Single-pitch elevated racking
+                for (let k = 0; k < xPositions.length; k++) {
+                    const xRack = xPositions[k];
+                    for (let g = 0; g < arrM; g++) {
+                        const blockZ = (g - (arrM - 1) / 2) * arrP;
+                        const railCenterY = singleHighY - halfLen * Math.sin(totalTiltRad) - 0.025;
+                        const railCenterZ = zCenterOffset + blockZ;
+                        
+                        if (hasPanelInSpan(xRack, railCenterZ, arrayLength / 2, xBayRad)) {
+                            aluminumBoxes.push({
+                                pos: [xRack, railCenterY, railCenterZ],
+                                rot: [-totalTiltRad, 0, 0],
+                                scale: [0.05, 0.05, arrayLength]
+                            });
+                        }
+                        
+                        const hasMiddleLeg = arrayLength > 8.0;
+                        const shiftDist = arrayLength / (hasMiddleLeg ? 8 : 5);
+                        const legFrontZ_local = -halfLen + shiftDist;
+                        const legBackZ_local = halfLen - shiftDist;
+                        const legMiddleZ_local = 0.0;
+                        
+                        const legFrontZ = zCenterOffset + legFrontZ_local * Math.cos(totalTiltRad) + blockZ;
+                        const legBackZ = zCenterOffset + legBackZ_local * Math.cos(totalTiltRad) + blockZ;
+                        const legMiddleZ = zCenterOffset + legMiddleZ_local * Math.cos(totalTiltRad) + blockZ;
+                        
+                        const legY_front = singleHighY - (halfLen - legFrontZ_local) * Math.sin(totalTiltRad) - 0.05;
+                        const legY_back = singleHighY - (halfLen - legBackZ_local) * Math.sin(totalTiltRad) - 0.05;
+                        const legY_middle = singleHighY - (halfLen - legMiddleZ_local) * Math.sin(totalTiltRad) - 0.05;
+                        
+                        const feet = [
+                            { z: legFrontZ, y: legY_front },
+                            { z: legBackZ, y: legY_back }
+                        ];
+                        if (hasMiddleLeg) {
+                            feet.push({ z: legMiddleZ, y: legY_middle });
+                        }
+                        
+                        const legRadZ = Math.max(arrayLength / 6, 1.8);
+                        feet.forEach(f => {
+                            const yRoof = getRoofY(f.z);
+                            const hFoot = f.y - yRoof;
+                            if (hFoot > 0.005 && hasPanelNear(xRack, f.z, xBayRad, legRadZ)) {
+                                aluminumFeet.push({
+                                    pos: [xRack, yRoof + hFoot / 2, f.z],
+                                    rot: [0, 0, 0],
+                                    scale: [0.03, hFoot, 0.03]
+                                });
+                            }
+                        });
+                    }
+                }
+            }
+        }
+    } else {
+        // Ground mount and Flat roof racking
+        for (let k = 0; k < xPositions.length; k++) {
+            const xRack = xPositions[k];
+            
+            for (let g = 0; g < arrM; g++) {
+                const blockZ = (g - (arrM - 1) / 2) * arrP;
+                
                 if (pitchStyle === 'double') {
                     const ridgeY_ground = supportH;
                     const local_s_outer_neg = s_outer_neg;
@@ -4714,130 +4905,6 @@ function updateViewer(params) {
                         }
                     }
                 }
-            } else if (siteType === 'roof-slope') {
-                if (tilt > 0) {
-                    if (pitchStyle === 'double') {
-                        // Double-pitch rails
-                        const local_s_outer_neg = s_outer_neg;
-                        const local_s_outer_pos = s_outer_pos;
-                        
-                        // Z-negative rail
-                        const len_neg = Math.abs(local_s_outer_neg);
-                        if (len_neg > 0.05) {
-                            const s_center = local_s_outer_neg / 2;
-                            const railY = ridgeY - Math.abs(s_center) * Math.sin(totalTiltRad) - 0.025;
-                            const railZ = s_center * Math.cos(totalTiltRad) - zOffset + blockZ;
-                            if (hasPanelInSpan(xRack, railZ, len_neg / 2, xBayRad)) {
-                                aluminumBoxes.push({
-                                    pos: [xRack, railY, railZ],
-                                    rot: [-totalTiltRad, 0, 0],
-                                    scale: [0.05, 0.05, len_neg]
-                                });
-                            }
-                        }
-                        
-                        // Z-positive rail
-                        const len_pos = local_s_outer_pos;
-                        if (len_pos > 0.05) {
-                            const s_center = local_s_outer_pos / 2;
-                            const railY = ridgeY - s_center * Math.sin(totalTiltRad) - 0.025;
-                            const railZ = s_center * Math.cos(totalTiltRad) - zOffset + blockZ;
-                            if (hasPanelInSpan(xRack, railZ, len_pos / 2, xBayRad)) {
-                                aluminumBoxes.push({
-                                    pos: [xRack, railY, railZ],
-                                    rot: [+totalTiltRad, 0, 0],
-                                    scale: [0.05, 0.05, len_pos]
-                                });
-                            }
-                        }
-                        
-                        const getRoofY = (zVal) => {
-                            if (siteType !== 'roof-slope') return 0;
-                            if (pitchStyle === 'double') {
-                                const z_ridge = -zOffset;
-                                const distFromRidge = zVal - z_ridge;
-                                if (distFromRidge < 0) {
-                                    return y_roof_ridge - (-distFromRidge) * Math.sin(roofTiltRad);
-                                } else {
-                                    return y_roof_ridge - distFromRidge * Math.sin(roofTiltRad);
-                                }
-                            } else {
-                                return roofCenterY + zVal * Math.sin(roofTiltRad);
-                            }
-                        };
-
-                        // L-feet
-                        const s_leg_neg = (numNeg > 0) ? s_outer_neg * 0.8 : -ridgeSp / 2;
-                        const s_leg_pos = (numPos > 0) ? s_outer_pos * 0.8 : ridgeSp / 2;
-                        
-                        const legZ_neg = s_leg_neg * Math.cos(totalTiltRad) - zOffset + blockZ;
-                        const legZ_pos = s_leg_pos * Math.cos(totalTiltRad) - zOffset + blockZ;
-                        const legZ_center = -zOffset + blockZ;
-                        
-                        const y_roof_neg = getRoofY(legZ_neg);
-                        const y_roof_pos = getRoofY(legZ_pos);
-                        const y_roof_center = getRoofY(legZ_center);
-                        
-                        const hFoot_neg = (ridgeY - Math.abs(s_leg_neg) * Math.sin(totalTiltRad) - 0.05) - y_roof_neg;
-                        const hFoot_center = (ridgeY - 0.05) - y_roof_center;
-                        const hFoot_pos = (ridgeY - Math.abs(s_leg_pos) * Math.sin(totalTiltRad) - 0.05) - y_roof_pos;
-                        
-                        const feet = [
-                            { z: legZ_neg, h: hFoot_neg, y_base: y_roof_neg },
-                            { z: legZ_center, h: hFoot_center, y_base: y_roof_center },
-                            { z: legZ_pos, h: hFoot_pos, y_base: y_roof_pos }
-                        ];
-                        
-                        feet.forEach(f => {
-                            if (f.h > 0.005 && hasPanelNear(xRack, f.z, xBayRad, 2.0)) {
-                                aluminumFeet.push({
-                                    pos: [xRack, f.y_base + f.h / 2, f.z],
-                                    rot: [0, 0, 0],
-                                    scale: [0.015, f.h, 0.015]
-                                });
-                            }
-                        });
-                    } else {
-                        // Single-pitch Aluminum Rail & L-Feet
-                        const railY = effSupportH + (zCenterOffset + halfLen) * Math.sin(totalTiltRad) - 0.025;
-                        if (hasPanelInSpan(xRack, zCenterOffset + blockZ, arrayLength / 2, xBayRad)) {
-                            aluminumBoxes.push({
-                                pos: [xRack, railY, zCenterOffset + blockZ],
-                                rot: [-totalTiltRad, 0, 0],
-                                scale: [0.05, 0.05, arrayLength]
-                            });
-                        }
-                        
-                        const getRoofY = (zVal) => {
-                            if (siteType !== 'roof-slope') return 0;
-                            return zVal * Math.sin(roofTiltRad);
-                        };
-
-                        const frontZ_world = zCenterOffset + blockZ - halfLen * Math.cos(totalTiltRad);
-                        const railY_front = railY - halfLen * Math.sin(totalTiltRad);
-                        const y_roof_front = getRoofY(frontZ_world);
-                        const frontFootH = (railY_front - 0.025) - y_roof_front;
-                        if (frontFootH > 0.005 && hasPanelNear(xRack, frontZ_world, xBayRad, 2.0)) {
-                            aluminumFeet.push({
-                                pos: [xRack, y_roof_front + frontFootH / 2, frontZ_world],
-                                rot: [0, 0, 0],
-                                scale: [0.015, frontFootH, 0.015]
-                            });
-                        }
-                        
-                        const backZ_world = zCenterOffset + blockZ + halfLen * Math.cos(totalTiltRad);
-                        const railY_back = railY + halfLen * Math.sin(totalTiltRad);
-                        const y_roof_back = getRoofY(backZ_world);
-                        const backFootH = (railY_back - 0.025) - y_roof_back;
-                        if (backFootH > 0.005 && hasPanelNear(xRack, backZ_world, xBayRad, 2.0)) {
-                            aluminumFeet.push({
-                                pos: [xRack, y_roof_back + backFootH / 2, backZ_world],
-                                rot: [0, 0, 0],
-                                scale: [0.015, backFootH, 0.015]
-                            });
-                        }
-                    }
-                }
             }
         }
     }
@@ -4892,7 +4959,8 @@ function updateViewer(params) {
         if (instancedFeet) supportGroup.add(instancedFeet);
     }
     
-    supportGroup.visible = true;
+    const showSupports = params && params.showSupports !== undefined ? params.showSupports : state.showSupports;
+    supportGroup.visible = (showSupports !== false);
     localGroup.add(supportGroup);
     
     // Rotate entire localGroup by Azimuth
@@ -4906,9 +4974,9 @@ function updateViewer(params) {
     pvGroup.add(localGroup);
     
     // ------------------------------------------
-    // 4. Create 3D Obstacles
+    // 4. Create 3D Obstacles (Real-time rendered on keep & adjust)
     // ------------------------------------------
-    if (obstacleState === 'locked') {
+    if (obstacleGroup) {
         while (obstacleGroup.children.length > 0) {
             const obj = obstacleGroup.children[0];
             obstacleGroup.remove(obj);
@@ -4916,7 +4984,7 @@ function updateViewer(params) {
         }
         
         obstaclePolygons.forEach(poly => {
-            const latlngs = poly.getLatLngs()[0] || [];
+            const latlngs = getOuterRingLatLngs(poly) || [];
             if (latlngs.length < 3) return;
             
             const points = latlngs.map(pt => {
@@ -4932,8 +5000,9 @@ function updateViewer(params) {
             }
             shape.closePath();
             
+            const extrudeHeight = poly.obstacleHeight !== undefined ? poly.obstacleHeight : 5.0;
             const extrudeSettings = {
-                depth: poly.obstacleHeight,
+                depth: extrudeHeight,
                 bevelEnabled: false
             };
             
@@ -5143,22 +5212,22 @@ function animate() {
     if (controls) controls.update();
     updateMeasureLabels();
     
-    // 蝢 HUD 雿蔭????
+    // 羅盤 HUD 位置與旋轉更新
     if (compassGroup && camera && renderer) {
         const aspect = camera.aspect;
-        const distance = 5.0; // ?蔣?潛璈??寧?頝
+        const distance = 5.0; // 相對於相機的前方距離
         const fovRad = (camera.fov * Math.PI) / 180;
         const visibleHeight = 2 * distance * Math.tan(fovRad / 2);
         const visibleWidth = visibleHeight * aspect;
         
-        // ???澆椰銝? (????頝隤踵?宏)
+        // 固定在左上方
         compassGroup.position.set(
             -visibleWidth / 2 + 0.55,
             visibleHeight / 2 - 0.55,
             -distance
         );
         
-        // 撠璈??瘙頠?鞈虫?蝢嚗蝙?嗡??函璈?頧???靽???銝??????孵? (r120 ?銝凋蝙??conjugate)
+        // 使 HUD 羅盤相對於相機反向旋轉以指向世界北向
         compassGroup.quaternion.copy(camera.quaternion).conjugate();
     }
     
@@ -5172,7 +5241,7 @@ const state = {
     siteName: '',
     siteType: 'ground',
     pitchStyle: 'single',
-    pvOrient: 'portrait', // Ground/Flat roof default to Portrait (?瑕??暹?)
+    pvOrient: 'portrait', // Ground/Flat roof default to Portrait (直向排列)
     pvPreset: 'preset-vsun450', // Default to VSUN 450W
     pvL: 1722,
     pvW: 1134,
@@ -5410,6 +5479,110 @@ function getOuterRingLatLngs(poly) {
     return latlngs;
 }
 
+function getModuleWorldBottomY(localX, rowZ, params) {
+    const config = params || state;
+    const siteType = config.siteType || 'ground';
+    const pitchStyle = config.pitchStyle || 'single';
+    const tilt = config.tilt !== undefined ? config.tilt : 6;
+    const roofTilt = config.roofTilt !== undefined ? config.roofTilt : 0;
+    const supportH = (config.supportH !== undefined ? config.supportH : 2000) / 1000; // in meters
+    const roofH = config.roofH !== undefined ? config.roofH : 0; // in meters
+    const pvOrient = config.pvOrient || 'portrait';
+    const pvL_raw = config.pvL || 1722;
+    const pvW_raw = config.pvW || 1134;
+    const arrJ = config.arrJ || 4;
+    const arrM = siteType === 'roof-slope' ? 1 : (config.arrM || 1);
+    const arrP = config.arrP !== undefined ? config.arrP : 1.0;
+    const spY = (config.spY !== undefined ? config.spY : 20) / 1000;
+    
+    const totalTiltRad = (tilt * Math.PI) / 180;
+    const roofTiltRad = (roofTilt * Math.PI) / 180;
+    const isPortrait = pvOrient === 'portrait';
+    const pvW_term = isPortrait ? pvL_raw : pvW_raw;
+    const pvW = pvW_term / 1000;
+    const halfW = pvW / 2;
+    const halfH_tilted = halfW * Math.sin(totalTiltRad);
+    
+    const isSpecialRoofSlopeFlatLandscape = 
+        siteType === 'roof-slope' && 
+        Math.abs(tilt - roofTilt) < 0.01 && 
+        pvOrient === 'landscape';
+        
+    let totalSpY = 0;
+    for (let r = 1; r < arrJ; r++) {
+        totalSpY += (isSpecialRoofSlopeFlatLandscape && r % 10 === 0) ? 0.6 : spY;
+    }
+    const arrayLength = arrJ * pvW + totalSpY;
+    const halfLen = arrayLength / 2;
+    
+    const panelOffset = (siteType === 'roof-slope') ? 0.0 : (0.075 + 0.20);
+    const isFlatLaid = (siteType === 'roof-slope') && Math.abs(tilt - roofTilt) < 0.01;
+    
+    const getRoofY = (zVal) => {
+        if (siteType !== 'roof-slope') return 0;
+        return zVal * Math.sin(roofTiltRad);
+    };
+    
+    const blockIdx = arrM > 1 ? Math.round((rowZ / arrP) + (arrM - 1) / 2) : 0;
+    const clampedG = Math.max(0, Math.min(arrM - 1, blockIdx));
+    const blockZ = (clampedG - (arrM - 1) / 2) * arrP;
+    
+    let panelY = 0;
+    if (pitchStyle === 'double') {
+        const ridgeSp = (siteType === 'roof-slope') ? 1.2 : 0.2;
+        const azimuthRad = ((config.azimuth || 180) * Math.PI) / 180;
+        const isSouthSlopeZNeg = (Math.cos(azimuthRad) <= 0);
+        const numSouth = (arrJ % 2 !== 0) ? (arrJ + 1) / 2 : arrJ / 2;
+        const numNorth = arrJ - numSouth;
+        const numNeg = isSouthSlopeZNeg ? numSouth : numNorth;
+        const numPos = isSouthSlopeZNeg ? numNorth : numSouth;
+        
+        let totalSpY_neg = 0;
+        for (let r = 1; r < numNeg; r++) {
+            totalSpY_neg += (isSpecialRoofSlopeFlatLandscape && r % 10 === 0) ? 0.6 : spY;
+        }
+        let totalSpY_pos = 0;
+        for (let r = 1; r < numPos; r++) {
+            totalSpY_pos += (isSpecialRoofSlopeFlatLandscape && r % 10 === 0) ? 0.6 : spY;
+        }
+        const s_outer_neg = (numNeg > 0) ? -(ridgeSp / 2 + numNeg * pvW + totalSpY_neg) : (ridgeSp / 2);
+        const s_outer_pos = (numPos > 0) ? +(ridgeSp / 2 + numPos * pvW + totalSpY_pos) : -(ridgeSp / 2);
+        const zOffset = (s_outer_pos + s_outer_neg) / 2 * Math.cos(totalTiltRad);
+        
+        let ridgeY = supportH;
+        if (siteType === 'roof-slope') {
+            ridgeY = isFlatLaid ? 0.20 : (supportH + 0.1);
+        }
+        const s_actual = (rowZ + zOffset - blockZ) / Math.cos(totalTiltRad);
+        const rowY = ridgeY - Math.abs(s_actual) * Math.sin(totalTiltRad);
+        panelY = rowY + 0.015 + panelOffset;
+    } else {
+        let singleHighY = supportH;
+        if (siteType === 'roof-slope') {
+            const z_back_arr = halfLen * Math.cos(totalTiltRad);
+            const y_roof_back = getRoofY(z_back_arr);
+            if (isFlatLaid) {
+                singleHighY = y_roof_back + 0.20;
+            } else {
+                const z_front_arr = -halfLen * Math.cos(totalTiltRad);
+                const y_roof_front = getRoofY(z_front_arr);
+                const nominalHighY = y_roof_back + supportH;
+                const mod_front_Y = nominalHighY - 2 * halfLen * Math.sin(totalTiltRad);
+                const clearance_front = mod_front_Y - y_roof_front;
+                const lift = (clearance_front < 0.1) ? (0.1 - clearance_front) : 0;
+                singleHighY = nominalHighY + lift;
+            }
+        }
+        const localZ_actual = (rowZ - blockZ) / Math.cos(totalTiltRad);
+        const tiltedY = (siteType === 'roof-slope' ? singleHighY : supportH) - (halfLen - localZ_actual) * Math.sin(totalTiltRad);
+        panelY = tiltedY + 0.015 + panelOffset;
+    }
+    
+    // World bottom elevation of module
+    const worldBottomY = roofH + (panelY - 0.015) - halfH_tilted;
+    return worldBottomY;
+}
+
 function isModuleExcluded(localX, rowZ, params) {
     if (exclusionPolygons.length === 0 && obstaclePolygons.length === 0 && !customSiteBoundary) return false;
     
@@ -5417,6 +5590,7 @@ function isModuleExcluded(localX, rowZ, params) {
     const pvOrient = config.pvOrient !== undefined ? config.pvOrient : state.pvOrient;
     const pvL = config.pvL !== undefined ? config.pvL : state.pvL;
     const pvW = config.pvW !== undefined ? config.pvW : state.pvW;
+    const tilt = config.tilt !== undefined ? config.tilt : state.tilt;
     const azimuth = config.azimuth !== undefined ? config.azimuth : state.azimuth;
     const lat = config.lat !== undefined ? config.lat : state.lat;
     const lng = config.lng !== undefined ? config.lng : state.lng;
@@ -5424,15 +5598,17 @@ function isModuleExcluded(localX, rowZ, params) {
     const isPortrait = pvOrient === 'portrait';
     const pvL_term = isPortrait ? pvW : pvL;
     const pvW_term = isPortrait ? pvL : pvW;
+    const totalTiltRad = (tilt * Math.PI) / 180;
     const halfL = pvL_term / 2000;
     const halfW = pvW_term / 2000;
+    const halfW_z = halfW * Math.cos(totalTiltRad);
     
     const testPoints = [
         { x: localX, z: rowZ },
-        { x: localX - halfL, z: rowZ - halfW },
-        { x: localX + halfL, z: rowZ - halfW },
-        { x: localX + halfL, z: rowZ + halfW },
-        { x: localX - halfL, z: rowZ + halfW }
+        { x: localX - halfL, z: rowZ - halfW_z },
+        { x: localX + halfL, z: rowZ - halfW_z },
+        { x: localX + halfL, z: rowZ + halfW_z },
+        { x: localX - halfL, z: rowZ + halfW_z }
     ];
     
     const thetaRad = (-azimuth * Math.PI) / 180;
@@ -5469,10 +5645,10 @@ function isModuleExcluded(localX, rowZ, params) {
     let isExcludedByExclusion = false;
     if (exclusionPolygons.length > 0) {
         const corners = [
-            { x: localX - halfL, z: rowZ - halfW },
-            { x: localX + halfL, z: rowZ - halfW },
-            { x: localX + halfL, z: rowZ + halfW },
-            { x: localX - halfL, z: rowZ + halfW }
+            { x: localX - halfL, z: rowZ - halfW_z },
+            { x: localX + halfL, z: rowZ - halfW_z },
+            { x: localX + halfL, z: rowZ + halfW_z },
+            { x: localX - halfL, z: rowZ + halfW_z }
         ];
         const coords = corners.map(pt => {
             const rx = pt.x * cosTheta + pt.z * sinTheta;
@@ -5496,7 +5672,7 @@ function isModuleExcluded(localX, rowZ, params) {
                     if (intersection) {
                         const area = turf.area(intersection);
                         if (poly.isPathway || poly.isSubstation) {
-                            if (area > 0.01) { // Any significant overlap (more than 100 cm簡)
+                            if (area > 0.01) { // Any significant overlap (more than 100 cm²)
                                 isExcludedByExclusion = true;
                                 break;
                             }
@@ -5537,23 +5713,77 @@ function isModuleExcluded(localX, rowZ, params) {
     
     if (isExcludedByExclusion) return true;
     
-    // C. Check Obstacles
+    // C. Check Obstacles (Planar 2D Footprint + 3D Height Collision)
     let isExcludedByObstacle = false;
     if (obstaclePolygons.length > 0) {
-        for (const pt of testPoints) {
+        const corners = [
+            { x: localX - halfL, z: rowZ - halfW_z },
+            { x: localX + halfL, z: rowZ - halfW_z },
+            { x: localX + halfL, z: rowZ + halfW_z },
+            { x: localX - halfL, z: rowZ + halfW_z }
+        ];
+        const coords = corners.map(pt => {
             const rx = pt.x * cosTheta + pt.z * sinTheta;
             const ry = pt.x * sinTheta - pt.z * cosTheta;
             const testLat = lat + ry / metersPerLatDegree;
             const testLng = lng + rx / metersPerLngDegree;
+            return [testLng, testLat];
+        });
+        coords.push(coords[0]);
+        
+        const roofH = config.roofH !== undefined ? config.roofH : 0;
+        let supportBaseY = 0;
+        if (config.siteType === 'roof-flat') {
+            supportBaseY = roofH;
+        } else if (config.siteType === 'roof-slope') {
+            const roofTiltRad = ((config.roofTilt || 0) * Math.PI) / 180;
+            supportBaseY = roofH + rowZ * Math.sin(roofTiltRad);
+        } else {
+            supportBaseY = 0; // ground mount base
+        }
+        
+        for (const poly of obstaclePolygons) {
+            const obsHeight = poly.obstacleHeight !== undefined ? poly.obstacleHeight : 5.0;
             
-            for (const poly of obstaclePolygons) {
+            // If obstacle height does not even reach the base of support structure / roof surface, no physical clash
+            if (obsHeight < supportBaseY - 0.001) {
+                continue;
+            }
+            
+            // Check 2D planar overlap
+            let has2DOverlap = false;
+            try {
+                if (window.turf) {
+                    const moduleGeoJSON = turf.polygon([coords]);
+                    const polyGeoJSON = poly.toGeoJSON();
+                    const intersection = turf.intersect(moduleGeoJSON, polyGeoJSON);
+                    if (intersection && turf.area(intersection) > 0.001) {
+                        has2DOverlap = true;
+                    }
+                }
+            } catch (e) {
+                // Turf fallback
+            }
+            
+            if (!has2DOverlap) {
+                // Point-in-polygon check
                 const latlngs = getOuterRingLatLngs(poly);
-                if (isPointInPolygon({ lat: testLat, lng: testLng }, latlngs)) {
-                    isExcludedByObstacle = true;
-                    break;
+                for (const pt of testPoints) {
+                    const rx = pt.x * cosTheta + pt.z * sinTheta;
+                    const ry = pt.x * sinTheta - pt.z * cosTheta;
+                    const testLat = lat + ry / metersPerLatDegree;
+                    const testLng = lng + rx / metersPerLngDegree;
+                    if (isPointInPolygon({ lat: testLat, lng: testLng }, latlngs)) {
+                        has2DOverlap = true;
+                        break;
+                    }
                 }
             }
-            if (isExcludedByObstacle) break;
+            
+            if (has2DOverlap) {
+                isExcludedByObstacle = true;
+                break;
+            }
         }
     }
     
@@ -5588,7 +5818,6 @@ function unionExclusionPolygons() {
     
     if (regulars.length <= 1) return;
     
-    // ?典?雿萎?閬?????嚗?皜?嗅??詨????擃漁蝺??脫迫?遣?惜???湧?鈭桃?畾?
     clearActivePolygonSelection();
     
     const features = regulars.map(p => p.toGeoJSON());
@@ -5679,7 +5908,7 @@ function applyDefaultsIntoDOM(defaults) {
     
     elements.azimuth.value = defaults.azimuth;
     if (elements.azimuthSlider) elements.azimuthSlider.value = defaults.azimuth;
-    elements.coords.value = defaults.coords || '23簞52\'12.7"N 120簞31\'22.8"E';
+    elements.coords.value = defaults.coords || '23°52\'12.7"N 120°31\'22.8"E';
     
     if (elements.sunMonthSlider) elements.sunMonthSlider.value = defaults.sunMonth;
     if (elements.sunHourSlider) elements.sunHourSlider.value = defaults.sunHour;
@@ -5731,15 +5960,31 @@ function updateLogoTheme() {
         }
     }
     
-    if (isDark) {
-        logoImg.src = 'images/pv_super_logo_dark.png';  // dark version for dark background
-    } else {
-        logoImg.src = 'images/pv_super_logo_light.png'; // light version for light background
+    const normalSrc = isDark ? 'images/pv_super_logo_dark.png' : 'images/pv_super_logo_light.png';
+    const hoverSrc = isDark ? 'images/pv_super_logo_light.png' : 'images/pv_super_logo_dark.png';
+    
+    logoImg.src = normalSrc;
+    
+    // Preload both images for instant hover switching
+    const preloadHover = new Image();
+    preloadHover.src = hoverSrc;
+    const preloadNormal = new Image();
+    preloadNormal.src = normalSrc;
+    
+    const logoLink = logoImg.closest('.pv-super-logo-link') || logoImg;
+    if (!logoLink._hasHoverListener) {
+        logoLink._hasHoverListener = true;
+        logoLink.addEventListener('mouseenter', () => {
+            logoImg.src = hoverSrc;
+        });
+        logoLink.addEventListener('mouseleave', () => {
+            logoImg.src = normalSrc;
+        });
     }
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
-    // ?身?頛?摩嚗? defaults.json 靽?摰?郊嚗?
+    // 讀取 defaults.json 設定檔
     let defaults = {
         siteName: "??蝬 1?",
         siteType: "ground",
@@ -5767,24 +6012,24 @@ window.addEventListener('DOMContentLoaded', async () => {
         sunHour: 15.0
     };
     
-    // ?芸?敺?defaults.json 瑼?霈??閮剖潘??? timestamp ?踹?鋡怎汗?典翰??
+    // 優先自 defaults.json 檔案讀取預設值，附加 timestamp 避免瀏覽器快取
     try {
         const fileResponse = await fetch('defaults.json?t=' + Date.now(), { cache: 'no-store' });
         if (fileResponse.ok) {
             const fileDefaults = await fileResponse.json();
             defaults = { ...defaults, ...fileDefaults };
-            // ?郊撖怠 localStorage
+            // 同步存入 localStorage
             localStorage.setItem('solar_layout_custom_defaults', JSON.stringify(defaults));
             console.log('Loaded defaults from defaults.json', defaults);
         }
     } catch (err) {
         console.log('Cannot fetch defaults.json, falling back to localStorage/static defaults.', err);
-        // ?嗆活霈??localStorage ?閮?閮剖?
+        // 次選讀取 localStorage 內儲存的預設值
         const saved = localStorage.getItem('solar_layout_custom_defaults');
         if (saved) {
             try {
                 const localDefaults = JSON.parse(saved);
-                // ?亥? localStorage ?箇?鈭???month: 6嚗?甇??祈 12
+                // 修正舊版 localStorage 存留之 month: 6，強制改為 12
                 if (localDefaults.sunMonth === 6) {
                     localDefaults.sunMonth = 12;
                 }
@@ -5795,7 +6040,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         }
     }
     
-    // 憟?身?潸 DOM Inputs
+    // 套用預設值至 DOM Inputs
     applyDefaultsIntoDOM(defaults);
     
     syncStateFromDOM();
@@ -5807,7 +6052,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     // Initialize Three.js Viewer
     initViewer('three-canvas');
     
-    setupEventListeners(); // 蝬????賢
+    setupEventListeners(); // 綁定事件監聽器
     
     // Initialize sun simulator text labels and solar position
     if (elements.sunMonthSlider) elements.sunMonthSlider.dispatchEvent(new Event('input'));
@@ -5816,17 +6061,17 @@ window.addEventListener('DOMContentLoaded', async () => {
     updateAllVisuals(true);
     resetCamera();
     setupSplitter(); // Enable resizable panes
-    initInstructionsHighlight(); // ???郊撽?蝷粹?鈭桀???
-    updateLogoTheme(); // ?寞???脤???拍? Logo (dark/light)
+    initInstructionsHighlight(); // 初始化說明高亮功能
+    updateLogoTheme(); // 依主題更新 Logo (dark/light)
     
-    // ?????極?瑟???? / 獢?銝??箸雿蔭
+    // 初始化工具箱切換與位置控制
     updatePlanningControlsSlot();
     window.addEventListener('resize', updatePlanningControlsSlot);
     
-    // ???筑?極?瑞拳?臬像蝘餅??喳???
+    // 綁定邊線平移微調按鈕
     initDraggablePanels();
     
-    // ???????凋?隞?
+    // 初始化模組滑桿
     initLockButtons();
 });
 
@@ -6049,7 +6294,7 @@ function handleSiteTypeChangeUI() {
 
 function updateSupportHLockState() {
     const isSlopeRoof = state.siteType === 'roof-slope';
-    // 撟唾?摰儔?綽?摰??曇????摨虫???
+    // 平鋪時角度鎖定邏輯處理
     const isFlatLaid = Math.abs(state.tilt - state.roofTilt) < 0.01;
     
     // Locked ONLY if Slope Roof AND flat-laid
@@ -6850,6 +7095,7 @@ function setupEventListeners() {
                 updateSupportHLockState();
             } else if (item.key === 'roofTilt') {
                 elements.roofTiltSlider.value = val;
+                updateSupportHLockState();
             } else if (item.key === 'roofH') {
                 elements.roofHSlider.value = val;
             } else if (item.key === 'supportH') {
@@ -6923,7 +7169,7 @@ function setupEventListeners() {
         
         if (state.siteType === 'roof-slope') {
             // Slope Roof (Pitched):
-            // Default to Landscape (?剖??暹?), x=20mm, y=26mm, install tilt = 0, roof tilt = 8, roof height = 10m
+            // Default to Landscape, x=20mm, y=26mm, install tilt = 8, roof tilt = 8, roof height = 10m
             state.pvOrient = 'landscape';
             state.spX = 20;
             state.spY = 26;
@@ -6944,7 +7190,7 @@ function setupEventListeners() {
             elements.roofHSlider.value = 10;
         } else {
             // Ground mount or Flat roof:
-            // Default to Portrait (?瑕??暹?), x=20mm, y=20mm, install tilt = 6, roof tilt = 0
+            // Default to Portrait, x=20mm, y=20mm, install tilt = 6, roof tilt = 0
             state.pvOrient = 'portrait';
             state.spX = 20;
             state.spY = 20;
@@ -7006,6 +7252,7 @@ function setupEventListeners() {
         const val = parseFloat(e.target.value) || 0;
         elements.roofTilt.value = val;
         state.roofTilt = val;
+        updateSupportHLockState();
         calculateOutputs();
         updateAllVisuals();
     });
@@ -7108,7 +7355,12 @@ function setupEventListeners() {
             const val = e.target.value;
             elements.slider3DSupports.setAttribute('value', val);
             state.showSupports = (val === '1');
-            updateViewer(state);
+            const supGroup = scene ? scene.getObjectByName('supportGroup') : null;
+            if (supGroup) {
+                supGroup.visible = state.showSupports;
+            } else {
+                updateViewer(state);
+            }
         });
     }
     
@@ -7129,7 +7381,7 @@ function setupEventListeners() {
             numInput.value = val;
             sliderInput.value = val;
             state[stateKey] = val;
-            if (stateKey === 'tilt') updateSupportHLockState();
+            if (stateKey === 'tilt' || stateKey === 'roofTilt') updateSupportHLockState();
             if (stateKey === 'azimuth') updateAzimuthNodesHighlight(val);
             if (stateKey === 'azimuth' && customSiteBoundary) {
                 inferParametersFromSiteBoundary(customSiteBoundary, true);
@@ -7148,7 +7400,7 @@ function setupEventListeners() {
             numInput.value = val;
             sliderInput.value = val;
             state[stateKey] = val;
-            if (stateKey === 'tilt') updateSupportHLockState();
+            if (stateKey === 'tilt' || stateKey === 'roofTilt') updateSupportHLockState();
             if (stateKey === 'azimuth') updateAzimuthNodesHighlight(val);
             if (stateKey === 'azimuth' && customSiteBoundary) {
                 inferParametersFromSiteBoundary(customSiteBoundary, true);
@@ -7230,6 +7482,10 @@ function setupEventListeners() {
                         elements.sunHourSlider.value = targetVal;
                         elements.sunHourSlider.dispatchEvent(new Event('input'));
                         return;
+                    }
+                    
+                    if (targetKey === 'tilt' || targetKey === 'roofTilt') {
+                        updateSupportHLockState();
                     }
                     
                     if (targetKey === 'azimuth' && customSiteBoundary) {
@@ -7677,14 +7933,42 @@ function showToast(message, type) {
     const obsHSlider = document.getElementById('val-obs-h-slider');
     if (obsHInput && obsHSlider) {
         obsHSlider.addEventListener('input', () => {
-            obsHInput.value = parseFloat(obsHSlider.value).toFixed(1);
+            const val = parseFloat(obsHSlider.value) || 5.0;
+            obsHInput.value = val.toFixed(1);
+            if (activeSelectedPolygon && activeSelectedPolygon.isObstacle) {
+                activeSelectedPolygon.obstacleHeight = val;
+                const handle = document.querySelector('.toolbox-drag-handle');
+                if (handle) handle.innerHTML = `障礙物 (${val.toFixed(1)}m) ⋮⋮`;
+                calculateOutputs();
+                updateAllVisuals(true);
+            }
+        });
+        obsHInput.addEventListener('input', () => {
+            let val = parseFloat(obsHInput.value) || 5.0;
+            if (val >= 1 && val <= 20) {
+                obsHSlider.value = val;
+            }
+            if (activeSelectedPolygon && activeSelectedPolygon.isObstacle) {
+                activeSelectedPolygon.obstacleHeight = val;
+                const handle = document.querySelector('.toolbox-drag-handle');
+                if (handle) handle.innerHTML = `障礙物 (${val.toFixed(1)}m) ⋮⋮`;
+                calculateOutputs();
+                updateAllVisuals(true);
+            }
         });
         obsHInput.addEventListener('change', () => {
             let val = parseFloat(obsHInput.value) || 5.0;
-            val = Math.max(2, Math.min(100, val));
+            val = Math.max(0.5, Math.min(100, val));
             obsHInput.value = val.toFixed(1);
-            if (val >= 2 && val <= 20) {
+            if (val >= 1 && val <= 20) {
                 obsHSlider.value = val;
+            }
+            if (activeSelectedPolygon && activeSelectedPolygon.isObstacle) {
+                activeSelectedPolygon.obstacleHeight = val;
+                const handle = document.querySelector('.toolbox-drag-handle');
+                if (handle) handle.innerHTML = `障礙物 (${val.toFixed(1)}m) ⋮⋮`;
+                calculateOutputs();
+                updateAllVisuals(true);
             }
         });
     }
@@ -8212,15 +8496,15 @@ function initInstructionsHighlight() {
         
         const getTargetSelector = () => {
             switch (stepNum) {
-                case 1: // 摰?
+                case 1: // 星期一
                     return '.map-search-box';
-                case 2: // 蝭?
+                case 2: // 星期二
                     return '#btn-site-boundary';
-                case 3: // ?
+                case 3: // 星期三
                     return '.spreadsheet-container';
-                case 4: // ?
+                case 4: // 星期四
                     return '#btn-exclusion-zone';
-                case 5: // ??
+                case 5: // 星期五
                     return '#btn-obstacle-zone';
                 default:
                     return null;
@@ -8237,7 +8521,7 @@ function initInstructionsHighlight() {
             if (active) {
                 el.classList.add('element-flash');
                 
-                // ?亦璅撌血 sidebar 銝哨??芸?撟單?皛曉??喳閬???
+                // 防止左側 sidebar 水平滾動衝突
                 if (selector.startsWith('#btn-') || selector === '.spreadsheet-container') {
                     el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
@@ -8249,13 +8533,13 @@ function initInstructionsHighlight() {
         step.addEventListener('mouseenter', () => triggerFlash(true));
         step.addEventListener('mouseleave', () => triggerFlash(false));
         
-        // ???舀銵?鋆蔭暺? (閫豢) ???????
+        // 觸控手勢保護
         step.addEventListener('touchstart', (e) => {
-            // ???文隞?????
+            // 檢查觸控點
             document.querySelectorAll('.element-flash').forEach(el => el.classList.remove('element-flash'));
             triggerFlash(true);
             
-            // 2 蝘??芸??迫??
+            // 雙指觸控手勢處理
             setTimeout(() => triggerFlash(false), 2000);
         }, { passive: true });
     });
@@ -9223,20 +9507,98 @@ async function exportSlideshowPDF() {
         renderer.render(scene, camera);
         const localTopViewImg = renderer.domElement.toDataURL('image/jpeg', 0.90);
         
-        // Capture 4: 側視圖 (Side View - 75% zoom to fit, obstacles hidden)
+                                // Capture 4: 側視圖 (Side View - 平行投影 Orthographic, 涵蓋約 10 片以內模組)
         const prevObstacleVis = obstacleGroup ? obstacleGroup.visible : true;
         if (obstacleGroup) obstacleGroup.visible = false;
         
         const sideAzimuthRad = (state.azimuth * Math.PI) / 180;
-        // Direction perpendicular to azimuth with a natural 3D elevation angle
-        const sideDir = new THREE.Vector3(Math.cos(sideAzimuthRad), 0.38, Math.sin(sideAzimuthRad)).normalize();
-        const sideDist = tightDist * 0.95;
+        // 垂直於方位角之側向向量 (沿陣列橫向 X 方向)
+        const sideDir = new THREE.Vector3(Math.cos(sideAzimuthRad), 0, Math.sin(sideAzimuthRad)).normalize();
         
-        camera.position.copy(sceneCenter).addScaledVector(sideDir, sideDist);
-        controls.target.copy(sceneCenter);
-        camera.lookAt(sceneCenter);
-        renderer.render(scene, camera);
-        const sideViewImg = renderer.domElement.toDataURL('image/jpeg', 0.90);
+        // 計算涵蓋約 10 片以內模組之沿斜坡/縱深範圍
+        const isSidePortrait = (state.pvOrient || 'portrait') === 'portrait';
+        const pvSlopeDim = (isSidePortrait ? (state.pvL || 1722) : (state.pvW || 1134)) / 1000;
+        const tiltAngleRad = ((state.tilt !== undefined ? state.tilt : 6) * Math.PI) / 180;
+        const sideSpY_m = (state.spY || 20) / 1000;
+        
+        const numRowsToShow = Math.min(state.arrJ || 4, 10);
+        const modulePitchZ = pvSlopeDim * Math.cos(tiltAngleRad) + sideSpY_m;
+        const spanDepth = numRowsToShow * modulePitchZ;
+        const targetViewDepth = Math.max(spanDepth * 1.25, 4.0);
+        
+        // 高程範圍：地面 (0) 至 建物頂/模組/支架之最高點
+        const baseRoofH = state.siteType === 'ground' ? 0 : (state.roofH || 0);
+        const maxSupportH = (state.supportH !== undefined ? state.supportH : 2000) / 1000;
+        const maxStructureH = baseRoofH + maxSupportH + (spanDepth * Math.sin(tiltAngleRad)) + 1.2;
+        
+        // 給予地面下方充足的底度空間 (groundMargin)，讓地面厚實綠色色帶能非常明顯顯現
+        const groundMargin = 0.50; // 地面下方留白/地坪厚度 0.5m
+        const topMargin = 0.80;    // 結構上方空間
+        const totalViewHeight = maxStructureH + groundMargin + topMargin;
+        
+        // 正交相機 (平行投影) 視窗計算
+        let orthoHalfH = totalViewHeight / 2;
+        let orthoHalfW = orthoHalfH * captureAspect;
+        if (orthoHalfW < targetViewDepth / 2) {
+            orthoHalfW = targetViewDepth / 2;
+            orthoHalfH = orthoHalfW / captureAspect;
+        }
+        
+        const sideOrthoCamera = new THREE.OrthographicCamera(
+            -orthoHalfW, orthoHalfW,
+            orthoHalfH, -orthoHalfH,
+            0.1, 2000
+        );
+        
+        // 攝影機垂直中心設定：讓地面 Y=0 位於下方適當高度，綠色地面條清晰厚實
+        const sideCenterY = (maxStructureH - groundMargin) / 2;
+        const sideTarget = new THREE.Vector3(sceneCenter.x, sideCenterY, sceneCenter.z);
+        
+        sideOrthoCamera.position.copy(sideTarget).addScaledVector(sideDir, 250);
+        sideOrthoCamera.lookAt(sideTarget);
+        sideOrthoCamera.updateProjectionMatrix();
+        
+        // 套用側視圖專用色彩材質 (藍色模組、金色支架、灰色建物、草綠色地面)
+        const sideMatPanel = new THREE.MeshBasicMaterial({ color: 0x1d4ed8 }); // 藍色模組
+        const sideMatSupport = new THREE.MeshBasicMaterial({ color: 0xf59e0b }); // 金色/琥珀色支架組件
+        const sideMatBuilding = new THREE.MeshBasicMaterial({ color: 0x94a3b8 }); // 灰色建物
+        const sideMatGround = new THREE.MeshBasicMaterial({ color: 0x22c55e }); // 醒目草綠色地面
+        
+        const savedSideMaterials = new Map();
+        scene.traverse(node => {
+            if (node.isMesh || node.isInstancedMesh) {
+                savedSideMaterials.set(node, node.material);
+                if (node.parent && (node.parent.name === 'supportGroup' || (typeof supportGroup !== 'undefined' && node.parent === supportGroup))) {
+                    node.material = sideMatSupport;
+                } else if (node.material === materials.panelFace || node.material === materials.frame) {
+                    node.material = sideMatPanel;
+                } else if (node.material === materials.building || node.material === materials.roofTile) {
+                    node.material = sideMatBuilding;
+                } else if (node === ground) {
+                    node.material = sideMatGround;
+                }
+            }
+        });
+        
+        // 建立醒目的草綠色實體地面基準色板 (厚度 0.35m，自 Y=-0.35 至 Y=0)
+        const groundBoxHeight = 0.35;
+        const groundElevationBox = new THREE.Mesh(
+            new THREE.BoxGeometry(2000, groundBoxHeight, 2000),
+            sideMatGround
+        );
+        groundElevationBox.position.set(sceneCenter.x, -groundBoxHeight / 2, sceneCenter.z);
+        scene.add(groundElevationBox);
+        
+        renderer.render(scene, sideOrthoCamera);
+        const sideViewImg = renderer.domElement.toDataURL('image/jpeg', 0.92);
+        
+        // 移除臨時地面基準板並復原材質
+        scene.remove(groundElevationBox);
+        groundElevationBox.geometry.dispose();
+        
+        savedSideMaterials.forEach((origMat, mesh) => {
+            mesh.material = origMat;
+        });
         
         if (obstacleGroup) obstacleGroup.visible = prevObstacleVis;
         
@@ -9760,10 +10122,18 @@ async function exportSlideshowPDF() {
                 
                 <!-- Row 2, Col 2: 側視圖 -->
                 <div style="display: flex; flex-direction: column; gap: 6px; align-items: center; min-height: 0;">
-                    <div style="font-weight: bold; color: rgba(56, 189, 248, 1); font-size: 0.95rem; text-align: center;">側視圖</div>
-                    <div style="width: 100%; height: 232px; background: rgba(2, 6, 23, 1); border: 1.5px solid rgba(51, 65, 85, 1); border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); position: relative;">
-                        <img src="${sideViewImg}" style="width: 100%; height: 100%; object-fit: contain; display: block;">
+                    <div style="font-weight: bold; color: rgba(56, 189, 248, 1); font-size: 0.95rem; text-align: center;">側視圖 (平行投影)</div>
+                    <div style="width: 100%; height: 232px; background: rgba(2, 6, 23, 1); border: 1.5px solid rgba(51, 65, 85, 1); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); position: relative;">
+                        <img src="${sideViewImg}" style="width: 100%; height: 198px; object-fit: contain; display: block;">
+                        <!-- 顏色標示圖例 (模組、支架組件、建物、地面) -->
+                        <div style="width: 100%; display: flex; gap: 10px; justify-content: center; align-items: center; padding: 4px 6px; background: rgba(15, 23, 42, 0.90); font-size: 0.70rem; color: #cbd5e1; border-top: 1px solid rgba(51, 65, 85, 0.6); box-sizing: border-box;">
+                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:#1d4ed8; border:1px solid #60a5fa; border-radius:2px;"></span>模組</span>
+                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:#f59e0b; border:1px solid #fbbf24; border-radius:2px;"></span>支架組件</span>
+                            ${state.siteType !== 'ground' ? '<span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:#94a3b8; border:1px solid #cbd5e1; border-radius:2px;"></span>建物</span>' : ''}
+                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:#22c55e; border:1px solid #4ade80; border-radius:2px;"></span>地面</span>
+                        </div>
                     </div>
+                </div>
                 </div>
             </div>
             
