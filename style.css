@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Serif+TC:wght@300;400;500;600;700;900&family=Outfit:wght@300;400;500;600;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Serif+TC:wght@300;400;500;600;700;900&family=Outfit:wght@300;400;500;600;700&display=swap');
 
 :root {
     --bg-main: rgba(255, 255, 255, 1);
@@ -3488,3 +3488,431 @@ tr.tr-azimuth-row td {
     filter: invert(1) !important;
 }
 
+
+
+/* ==========================================================================
+   手機與行動裝置專用 RWD 規則 (僅在螢幕寬度 <= 768px 生效，絕不影響電腦版)
+   ========================================================================== */
+@media screen and (max-width: 768px) {
+    /* 1. 左右寬度 fit 螢幕解析，僅需上下滑移 */
+    html, body {
+        width: 100% !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+        height: auto !important;
+        min-height: 100vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    header {
+        flex-direction: column !important;
+        gap: 8px !important;
+        padding: 8px 10px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    .company-title-span {
+        font-size: 0.82rem !important;
+    }
+    .instructions-steps-bar {
+        width: 100% !important;
+        justify-content: center !important;
+        gap: 3px !important;
+        flex-wrap: wrap !important;
+        padding: 2px 4px !important;
+    }
+    .step-item {
+        padding: 2px 4px !important;
+        font-size: 0.70rem !important;
+    }
+
+    main {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+        padding: 6px !important;
+        gap: 8px !important;
+        height: auto !important;
+        overflow: visible !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 2. 手機版區塊順序：1.衛星地圖 -> 2.三個工具 -> 3.試算表 -> 4.3D預覽視窗 (最下方) */
+    .workspace-right {
+        display: contents !important;
+    }
+
+    #view-wrapper-map {
+        order: 1 !important;
+        width: 100% !important;
+        height: 380px !important;
+        min-height: 340px !important;
+        position: relative !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+    }
+
+    .desktop-planning-slot {
+        display: none !important;
+    }
+    #mobile-planning-controls-slot {
+        order: 2 !important;
+        width: 100% !important;
+        display: block !important;
+        margin: 4px 0 !important;
+    }
+
+    .sidebar {
+        order: 3 !important;
+        width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        border-radius: 12px !important;
+        overflow: visible !important;
+        margin: 4px 0 !important;
+    }
+
+    #view-wrapper-3d {
+        order: 4 !important;
+        width: 100% !important;
+        height: 380px !important;
+        min-height: 340px !important;
+        position: relative !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        margin-top: 6px !important;
+    }
+
+    #workspace-splitter {
+        display: none !important;
+    }
+
+    /* 3. 三個工具字級縮小以符合按鈕大小 */
+    .planning-controls-container {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 6px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .planning-block {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        padding: 4px 2px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 3px !important;
+        box-sizing: border-box !important;
+    }
+
+    .planning-btn {
+        font-size: 0.72rem !important;
+        padding: 4px 2px !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        width: 95% !important;
+        border-radius: 6px !important;
+        white-space: nowrap !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: bold !important;
+        box-sizing: border-box !important;
+    }
+
+    .planning-slider-wrapper {
+        margin-bottom: 2px !important;
+        gap: 2px !important;
+    }
+
+    .slider-label {
+        font-size: 0.62rem !important;
+    }
+
+    /* 4. 試算表 9~19 項：取消中間 slider bar 與藍點，保留 數值、鎖頭、負號、節點、正號 */
+    .spreadsheet-container {
+        padding: 4px 2px !important;
+        overflow-x: hidden !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .excel-table {
+        width: 100% !important;
+        min-width: 100% !important;
+        table-layout: fixed !important;
+    }
+
+    .excel-table th.col-header-blank,
+    .excel-table td.row-header {
+        width: 22px !important;
+        min-width: 22px !important;
+        max-width: 22px !important;
+        padding: 4px 1px !important;
+        font-size: 0.70rem !important;
+        text-align: center !important;
+    }
+
+    .excel-table th.col-header-a,
+    .excel-table td.cell-label {
+        width: 82px !important;
+        min-width: 78px !important;
+        max-width: 86px !important;
+        padding: 4px 2px !important;
+        font-size: 0.72rem !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        line-height: 1.15 !important;
+    }
+
+    .excel-table th.col-b,
+    .excel-table td.slider-cell,
+    .excel-table td:nth-child(3) {
+        width: auto !important;
+        min-width: 0 !important;
+        padding: 2px 2px !important;
+    }
+
+    .excel-table th.col-header-unit,
+    .excel-table td.cell-unit {
+        width: 28px !important;
+        min-width: 28px !important;
+        max-width: 28px !important;
+        padding: 4px 1px !important;
+        font-size: 0.68rem !important;
+        text-align: center !important;
+    }
+
+    /* 隱藏 9~19 項的中間 range slider bar 與藍點 */
+    .slider-cell input[type="range"] {
+        display: none !important;
+    }
+
+    .slider-cell {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 2px !important;
+        width: 100% !important;
+        padding: 2px 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    .slider-cell input[type="number"] {
+        width: 44px !important;
+        min-width: 38px !important;
+        max-width: 48px !important;
+        height: 26px !important;
+        font-size: 0.78rem !important;
+        padding: 1px !important;
+        text-align: center !important;
+        border-radius: 4px !important;
+        flex-shrink: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    .lock-toggle-btn {
+        width: 22px !important;
+        height: 26px !important;
+        min-width: 22px !important;
+        font-size: 0.80rem !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+        border-radius: 4px !important;
+    }
+
+    .slider-cell .slider-btn,
+    .slider-cell .slider-btn.slider-btn-large {
+        width: 24px !important;
+        height: 26px !important;
+        min-width: 24px !important;
+        font-size: 0.95rem !important;
+        padding: 0 !important;
+        border-radius: 4px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    .slider-wrapper {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        margin: 0 1px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        position: static !important;
+        height: 26px !important;
+    }
+
+    .slider-nodes-container {
+        position: static !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-evenly !important;
+        width: 100% !important;
+        gap: 2px !important;
+        height: 26px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        transform: none !important;
+    }
+
+    .slider-node-btn {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        max-width: 42px !important;
+        height: 24px !important;
+        font-size: 0.65rem !important;
+        padding: 1px 1px !important;
+        border-radius: 3px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+        text-overflow: ellipsis !important;
+        overflow: hidden !important;
+    }
+
+    /* 5. 3D 預覽的月份、時間調整 slider bar 取消，保留 負號、節點、正號 */
+    .sun-simulator-panel {
+        left: 6px !important;
+        right: 6px !important;
+        bottom: 6px !important;
+        padding: 5px 8px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 5px !important;
+        background: rgba(15, 23, 42, 0.92) !important;
+        backdrop-filter: blur(12px) !important;
+        border-radius: 8px !important;
+    }
+
+    .sun-simulator-panel input[type="range"] {
+        display: none !important;
+    }
+
+    .sim-control {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 4px !important;
+        width: 100% !important;
+    }
+
+    .sim-label {
+        font-size: 0.72rem !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 2px !important;
+        min-width: 36px !important;
+    }
+
+    .sim-slider-wrapper {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex: 1 !important;
+        gap: 3px !important;
+    }
+
+    .sim-slider-wrapper .slider-wrapper {
+        flex: 1 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        position: static !important;
+        height: 24px !important;
+    }
+
+    .sim-slider-wrapper .slider-nodes-container {
+        position: static !important;
+        display: flex !important;
+        justify-content: space-around !important;
+        width: 100% !important;
+        gap: 3px !important;
+        margin: 0 !important;
+        height: 24px !important;
+    }
+
+    .sim-slider-wrapper .slider-node-btn {
+        padding: 1px 4px !important;
+        font-size: 0.68rem !important;
+        height: 24px !important;
+        min-width: 34px !important;
+        border-radius: 3px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .sim-slider-wrapper .slider-btn {
+        width: 24px !important;
+        height: 24px !important;
+        min-width: 24px !important;
+        font-size: 0.95rem !important;
+        flex-shrink: 0 !important;
+    }
+
+    .sim-value {
+        font-size: 0.70rem !important;
+        min-width: 66px !important;
+        text-align: right !important;
+    }
+
+    /* 3D 視角按鈕與標籤圖示保證完整顯現 */
+    .view-header {
+        position: absolute !important;
+        top: 6px !important;
+        left: 6px !important;
+        right: 6px !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 4px !important;
+        z-index: 1005 !important;
+        pointer-events: none !important;
+    }
+    .view-badge {
+        padding: 3px 6px !important;
+        border-radius: 16px !important;
+        font-size: 0.72rem !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 3px !important;
+        pointer-events: auto !important;
+    }
+    .view-badge .view-icon img {
+        width: 14px !important;
+        height: 14px !important;
+        display: block !important;
+    }
+    .view-controls {
+        display: flex !important;
+        gap: 3px !important;
+        pointer-events: auto !important;
+    }
+    .control-btn {
+        width: 26px !important;
+        height: 26px !important;
+        padding: 3px !important;
+        border-radius: 5px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    .control-btn img.btn-icon {
+        width: 14px !important;
+        height: 14px !important;
+        display: block !important;
+    }
+}

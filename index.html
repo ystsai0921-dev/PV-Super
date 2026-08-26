@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 
 <head>
@@ -291,7 +291,14 @@
                                 <input id="val-arr-p" type="number" min="1" max="30" step="0.1" value="1.0">
                                 <button type="button" class="lock-toggle-btn" id="lock-arr-p" title="鎖定/解鎖組列間距" data-param="arrP">🔓</button>
                                 <button class="slider-btn" id="btn-arr-p-minus" title="減少0.1m">−</button>
-                                <input id="val-arr-p-slider" type="range" min="1" max="30" step="0.1" value="1.0">
+                                <div class="slider-wrapper">
+                                    <input id="val-arr-p-slider" type="range" min="1" max="30" step="0.1" value="1.0">
+                                    <div class="slider-nodes-container" data-target="arrP">
+                                        <button type="button" class="slider-node-btn active" data-val="1.0" title="1.0m">1.0</button>
+                                        <button type="button" class="slider-node-btn" data-val="2.5" title="2.5m">2.5</button>
+                                        <button type="button" class="slider-node-btn" data-val="5.0" title="5.0m">5.0</button>
+                                    </div>
+                                </div>
                                 <button class="slider-btn" id="btn-arr-p-plus" title="增加0.1m">+</button>
                             </td>
                             <td class="cell-unit">m</td>
@@ -572,7 +579,7 @@
                 <div class="view-header">
                     <div class="view-badge">
                         <span class="view-icon">
-                            <img src="images/3d_preview.svg" class="btn-icon" />
+                            <img src="images/3D_preview.svg" class="btn-icon" />
                         </span>
                         <span class="view-title">3D 預覽<span class="hide-small"> (Three.js)</span></span>
                     </div>
