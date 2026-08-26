@@ -9507,9 +9507,12 @@ async function exportSlideshowPDF() {
         renderer.render(scene, camera);
         const localTopViewImg = renderer.domElement.toDataURL('image/jpeg', 0.90);
         
-                                // Capture 4: 側視圖 (Side View - 平行投影 Orthographic, 涵蓋約 10 片以內模組)
+                                        // Capture 4: 側視圖 (Side View - 平行投影 Orthographic, 涵蓋約 10 片以內模組, 建物過高時自動破裂視圖截斷)
         const prevObstacleVis = obstacleGroup ? obstacleGroup.visible : true;
         if (obstacleGroup) obstacleGroup.visible = false;
+        
+        const isGroundSite = state.siteType === 'ground';
+        const baseRoofH = isGroundSite ? 0 : (state.roofH || 0);
         
         const sideAzimuthRad = (state.azimuth * Math.PI) / 180;
         // 垂直於方位角之側向向量 (沿陣列橫向 X 方向)
@@ -9526,15 +9529,28 @@ async function exportSlideshowPDF() {
         const spanDepth = numRowsToShow * modulePitchZ;
         const targetViewDepth = Math.max(spanDepth * 1.25, 4.0);
         
-        // 高程範圍：地面 (0) 至 建物頂/模組/支架之最高點
-        const baseRoofH = state.siteType === 'ground' ? 0 : (state.roofH || 0);
         const maxSupportH = (state.supportH !== undefined ? state.supportH : 2000) / 1000;
-        const maxStructureH = baseRoofH + maxSupportH + (spanDepth * Math.sin(tiltAngleRad)) + 1.2;
+        const maxStructureTopY = baseRoofH + maxSupportH + (spanDepth * Math.sin(tiltAngleRad)) + 0.6;
         
-        // 給予地面下方充足的底度空間 (groundMargin)，讓地面厚實綠色色帶能非常明顯顯現
-        const groundMargin = 0.50; // 地面下方留白/地坪厚度 0.5m
-        const topMargin = 0.80;    // 結構上方空間
-        const totalViewHeight = maxStructureH + groundMargin + topMargin;
+        // 判斷是否需要進行建物高度「破裂視圖 (Broken-out View)」截斷
+        // 當屋頂高度 baseRoofH > 1.5m 時，截斷建物主體，聚焦模組與支架
+        const isBreakView = !isGroundSite && (baseRoofH > 1.5);
+        
+        // 計算視圖垂直範圍與中心
+        let viewBottomY, viewTopY, groundLevelY;
+        if (isBreakView) {
+            // 破裂視圖：僅保留屋面下方 0.8m 建物壁體，隨後放置破裂線與粗綠地面帶
+            viewBottomY = baseRoofH - 1.8;
+            viewTopY = maxStructureTopY + 0.6;
+            groundLevelY = baseRoofH - 1.2;
+        } else {
+            // 地面型或低矮屋面：以地面 Y=0 為底
+            viewBottomY = -1.0;
+            viewTopY = maxStructureTopY + 0.6;
+            groundLevelY = 0;
+        }
+        
+        const totalViewHeight = Math.max(viewTopY - viewBottomY, 3.5);
         
         // 正交相機 (平行投影) 視窗計算
         let orthoHalfH = totalViewHeight / 2;
@@ -9550,8 +9566,7 @@ async function exportSlideshowPDF() {
             0.1, 2000
         );
         
-        // 攝影機垂直中心設定：讓地面 Y=0 位於下方適當高度，綠色地面條清晰厚實
-        const sideCenterY = (maxStructureH - groundMargin) / 2;
+        const sideCenterY = (viewTopY + viewBottomY) / 2;
         const sideTarget = new THREE.Vector3(sceneCenter.x, sideCenterY, sceneCenter.z);
         
         sideOrthoCamera.position.copy(sideTarget).addScaledVector(sideDir, 250);
@@ -9559,12 +9574,23 @@ async function exportSlideshowPDF() {
         sideOrthoCamera.updateProjectionMatrix();
         
         // 套用側視圖專用色彩材質 (藍色模組、金色支架、灰色建物、草綠色地面)
-        const sideMatPanel = new THREE.MeshBasicMaterial({ color: 0x1d4ed8 }); // 藍色模組
-        const sideMatSupport = new THREE.MeshBasicMaterial({ color: 0xf59e0b }); // 金色/琥珀色支架組件
-        const sideMatBuilding = new THREE.MeshBasicMaterial({ color: 0x94a3b8 }); // 灰色建物
+        const sideMatPanel = new THREE.MeshBasicMaterial({ color: 0x1d4ed8 }); // 湛藍模組
+        const sideMatSupport = new THREE.MeshBasicMaterial({ color: 0xf59e0b }); // 琥珀金支架組件
+        const sideMatBuilding = new THREE.MeshBasicMaterial({ color: 0x94a3b8 }); // 淺灰建物
         const sideMatGround = new THREE.MeshBasicMaterial({ color: 0x22c55e }); // 醒目草綠色地面
+        const sideMatBreakLine = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 }); // 白色破裂折斷線
         
         const savedSideMaterials = new Map();
+        const temporarySideObjects = [];
+        
+        // 隱藏原始高聳建物 Mesh（若是破裂視圖）
+        let origBuildingVis = true;
+        const bMesh = scene.getObjectByName('buildingMesh') || (typeof localGroup !== 'undefined' && localGroup ? localGroup.getObjectByName('buildingMesh') : null);
+        if (isBreakView && bMesh) {
+            origBuildingVis = bMesh.visible;
+            bMesh.visible = false;
+        }
+        
         scene.traverse(node => {
             if (node.isMesh || node.isInstancedMesh) {
                 savedSideMaterials.set(node, node.material);
@@ -9580,21 +9606,63 @@ async function exportSlideshowPDF() {
             }
         });
         
-        // 建立醒目的草綠色實體地面基準色板 (厚度 0.35m，自 Y=-0.35 至 Y=0)
-        const groundBoxHeight = 0.35;
+        if (isBreakView) {
+            // 建立破裂截斷建物頂部實體 (屋頂下 0.8m)
+            const truncBoxH = 0.8;
+            const truncGeo = new THREE.BoxGeometry(sceneSize.x * 2.0, truncBoxH, targetViewDepth * 2.0);
+            const truncMesh = new THREE.Mesh(truncGeo, sideMatBuilding);
+            truncMesh.position.set(sceneCenter.x, baseRoofH - truncBoxH / 2, sceneCenter.z);
+            scene.add(truncMesh);
+            temporarySideObjects.push(truncMesh);
+            
+            // 建立工程破裂折斷線 (Zigzag Break Line)
+            const breakZStart = sceneCenter.z - targetViewDepth * 1.2;
+            const breakZEnd = sceneCenter.z + targetViewDepth * 1.2;
+            const breakY = baseRoofH - truncBoxH;
+            const numZigs = 16;
+            const breakPoints = [];
+            for (let i = 0; i <= numZigs; i++) {
+                const t = i / numZigs;
+                const z = breakZStart + (breakZEnd - breakZStart) * t;
+                const yOff = (i % 2 === 0 ? 0.07 : -0.07);
+                breakPoints.push(new THREE.Vector3(sceneCenter.x, breakY + yOff, z));
+            }
+            const breakGeo = new THREE.BufferGeometry().setFromPoints(breakPoints);
+            const breakLineMesh = new THREE.Line(breakGeo, sideMatBreakLine);
+            scene.add(breakLineMesh);
+            temporarySideObjects.push(breakLineMesh);
+        }
+        
+        // 建立極為明顯的加粗草綠色實體地面基盤 (厚度 0.6m)
+        const groundBoxHeight = 0.60;
         const groundElevationBox = new THREE.Mesh(
-            new THREE.BoxGeometry(2000, groundBoxHeight, 2000),
+            new THREE.BoxGeometry(3000, groundBoxHeight, 3000),
             sideMatGround
         );
-        groundElevationBox.position.set(sceneCenter.x, -groundBoxHeight / 2, sceneCenter.z);
+        groundElevationBox.position.set(sceneCenter.x, groundLevelY - groundBoxHeight / 2, sceneCenter.z);
         scene.add(groundElevationBox);
+        temporarySideObjects.push(groundElevationBox);
+        
+        // 建立地面上緣明亮草綠色實體頂線
+        const groundTopLineGeo = new THREE.BoxGeometry(3000, 0.08, 3000);
+        const groundTopLineMat = new THREE.MeshBasicMaterial({ color: 0x4ade80 }); // 亮綠高光頂線
+        const groundTopLineMesh = new THREE.Mesh(groundTopLineGeo, groundTopLineMat);
+        groundTopLineMesh.position.set(sceneCenter.x, groundLevelY - 0.04, sceneCenter.z);
+        scene.add(groundTopLineMesh);
+        temporarySideObjects.push(groundTopLineMesh);
         
         renderer.render(scene, sideOrthoCamera);
         const sideViewImg = renderer.domElement.toDataURL('image/jpeg', 0.92);
         
-        // 移除臨時地面基準板並復原材質
-        scene.remove(groundElevationBox);
-        groundElevationBox.geometry.dispose();
+        // 清理所有臨時加入的破裂視圖與地面物件
+        temporarySideObjects.forEach(obj => {
+            scene.remove(obj);
+            if (obj.geometry) obj.geometry.dispose();
+        });
+        
+        if (isBreakView && bMesh) {
+            bMesh.visible = origBuildingVis;
+        }
         
         savedSideMaterials.forEach((origMat, mesh) => {
             mesh.material = origMat;
