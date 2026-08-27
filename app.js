@@ -2234,6 +2234,8 @@ function updateMarkerDragStates() {
 function setPlanningModeState(mode, stateVal) {
     if (stateVal !== 'edit') {
         clearActivePolygonSelection();
+        const pToolbox = document.getElementById('polygon-toolbox-panel');
+        if (pToolbox) pToolbox.style.display = 'none';
     }
     if (mode === 'site') {
         siteBoundaryState = stateVal;
@@ -2241,6 +2243,8 @@ function setPlanningModeState(mode, stateVal) {
         const block = document.getElementById('planning-block-site');
         const lblEdit = document.getElementById('lbl-site-edit');
         const lblLock = document.getElementById('lbl-site-lock');
+        const sitePanel = document.getElementById('site-tool-panel');
+        const redrawBtn = document.getElementById('btn-redraw-site-trigger');
         
         if (slider) slider.value = stateVal === 'edit' ? 0 : 1;
         
@@ -2257,6 +2261,8 @@ function setPlanningModeState(mode, stateVal) {
             if (lblEdit) lblEdit.classList.remove('active');
             if (lblLock) lblLock.classList.add('active');
             exitSiteBoundaryDrawMode();
+            if (sitePanel) sitePanel.style.display = 'none';
+            if (redrawBtn) redrawBtn.style.display = 'none';
             
             // Rebuild calculations when locked
             calculateOutputs();
@@ -2268,6 +2274,8 @@ function setPlanningModeState(mode, stateVal) {
         const block = document.getElementById('planning-block-exclusion');
         const lblEdit = document.getElementById('lbl-ex-edit');
         const lblLock = document.getElementById('lbl-ex-lock');
+        const exPanel = document.getElementById('exclusion-tool-panel');
+        const exTrigger = document.getElementById('btn-add-exclusion-trigger');
         
         if (slider) slider.value = stateVal === 'edit' ? 0 : 1;
         
@@ -2284,6 +2292,8 @@ function setPlanningModeState(mode, stateVal) {
             if (lblEdit) lblEdit.classList.remove('active');
             if (lblLock) lblLock.classList.add('active');
             exitExclusionDrawMode();
+            if (exPanel) exPanel.style.display = 'none';
+            if (exTrigger) exTrigger.style.display = 'none';
             
             // Rebuild calculations when locked
             unionExclusionPolygons();
@@ -2296,6 +2306,8 @@ function setPlanningModeState(mode, stateVal) {
         const block = document.getElementById('planning-block-obstacle');
         const lblEdit = document.getElementById('lbl-obs-edit');
         const lblLock = document.getElementById('lbl-obs-lock');
+        const obsPanel = document.getElementById('obstacle-tool-panel');
+        const obsTrigger = document.getElementById('btn-add-obstacle-trigger');
         
         if (slider) slider.value = stateVal === 'edit' ? 0 : 1;
         
@@ -2312,6 +2324,8 @@ function setPlanningModeState(mode, stateVal) {
             if (lblEdit) lblEdit.classList.remove('active');
             if (lblLock) lblLock.classList.add('active');
             exitObstacleDrawMode();
+            if (obsPanel) obsPanel.style.display = 'none';
+            if (obsTrigger) obsTrigger.style.display = 'none';
             
             // Rebuild calculations when locked (Draws 3D obstacles!)
             calculateOutputs();
@@ -8139,15 +8153,22 @@ function showToast(message, type) {
         });
     }
     
+    const btnSiteCancel = document.getElementById('btn-site-cancel');
+    if (btnSiteCancel) {
+        btnSiteCancel.addEventListener('click', () => {
+            switchPlanningMode('site', 'locked');
+        });
+    }
+
     if (elements.btnExCancel) {
         elements.btnExCancel.addEventListener('click', () => {
-            exitExclusionDrawMode();
+            switchPlanningMode('exclusion', 'locked');
         });
     }
     
     if (elements.btnObsCancel) {
         elements.btnObsCancel.addEventListener('click', () => {
-            exitObstacleDrawMode();
+            switchPlanningMode('obstacle', 'locked');
         });
     }
     
@@ -8171,15 +8192,25 @@ function showToast(message, type) {
     registerLabelClicks('lbl-ex-edit', 'lbl-ex-lock', 'exclusion');
     registerLabelClicks('lbl-obs-edit', 'lbl-obs-lock', 'obstacle');
     
-    // Helper for slider click and drag
+    // Helper for slider click and drag (supports mobile touch, drag, input, and change events)
     const setupToggleSlider = (sliderElement, mode, getStateFunc) => {
         if (!sliderElement) return;
         
+        const syncSliderChange = () => {
+            const val = parseInt(sliderElement.value);
+            const targetState = (val === 0) ? 'edit' : 'locked';
+            if (getStateFunc() !== targetState) {
+                switchPlanningMode(mode, targetState);
+            }
+        };
+
         sliderElement.addEventListener('click', (e) => {
             const currentState = getStateFunc();
             const next = currentState === 'locked' ? 'edit' : 'locked';
             switchPlanningMode(mode, next);
         });
+        sliderElement.addEventListener('change', syncSliderChange);
+        sliderElement.addEventListener('input', syncSliderChange);
     };
     
     setupToggleSlider(elements.sliderSite, 'site', () => siteBoundaryState);
