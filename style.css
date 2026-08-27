@@ -1830,12 +1830,15 @@ tr.tr-azimuth-row td {
     .map-search-box {
         bottom: 10px;
         left: 10px;
-        padding: 4px;
-        width: calc(100% - 20px);
+        right: auto;
+        padding: 3px 6px;
+        width: auto;
+        max-width: 60%;
         box-sizing: border-box;
     }
     .map-search-input {
-        width: 100%;
+        width: 140px;
+        max-width: 100%;
         font-size: 0.75rem;
     }
     .map-search-btn {
@@ -2626,9 +2629,9 @@ tr.tr-azimuth-row td {
         top: auto !important;
         bottom: 8px !important;
         left: 8px !important;
-        right: 8px !important;
+        right: auto !important;
         width: auto !important;
-        max-width: calc(100% - 16px) !important;
+        max-width: 60% !important;
         height: auto !important;
         padding: 3px 8px !important;
         border-radius: 18px !important;
@@ -2637,9 +2640,10 @@ tr.tr-azimuth-row td {
     }
 
     .map-search-input {
-        width: 100% !important;
+        width: 130px !important;
+        max-width: 100% !important;
         height: 26px !important;
-        font-size: 12px !important;
+        font-size: 11px !important;
     }
 
     .map-search-btn {

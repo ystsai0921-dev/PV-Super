@@ -262,13 +262,10 @@ function initMap(lat, lng, onMarkerDrag) {
         title: "案場中心位置"
     }).addTo(map);
 
-    marker.bindPopup("<b>案場中心位置</b><br>請點擊或拖曳此標記").openPopup();
-
     // 6. Handle Drag Event
     marker.on('dragend', () => {
         const position = marker.getLatLng();
         onMarkerDrag(position.lat, position.lng);
-        marker.getPopup().setContent(`<b>案場中心位置</b><br>緯度: ${position.lat.toFixed(6)}<br>經度: ${position.lng.toFixed(6)}`).openPopup();
     });
 
     // 7. Map click to reposition marker
@@ -298,7 +295,6 @@ function initMap(lat, lng, onMarkerDrag) {
             const position = event.latlng;
             marker.setLatLng(position);
             onMarkerDrag(position.lat, position.lng);
-            marker.getPopup().setContent(`<b>案場中心位置</b><br>緯度: ${position.lat.toFixed(6)}<br>經度: ${position.lng.toFixed(6)}`).openPopup();
         }
     });
 
@@ -381,7 +377,6 @@ function initMap(lat, lng, onMarkerDrag) {
 function updateMarker(lat, lng) {
     if (marker) {
         marker.setLatLng([lat, lng]);
-        marker.getPopup().setContent(`<b>案場中心位置</b><br>緯度: ${lat.toFixed(6)}<br>經度: ${lng.toFixed(6)}`);
     }
 }
 
@@ -2623,7 +2618,6 @@ function updateSiteCenterFromBoundary(polygon) {
         
         if (marker) {
             marker.setLatLng([state.lat, state.lng]);
-            marker.getPopup().setContent(`<b>案場中心位置</b><br>緯度: ${state.lat.toFixed(6)}<br>經度: ${state.lng.toFixed(6)}`);
         }
         
         const dmsLat = convertToDMS(state.lat, true);
