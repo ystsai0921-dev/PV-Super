@@ -2416,8 +2416,29 @@ function addDrawingVertexMarker(clickedLatLng, pointsArray, tempLine, color, sna
     });
 
     marker.on('drag', (e) => {
-        const newLatLng = e.target.getLatLng();
-        pointsArray[pointIndex] = newLatLng;
+        let mouseLatLng = e.target.getLatLng();
+        let targetLatLng = mouseLatLng;
+        
+        // 1. Check vertex snapping to other points/polygons
+        const snapCheck = checkVertexSnapping(mouseLatLng);
+        if (snapCheck) {
+            isRightAngleSnapActive = false;
+            isRectangleSnapActive = false;
+            isParallelSnapActive = false;
+            isPerpendicularSnapActive = false;
+            clearRightAngleIndicator();
+            updateSnapMarkerVisual(snapCheck);
+            targetLatLng = snapCheck.latlng;
+        } else {
+            updateSnapMarkerVisual(null);
+            // 2. Check right angle / parallel / perpendicular / rectangle snapping with previous vertices
+            const priorPoints = pointsArray.slice(0, pointIndex);
+            if (priorPoints.length > 0) {
+                targetLatLng = snapToPreviousSegmentRightAngle(priorPoints, mouseLatLng);
+            }
+        }
+        
+        pointsArray[pointIndex] = targetLatLng;
         if (tempLine) {
             tempLine.setLatLngs(pointsArray);
         }
@@ -2425,6 +2446,11 @@ function addDrawingVertexMarker(clickedLatLng, pointsArray, tempLine, color, sna
 
     marker.on('dragend', () => {
         map.dragging.enable();
+        if (pointsArray[pointIndex]) {
+            marker.setLatLng(pointsArray[pointIndex]);
+        }
+        updateSnapMarkerVisual(null);
+        clearRightAngleIndicator();
         resetLockTimer();
     });
 
