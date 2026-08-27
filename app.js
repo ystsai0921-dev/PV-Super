@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 繪製多邊形完成後之 (確定保留 / 刪除) 浮動確認對話框
  * @param {string} typeName - 物件類型名稱 (如 '案場邊界', '排除區域', '障礙物')
  * @param {Function} onKeep - 確定保留點擊回呼
@@ -2248,15 +2248,82 @@ function updateSiteBoundaryDrawState() {
         isSiteBoundaryDrawMode = true;
         setPolygonsInteractivity(false);
         if (sitePanel) sitePanel.style.display = 'block';
-        if (redrawBtn) redrawBtn.style.display = 'none';
-        
-        if (map) {
-            map.dragging.enable();
-            map.getContainer().style.cursor = 'url("images/draw_pencil.svg") 2 30, crosshair';
-            map.off('mousemove', handleSiteBoundaryMouseMove);
-            map.on('mousemove', handleSiteBoundaryMouseMove);
+        if (redrawBtn) {
+            redrawBtn.style.display = (siteBoundaryState === 'edit' && customSiteBoundary) ? 'block' : 'none';
         }
     }
+}
+
+let activeDrawingTouchMarker = null;
+let activeDrawingTouchTimer = null;
+
+function addDrawingVertexMarker(clickedLatLng, pointsArray, tempLine, color, snappersArray) {
+    if (activeDrawingTouchMarker) {
+        if (activeDrawingTouchTimer) clearTimeout(activeDrawingTouchTimer);
+        lockActiveDrawingVertex(activeDrawingTouchMarker);
+        activeDrawingTouchMarker = null;
+    }
+
+    const pointIndex = pointsArray.length - 1;
+    const marker = L.marker(clickedLatLng, {
+        icon: L.divIcon({
+            className: 'touch-vertex-marker-container',
+            html: '<div class="touch-vertex-outer"></div>',
+            iconSize: [0, 0]
+        }),
+        draggable: true,
+        zIndexOffset: 1000
+    }).addTo(map);
+
+    activeDrawingTouchMarker = marker;
+    snappersArray.push(marker);
+
+    const resetLockTimer = () => {
+        if (activeDrawingTouchTimer) clearTimeout(activeDrawingTouchTimer);
+        activeDrawingTouchTimer = setTimeout(() => {
+            if (activeDrawingTouchMarker === marker) {
+                lockActiveDrawingVertex(marker);
+                activeDrawingTouchMarker = null;
+            }
+        }, 2000);
+    };
+
+    marker.on('dragstart', () => {
+        if (activeDrawingTouchTimer) clearTimeout(activeDrawingTouchTimer);
+        map.dragging.disable();
+    });
+
+    marker.on('drag', (e) => {
+        const newLatLng = e.target.getLatLng();
+        pointsArray[pointIndex] = newLatLng;
+        if (tempLine) {
+            tempLine.setLatLngs(pointsArray);
+        }
+    });
+
+    marker.on('dragend', () => {
+        map.dragging.enable();
+        resetLockTimer();
+    });
+
+    resetLockTimer();
+}
+
+function lockActiveDrawingVertex(marker) {
+    if (!marker || !map || !map.hasLayer(marker)) return;
+    const el = marker.getElement();
+    if (el) {
+        el.innerHTML = '<div class="touch-vertex-solid"></div>';
+    }
+    if (marker.dragging) marker.dragging.disable();
+}
+
+function clearActiveDrawingTouchState() {
+    if (activeDrawingTouchTimer) {
+        clearTimeout(activeDrawingTouchTimer);
+        activeDrawingTouchTimer = null;
+    }
+    activeDrawingTouchMarker = null;
 }
 
 /* ==========================================================================
@@ -2288,6 +2355,7 @@ function exitSiteBoundaryDrawMode() {
 }
 
 function clearSiteBoundaryDrawingState() {
+    clearActiveDrawingTouchState();
     siteBoundaryPoints = [];
     if (siteBoundaryTempLine) {
         map.removeLayer(siteBoundaryTempLine);
@@ -3351,228 +3419,176 @@ function makePolygonSelectable(poly) {
         if (poly.isObstacle && obstacleState !== 'edit') return;
         if (poly !== customSiteBoundary && !poly.isObstacle && exclusionState !== 'edit') return;
         
-        // Clear previous selection highlight
-        clearActivePolygonSelection();
-        
-        activeSelectedPolygon = poly;
-        updatePolygonVertexHandles(poly);
-        
         // Determine closest edge to click point
-        if (poly.isWalkway) {
+        let closestEdge = -1;
+        if (!poly.isWalkway) {
+            closestEdge = findClosestEdge(poly, e.latlng);
+        }
+        
+        if (closestEdge !== -1) {
+            // Clicked edge -> select edge and show docked left-middle toolbox
+            clearActivePolygonSelection();
+            activeSelectedPolygon = poly;
+            activeSelectedEdgeIndex = closestEdge;
+            updatePolygonVertexHandles(poly);
+            updateSelectedPolygonVisuals(poly, activeSelectedEdgeIndex);
+            showPolygonToolboxPanel(poly);
+        } else {
+            // Clicked interior -> select whole polygon, do not show toolbox
+            clearActivePolygonSelection();
+            activeSelectedPolygon = poly;
             activeSelectedEdgeIndex = -1;
-        } else {
-            activeSelectedEdgeIndex = findClosestEdge(poly, e.latlng);
+            updatePolygonVertexHandles(poly);
+            updateSelectedPolygonVisuals(poly, -1);
+            const panel = document.getElementById('polygon-toolbox-panel');
+            if (panel) panel.style.display = 'none';
         }
         
-        // Apply sparkling white flashing visuals to whole polygon or clicked edge
-        updateSelectedPolygonVisuals(poly, activeSelectedEdgeIndex);
-        
-        let title = "排除區域";
-        if (poly.isWalkway) {
-            title = "維修走道區域";
-        } else if (poly === customSiteBoundary) {
-            title = "案場邊界";
-        } else if (poly.isObstacle) {
-            title = `障礙物 (${poly.obstacleHeight}m)`;
-        } else {
-            if (poly.isSubstation) title = "升壓站";
-            else if (poly.isPathway) title = `${poly.pathwayWidth}m 走道`;
-        }
-        
-        let heightControlsHtml = '';
-        if (poly.isObstacle) {
-            heightControlsHtml = `
-                <div style="display: flex; gap: 4px; justify-content: center; margin-bottom: 4px;">
-                    <button id="btn-toolbox-height-down" class="toolbox-btn" style="flex: 1;">降低</button>
-                    <button id="btn-toolbox-height-up" class="toolbox-btn" style="flex: 1;">升高</button>
-                </div>
-            `;
-        }
+        L.DomEvent.stopPropagation(e);
+    });
+}
 
-        const edgeOffsetHtml = `
-            <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; padding: 4px; margin-bottom: 4px;">
-                <div id="toolbox-edge-label" style="font-size: 0.65rem; color: #ffffff; margin-bottom: 3px; text-align: center; font-weight: bold;">
-                    ${activeSelectedEdgeIndex !== -1 ? `已選取邊線 #${activeSelectedEdgeIndex + 1}` : '點擊邊線微調偏移'}
-                </div>
-                <div style="display: flex; gap: 4px; justify-content: center;">
-                    <button id="btn-toolbox-edge-in" class="toolbox-btn" style="flex: 1;" title="將邊線向內平移 0.5m">內縮</button>
-                    <button id="btn-toolbox-edge-out" class="toolbox-btn" style="flex: 1;" title="將邊線向外平移 0.5m">外推</button>
-                </div>
+function showPolygonToolboxPanel(poly) {
+    let panel = document.getElementById('polygon-toolbox-panel');
+    if (!panel) return;
+    
+    let title = "排除區域";
+    if (poly.isWalkway) {
+        title = "維修走道區域";
+    } else if (poly === customSiteBoundary) {
+        title = "案場邊界";
+    } else if (poly.isObstacle) {
+        title = `障礙物 (${poly.obstacleHeight || 5.0}m)`;
+    } else {
+        if (poly.isSubstation) title = "升壓站";
+        else if (poly.isPathway) title = `${poly.pathwayWidth}m 走道`;
+    }
+    
+    let heightControlsHtml = '';
+    if (poly.isObstacle) {
+        heightControlsHtml = `
+            <div style="display: flex; gap: 4px; justify-content: center; margin-bottom: 4px;">
+                <button id="btn-toolbox-height-down" class="toolbox-btn" style="flex: 1;">降低</button>
+                <button id="btn-toolbox-height-up" class="toolbox-btn" style="flex: 1;">升高</button>
             </div>
         `;
+    }
 
-        const bodyHtml = `
+    const edgeOffsetHtml = `
+        <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; padding: 4px; margin-bottom: 4px;">
+            <div id="toolbox-edge-label" style="font-size: 0.65rem; color: #ffffff; margin-bottom: 3px; text-align: center; font-weight: bold;">
+                ${activeSelectedEdgeIndex !== -1 ? `已選取邊線 #${activeSelectedEdgeIndex + 1}` : '點擊邊線微調偏移'}
+            </div>
+            <div style="display: flex; gap: 4px; justify-content: center;">
+                <button id="btn-toolbox-edge-in" class="toolbox-btn" style="flex: 1;" title="將邊線向內平移 0.5m" ${activeSelectedEdgeIndex === -1 ? 'disabled' : ''}>內縮</button>
+                <button id="btn-toolbox-edge-out" class="toolbox-btn" style="flex: 1;" title="將邊線向外平移 0.5m" ${activeSelectedEdgeIndex === -1 ? 'disabled' : ''}>外推</button>
+            </div>
+        </div>
+    `;
+
+    panel.innerHTML = `
+        <div style="font-family: sans-serif; font-size: 0.8rem; text-align: center; color: #ffffff; padding: 0; min-width: 110px;">
+            <div class="toolbox-drag-handle" style="font-size: 0.68rem; font-weight: bold; color: #ffffff; margin-bottom: 4px; user-select: none;">${title}</div>
             ${edgeOffsetHtml}
             ${heightControlsHtml}
             <div style="display: flex; gap: 4px; justify-content: center;">
                 <button id="btn-toolbox-delete" class="toolbox-btn" style="flex: 1;">刪除</button>
                 <button id="btn-toolbox-cancel" class="toolbox-btn" style="flex: 1;">返回</button>
             </div>
-        `;
-        
-        const popupContent = document.createElement('div');
-        popupContent.innerHTML = `
-            <div style="font-family: sans-serif; font-size: 0.8rem; text-align: center; color: #ffffff; padding: 0; min-width: 110px;">
-                <div class="toolbox-drag-handle" style="font-size: 0.68rem; font-weight: bold; color: #ffffff; margin-bottom: 4px; cursor: move; user-select: none;" title="按住此處可拖曳移動">${title} ⋮⋮</div>
-                ${bodyHtml}
-            </div>
-        `;
-        
-        const btnDel = popupContent.querySelector('#btn-toolbox-delete');
-        const btnCancel = popupContent.querySelector('#btn-toolbox-cancel');
-        const btnHeightDown = popupContent.querySelector('#btn-toolbox-height-down');
-        const btnHeightUp = popupContent.querySelector('#btn-toolbox-height-up');
-        const btnEdgeIn = popupContent.querySelector('#btn-toolbox-edge-in');
-        const btnEdgeOut = popupContent.querySelector('#btn-toolbox-edge-out');
+        </div>
+    `;
 
-        if (btnCancel) {
-            btnCancel.addEventListener('click', () => {
-                clearActivePolygonSelection();
-                if (activeSelectedPolygonPopup) {
-                    map.closePopup(activeSelectedPolygonPopup);
-                    activeSelectedPolygonPopup = null;
-                }
-            });
-        }
+    const btnDel = panel.querySelector('#btn-toolbox-delete');
+    const btnCancel = panel.querySelector('#btn-toolbox-cancel');
+    const btnHeightDown = panel.querySelector('#btn-toolbox-height-down');
+    const btnHeightUp = panel.querySelector('#btn-toolbox-height-up');
+    const btnEdgeIn = panel.querySelector('#btn-toolbox-edge-in');
+    const btnEdgeOut = panel.querySelector('#btn-toolbox-edge-out');
 
-        if (btnEdgeIn) {
-            btnEdgeIn.addEventListener('click', () => {
-                const edgeIdx = activeSelectedEdgeIndex >= 0 ? activeSelectedEdgeIndex : 0;
-                offsetSelectedEdge(poly, edgeIdx, -0.5);
-                updateToolboxPopupEdgeUI();
-            });
-        }
-        if (btnEdgeOut) {
-            btnEdgeOut.addEventListener('click', () => {
-                const edgeIdx = activeSelectedEdgeIndex >= 0 ? activeSelectedEdgeIndex : 0;
-                offsetSelectedEdge(poly, edgeIdx, 0.5);
-                updateToolboxPopupEdgeUI();
-            });
-        }
-        
-        if (btnDel) {
-            btnDel.addEventListener('click', () => {
-                map.removeLayer(poly);
-                clearPolygonVertexHandles();
-                if (selectedEdgeHighlightLine) {
-                    map.removeLayer(selectedEdgeHighlightLine);
-                    selectedEdgeHighlightLine = null;
-                }
-                activeSelectedEdgeIndex = -1;
-                if (poly === customSiteBoundary) {
-                    customSiteBoundary = null;
-                    if (siteBoundaryState === 'edit') {
-                        clearSiteBoundaryDrawingState();
-                        updateSiteBoundaryDrawState();
-                    }
-                    updateMarkerDragStates();
-                } else if (poly.isObstacle) {
-                    obstaclePolygons = obstaclePolygons.filter(p => p !== poly);
-                } else {
-                    if (poly.isSubstation) {
-                        clearSubstationEditHandles();
-                    }
-                    exclusionPolygons = exclusionPolygons.filter(p => p !== poly);
-                }
-                activeSelectedPolygon = null;
-                map.closePopup();
-                calculateOutputs();
-                updateAllVisuals(true);
-            });
-        }
-        
-        if (btnHeightDown) {
-            btnHeightDown.addEventListener('click', () => {
-                poly.obstacleHeight = Math.max(0.5, (poly.obstacleHeight || 5.0) - 0.5);
-                const handle = popupContent.querySelector('.toolbox-drag-handle');
-                if (handle) {
-                    handle.innerHTML = `障礙物 (${poly.obstacleHeight.toFixed(1)}m) ⋮⋮`;
-                }
-                const hInput = document.getElementById('val-obs-h');
-                const hSlider = document.getElementById('val-obs-h-slider');
-                if (hInput) hInput.value = poly.obstacleHeight.toFixed(1);
-                if (hSlider && poly.obstacleHeight >= 1 && poly.obstacleHeight <= 20) hSlider.value = poly.obstacleHeight;
-                calculateOutputs();
-                updateAllVisuals(true);
-            });
-        }
-        if (btnHeightUp) {
-            btnHeightUp.addEventListener('click', () => {
-                poly.obstacleHeight = (poly.obstacleHeight || 5.0) + 0.5;
-                const handle = popupContent.querySelector('.toolbox-drag-handle');
-                if (handle) {
-                    handle.innerHTML = `障礙物 (${poly.obstacleHeight.toFixed(1)}m) ⋮⋮`;
-                }
-                const hInput = document.getElementById('val-obs-h');
-                const hSlider = document.getElementById('val-obs-h-slider');
-                if (hInput) hInput.value = poly.obstacleHeight.toFixed(1);
-                if (hSlider && poly.obstacleHeight >= 1 && poly.obstacleHeight <= 20) hSlider.value = poly.obstacleHeight;
-                calculateOutputs();
-                updateAllVisuals(true);
-            });
-        }
-        
-        // 計算 Popup 浮動工具列的最佳定位點（位於多邊形北側上方）
-        const bounds = poly.getBounds();
-        const northLat = bounds.getNorth();
-        const centerLng = (bounds.getWest() + bounds.getEast()) / 2;
-        const latOffset = (bounds.getNorth() - bounds.getSouth()) * 0.18 + 0.00008; // 多邊形高度的 18% + 基礎位移
-        const popupLatLng = L.latLng(northLat + latOffset, centerLng);
-        
-        const popup = L.popup({
-            className: 'toolbox-popup',
-            autoPan: true,
-            closeButton: false
-        })
-        .setLatLng(popupLatLng)
-        .setContent(popupContent);
-        
-        // 監聽 Popup 的 remove 事件
-        popup.on('remove', () => {
-            // 檢查當前選取的物件是否為該多邊形
-            // 若仍為當前選取物件則清除選取狀態
-            if (activeSelectedPolygon === poly && activeSelectedPolygonPopup === popup) {
-                clearActivePolygonSelection();
-            }
+    if (btnCancel) {
+        btnCancel.addEventListener('click', () => {
+            clearActivePolygonSelection();
         });
-        
-        // 記錄當前 activeSelectedPolygonPopup
-        activeSelectedPolygonPopup = popup;
-        
-        popup.openOn(map);
-        
-        // 使用 L.Draggable 使 Popup 可被使用者自由拖曳移動
-        setTimeout(() => {
-            const popupElement = popup.getElement();
-            if (popupElement) {
-                const dragHandle = popupElement.querySelector('.toolbox-drag-handle');
-                if (dragHandle) {
-                    const draggable = new L.Draggable(popupElement, dragHandle);
-                    draggable.enable();
-                    
-                    draggable.on('dragstart', () => {
-                        map.dragging.disable();
-                    });
-                    
-                    draggable.on('dragend', () => {
-                        map.dragging.enable();
-                        // 拖曳結束後更新 Popup 位置
-                        const rect = popupElement.getBoundingClientRect();
-                        const mapRect = map.getContainer().getBoundingClientRect();
-                        const x = rect.left - mapRect.left + (rect.width / 2);
-                        const y = rect.bottom - mapRect.top;
-                        const newLatLng = map.containerPointToLatLng([x, y]);
-                        popup.setLatLng(newLatLng);
-                        
-                        keepToolboxPopupInViewport();
-                    });
-                }
+    }
+
+    if (btnEdgeIn) {
+        btnEdgeIn.addEventListener('click', () => {
+            const edgeIdx = activeSelectedEdgeIndex >= 0 ? activeSelectedEdgeIndex : 0;
+            offsetSelectedEdge(poly, edgeIdx, -0.5);
+            updateToolboxPopupEdgeUI();
+        });
+    }
+    if (btnEdgeOut) {
+        btnEdgeOut.addEventListener('click', () => {
+            const edgeIdx = activeSelectedEdgeIndex >= 0 ? activeSelectedEdgeIndex : 0;
+            offsetSelectedEdge(poly, edgeIdx, 0.5);
+            updateToolboxPopupEdgeUI();
+        });
+    }
+    
+    if (btnDel) {
+        btnDel.addEventListener('click', () => {
+            map.removeLayer(poly);
+            clearPolygonVertexHandles();
+            if (selectedEdgeHighlightLine) {
+                map.removeLayer(selectedEdgeHighlightLine);
+                selectedEdgeHighlightLine = null;
             }
-            keepToolboxPopupInViewport();
-        }, 60);
-        
-        L.DomEvent.stopPropagation(e);
-    });
+            activeSelectedEdgeIndex = -1;
+            if (poly === customSiteBoundary) {
+                customSiteBoundary = null;
+                if (siteBoundaryState === 'edit') {
+                    clearSiteBoundaryDrawingState();
+                    updateSiteBoundaryDrawState();
+                }
+                updateMarkerDragStates();
+            } else if (poly.isObstacle) {
+                obstaclePolygons = obstaclePolygons.filter(p => p !== poly);
+            } else {
+                if (poly.isSubstation) {
+                    clearSubstationEditHandles();
+                }
+                exclusionPolygons = exclusionPolygons.filter(p => p !== poly);
+            }
+            activeSelectedPolygon = null;
+            panel.style.display = 'none';
+            calculateOutputs();
+            updateAllVisuals(true);
+        });
+    }
+    
+    if (btnHeightDown) {
+        btnHeightDown.addEventListener('click', () => {
+            poly.obstacleHeight = Math.max(0.5, (poly.obstacleHeight || 5.0) - 0.5);
+            const handle = panel.querySelector('.toolbox-drag-handle');
+            if (handle) {
+                handle.innerHTML = `障礙物 (${poly.obstacleHeight.toFixed(1)}m)`;
+            }
+            const hInput = document.getElementById('val-obs-h');
+            const hSlider = document.getElementById('val-obs-h-slider');
+            if (hInput) hInput.value = poly.obstacleHeight.toFixed(1);
+            if (hSlider && poly.obstacleHeight >= 1 && poly.obstacleHeight <= 20) hSlider.value = poly.obstacleHeight;
+            calculateOutputs();
+            updateAllVisuals(true);
+        });
+    }
+    if (btnHeightUp) {
+        btnHeightUp.addEventListener('click', () => {
+            poly.obstacleHeight = (poly.obstacleHeight || 5.0) + 0.5;
+            const handle = panel.querySelector('.toolbox-drag-handle');
+            if (handle) {
+                handle.innerHTML = `障礙物 (${poly.obstacleHeight.toFixed(1)}m)`;
+            }
+            const hInput = document.getElementById('val-obs-h');
+            const hSlider = document.getElementById('val-obs-h-slider');
+            if (hInput) hInput.value = poly.obstacleHeight.toFixed(1);
+            if (hSlider && poly.obstacleHeight >= 1 && poly.obstacleHeight <= 20) hSlider.value = poly.obstacleHeight;
+            calculateOutputs();
+            updateAllVisuals(true);
+        });
+    }
+
+    panel.style.display = 'block';
 }
 
 function makePolygonDraggable(polygon) {
@@ -3589,12 +3605,25 @@ function makePolygonDraggable(polygon) {
         if (polygon.isObstacle && obstacleState !== 'edit') return;
         if (polygon !== customSiteBoundary && !polygon.isObstacle && exclusionState !== 'edit') return;
         
+        const closestEdge = findClosestEdge(polygon, e.latlng);
+        // If clicking near an edge, let click handler manage edge selection and toolbox
+        if (closestEdge !== -1) {
+            return;
+        }
+        
+        // Interior click -> whole polygon drag with move cursor
         map.dragging.disable();
         isDraggingPoly = true;
         startMouseLatLng = e.latlng;
         
+        map.getContainer().style.cursor = 'move';
+        const panel = document.getElementById('polygon-toolbox-panel');
+        if (panel) panel.style.display = 'none';
+        
         activeSelectedPolygon = polygon;
+        activeSelectedEdgeIndex = -1;
         updateSelectedPolygonVisuals(polygon, -1);
+        updatePolygonVertexHandles(polygon);
         
         if (polygon.isWalkway) {
             startLatLngs = polygon.getLatLngs().map(pt => L.latLng(pt.lat, pt.lng));
@@ -3651,6 +3680,9 @@ function makePolygonDraggable(polygon) {
         if (isDraggingPoly) {
             isDraggingPoly = false;
             map.dragging.enable();
+            if (map && map.getContainer()) {
+                map.getContainer().style.cursor = '';
+            }
             if (polygon === customSiteBoundary) {
                 inferParametersFromSiteBoundary(customSiteBoundary);
             } else {
@@ -6816,18 +6848,31 @@ function updateAllSliderNodesHighlight() {
         sunHour: state.sunHour
     };
     
-    document.querySelectorAll('.slider-nodes-container').forEach(container => {
-        const targetKey = container.getAttribute('data-target');
-        const currentVal = targets[targetKey];
-        if (currentVal !== undefined && currentVal !== null) {
+    document.querySelectorAll('.slider-nodes-container, .azimuth-nodes-container').forEach(container => {
+        const targetKey = container.getAttribute('data-target') || 'azimuth';
+        if (targetKey === 'arrP') {
+            const baseP = getBaseArrP();
+            const currentRatio = state.arrP / (baseP || 1);
             container.querySelectorAll('.slider-node-btn').forEach(btn => {
-                const nodeVal = parseFloat(btn.getAttribute('data-val'));
-                if (Math.abs(currentVal - nodeVal) < 0.25) {
+                const mult = parseFloat(btn.getAttribute('data-mult')) || (btn.getAttribute('data-val') === '1x' ? 1.0 : btn.getAttribute('data-val') === '1.3x' ? 1.3 : btn.getAttribute('data-val') === '1.6x' ? 1.6 : 1.0);
+                if (Math.abs(currentRatio - mult) < 0.08) {
                     btn.classList.add('active');
                 } else {
                     btn.classList.remove('active');
                 }
             });
+        } else {
+            const currentVal = targets[targetKey];
+            if (currentVal !== undefined && currentVal !== null) {
+                container.querySelectorAll('.slider-node-btn, .azimuth-node-btn').forEach(btn => {
+                    const nodeVal = parseFloat(btn.getAttribute('data-val'));
+                    if (!isNaN(nodeVal) && Math.abs(currentVal - nodeVal) < 0.25) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            }
         }
     });
 }

@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Serif+TC:wght@300;400;500;600;700;900&family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Serif+TC:wght@300;400;500;600;700;900&family=Outfit:wght@300;400;500;600;700&display=swap');
 
 :root {
     --bg-main: rgba(255, 255, 255, 1);
@@ -206,15 +206,19 @@ main {
     background: transparent;
     color: rgba(45, 55, 72, 1);
     font-family: var(--font-mono);
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     padding: 0 8px;
     transition: all 0.15s ease;
 }
 
 .excel-table td input[type="number"],
-.excel-table td.readonly input,
-.excel-table td.output-cell input {
+.excel-table td.readonly input {
     text-align: right;
+    -moz-appearance: textfield;
+}
+
+.excel-table td.output-cell input {
+    text-align: center !important;
     -moz-appearance: textfield;
 }
 
@@ -603,17 +607,19 @@ main {
 /* Map Search Bar styling */
 .map-search-box {
     position: absolute;
-    bottom: 16px;
-    left: 16px;
+    bottom: 12px;
+    left: 12px;
+    right: auto;
     z-index: 1005;
     display: flex;
-    gap: 8px;
+    gap: 6px;
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(8px);
     border: 1px solid var(--border-color);
-    padding: 6px;
+    padding: 4px 8px;
     border-radius: 8px;
     box-shadow: var(--shadow-main);
+    max-width: 65%;
 }
 
 .map-search-input {
@@ -954,12 +960,12 @@ main {
 
 .slider-node-btn,
 .azimuth-node-btn {
-    background: rgba(241, 245, 249, 1);
-    border: 1px solid rgba(203, 213, 225, 1);
+    background: transparent;
+    border: 1px solid rgba(148, 163, 184, 0.6);
     border-radius: 3px;
     font-size: 0.58rem;
     font-family: var(--font-mono);
-    color: rgba(100, 116, 139, 1);
+    color: rgba(100, 116, 139, 0.95);
     padding: 0 2px;
     line-height: 1.1;
     cursor: pointer;
@@ -1012,9 +1018,10 @@ main {
     transform: scale(1.05);
 }
 
-/* Azimuth Row 2-Tier Node Layout */
+/* Azimuth Row 2-Tier Node Layout (Increased height by 50% to 108px) */
 tr.tr-azimuth-row {
-    height: 72px !important;
+    height: 108px !important;
+    min-height: 108px !important;
 }
 
 tr.tr-azimuth-row td {
@@ -1124,26 +1131,27 @@ tr.tr-azimuth-row td {
 
 
 
-/* Sun Simulator Panel (Floating on 3D Viewer Container) */
+/* Sun Simulator Panel (Floating on 3D Viewer Container) - Compact 1/3 scaled */
 .sun-simulator-panel {
     position: absolute;
-    bottom: 15px;
-    left: 15px;
+    bottom: 12px;
+    left: 12px;
     top: auto;
     transform: none;
     background: rgba(15, 23, 42, 0.88);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 20px;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 10px 18px;
+    gap: 4px;
+    padding: 6px 10px;
     z-index: 100;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
     user-select: none;
     transition: background 0.3s, border-color 0.3s;
+    max-width: 250px;
 }
 
 .sun-simulator-panel:hover {
@@ -1154,31 +1162,39 @@ tr.tr-azimuth-row td {
 .sim-control {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
     width: 100%;
 }
 
 .sim-label {
-    font-size: 0.8rem;
+    font-size: 0.65rem;
     font-weight: 600;
     color: rgba(148, 163, 184, 1);
     white-space: nowrap;
-    width: 85px;
+    width: 52px;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.sim-label .btn-icon {
+    width: 11px;
+    height: 11px;
 }
 
 .sim-slider-wrapper {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     flex-grow: 1;
 }
 
 .sim-control input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
-    width: 90px;
-    height: 14px;
+    width: 60px;
+    height: 10px;
     background: transparent !important;
     outline: none;
     cursor: pointer;
@@ -1190,31 +1206,31 @@ tr.tr-azimuth-row td {
 .sim-control input[type="range"]::-webkit-slider-runnable-track {
     -webkit-appearance: none;
     width: 100%;
-    height: 3px !important;
+    height: 2px !important;
     background: rgba(255, 255, 255, 0.18) !important;
-    border-radius: 1.5px !important;
+    border-radius: 1px !important;
     border: none !important;
 }
 
 .sim-control input[type="range"]::-moz-range-track {
     width: 100%;
-    height: 3px !important;
+    height: 2px !important;
     background: rgba(255, 255, 255, 0.18) !important;
-    border-radius: 1.5px !important;
+    border-radius: 1px !important;
     border: none !important;
 }
 
 .sim-control input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: var(--primary);
     border: 1px solid rgba(255, 255, 255, 1);
     cursor: pointer;
-    margin-top: -2px; /* Center thumb vertically on 3px track */
-    box-shadow: 0 0 5px rgba(20, 184, 166, 0.5);
+    margin-top: -2px; /* Center thumb vertically on 2px track */
+    box-shadow: 0 0 4px rgba(20, 184, 166, 0.5);
     transition: transform 0.1s, background-color 0.2s;
 }
 
@@ -1224,13 +1240,13 @@ tr.tr-azimuth-row td {
 }
 
 .sim-control input[type="range"]::-moz-range-thumb {
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: var(--primary);
     border: 1px solid rgba(255, 255, 255, 1);
     cursor: pointer;
-    box-shadow: 0 0 5px rgba(20, 184, 166, 0.5);
+    box-shadow: 0 0 4px rgba(20, 184, 166, 0.5);
     transition: transform 0.1s, background-color 0.2s;
 }
 
@@ -1240,7 +1256,6 @@ tr.tr-azimuth-row td {
 }
 
 .sim-value {
-    font-size: 0.8rem;
     font-weight: 700;
     color: rgba(255, 255, 255, 1);
     width: 100px;
@@ -2516,7 +2531,7 @@ tr.tr-azimuth-row td {
     }
 
     .btn-planning-trigger {
-        top: 44px !important;
+        top: 72px !important;
         left: 8px !important;
         padding: 4px 8px !important;
         font-size: 0.68rem !important;
@@ -2526,7 +2541,7 @@ tr.tr-azimuth-row td {
 
     /* De-clutter & scale 3D View Badges & Sun Simulator Panel */
     .view-header {
-        top: 8px !important;
+        top: 36px !important;
         left: 8px !important;
         right: 8px !important;
         flex-wrap: wrap;
@@ -3674,15 +3689,15 @@ tr.tr-azimuth-row td {
     .excel-table td.slider-cell,
     .excel-table td:nth-child(3) {
         width: auto !important;
-        min-width: 215px !important;
+        min-width: 172px !important; /* Reduced 20% from 215px */
         padding: 2px 2px !important;
     }
 
     .excel-table th.col-header-unit,
     .excel-table td.cell-unit {
-        width: 32px !important;
-        min-width: 32px !important;
-        max-width: 36px !important;
+        width: 30px !important;
+        min-width: 28px !important;
+        max-width: 34px !important;
         padding: 4px 2px !important;
         font-size: 0.70rem !important;
         text-align: center !important;
@@ -3698,19 +3713,19 @@ tr.tr-azimuth-row td {
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
-        gap: 3px !important;
+        gap: 2px !important;
         width: 100% !important;
-        min-width: 210px !important;
+        min-width: 168px !important;
         padding: 2px 0 !important;
         box-sizing: border-box !important;
     }
 
     .slider-cell input[type="number"] {
-        width: 44px !important;
-        min-width: 38px !important;
-        max-width: 48px !important;
-        height: 26px !important;
-        font-size: 0.78rem !important;
+        width: 40px !important;
+        min-width: 36px !important;
+        max-width: 44px !important;
+        height: 24px !important;
+        font-size: 0.72rem !important; /* Consistent with Column A (0.72rem) */
         padding: 1px !important;
         text-align: center !important;
         border-radius: 4px !important;
@@ -3918,4 +3933,120 @@ tr.tr-azimuth-row td {
         height: 14px !important;
         display: block !important;
     }
+}
+
+/* 節點按鈕選中狀態高亮 (灰框、亮藍底、白字) 全面統一樣式 */
+.slider-node-btn,
+.azimuth-node-btn {
+    border: 1px solid rgba(148, 163, 184, 0.6) !important;
+    background: transparent !important;
+    color: rgba(148, 163, 184, 0.95) !important;
+}
+
+.slider-node-btn.active,
+.azimuth-node-btn.active {
+    background: #0ea5e9 !important;
+    border: 1px solid rgba(148, 163, 184, 0.8) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    box-shadow: 0 1px 4px rgba(14, 165, 233, 0.45) !important;
+}
+
+/* 3D 模擬太陽面板節點 (月份 6/21, 12/21 與 時間 09:00, 15:00) 樣式 */
+.sun-simulator-panel .slider-node-btn {
+    background: transparent !important;
+    border: 1px solid rgba(148, 163, 184, 0.6) !important;
+    color: rgba(148, 163, 184, 0.95) !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+.sun-simulator-panel .slider-node-btn:hover:not(:disabled) {
+    background: rgba(14, 165, 233, 0.2) !important;
+    border-color: rgba(148, 163, 184, 0.8) !important;
+    color: #ffffff !important;
+}
+.sun-simulator-panel .slider-node-btn.active {
+    background: #0ea5e9 !important;
+    border: 1px solid rgba(148, 163, 184, 0.8) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    box-shadow: 0 0 8px rgba(14, 165, 233, 0.6) !important;
+}
+
+/* 觸控手繪多邊形中心十字 + 1.5cm 空心外圓提示點 (Requirement 2) */
+.touch-vertex-outer {
+    width: 1.5cm !important;
+    height: 1.5cm !important;
+    margin-left: calc(-0.75cm) !important;
+    margin-top: calc(-0.75cm) !important;
+    border: 2px solid rgba(56, 189, 248, 0.95) !important;
+    border-radius: 50% !important;
+    background: rgba(56, 189, 248, 0.05) !important;
+    position: relative !important;
+    box-sizing: border-box !important;
+    cursor: move !important;
+    touch-action: none !important;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.6) !important;
+    pointer-events: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: opacity 0.2s ease;
+}
+
+.touch-vertex-outer::before {
+    content: '' !important;
+    position: absolute !important;
+    left: 20% !important;
+    right: 20% !important;
+    top: 50% !important;
+    height: 2px !important;
+    background: rgba(56, 189, 248, 1) !important;
+    transform: translateY(-50%) !important;
+}
+
+.touch-vertex-outer::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 20% !important;
+    bottom: 20% !important;
+    left: 50% !important;
+    width: 2px !important;
+    background: rgba(56, 189, 248, 1) !important;
+    transform: translateX(-50%) !important;
+}
+
+/* 鎖定後的角點小實心圓 */
+.touch-vertex-solid {
+    width: 8px !important;
+    height: 8px !important;
+    margin-left: -4px !important;
+    margin-top: -4px !important;
+    background: #ffffff !important;
+    border: 2px solid rgba(56, 189, 248, 1) !important;
+    border-radius: 50% !important;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.5) !important;
+    pointer-events: none !important;
+}
+
+/* 多邊形調整工具箱吸附視窗左側中間面板 (Requirement 3) */
+#polygon-toolbox-panel {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1015;
+    background: rgba(15, 23, 42, 0.94);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    min-width: 125px;
+    display: none;
+    pointer-events: auto;
+    color: #ffffff;
+    user-select: none;
 }
