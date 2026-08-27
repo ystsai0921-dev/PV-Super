@@ -1973,6 +1973,7 @@ function handleMapMeasureMouseMove(event) {
 }
 
 let activePolygonVertexMarkers = [];
+let activePolygonCenterMarker = null;
 
 function clearPolygonVertexHandles() {
     if (activePolygonVertexMarkers && activePolygonVertexMarkers.length > 0) {
@@ -1980,6 +1981,10 @@ function clearPolygonVertexHandles() {
             if (map) map.removeLayer(m);
         });
         activePolygonVertexMarkers = [];
+    }
+    if (activePolygonCenterMarker) {
+        if (map) map.removeLayer(activePolygonCenterMarker);
+        activePolygonCenterMarker = null;
     }
 }
 
@@ -2018,6 +2023,11 @@ function updatePolygonVertexHandles(poly) {
             currentRings[idx] = newPos;
             poly.setLatLngs(currentRings);
             
+            if (activePolygonCenterMarker) {
+                const newCenter = getPolygonCenter(poly);
+                activePolygonCenterMarker.setLatLng(newCenter);
+            }
+            
             if (selectedEdgeHighlightLine && typeof activeSelectedEdgeIndex !== 'undefined' && activeSelectedEdgeIndex !== -1) {
                 const p1 = currentRings[activeSelectedEdgeIndex];
                 const p2 = currentRings[(activeSelectedEdgeIndex + 1) % currentRings.length];
@@ -2039,6 +2049,90 @@ function updatePolygonVertexHandles(poly) {
         });
         
         activePolygonVertexMarkers.push(vMarker);
+    });
+
+    // Add central Move Icon Badge
+    const center = getPolygonCenter(poly);
+    const moveIcon = L.divIcon({
+        className: 'poly-center-move-icon-container',
+        html: `<div class="poly-move-badge" title="按住此處可拖曳移動多邊形">
+            <svg viewBox="0 0 24 24"><path d="M10 9h4V6h3l-5-5-5 5h3v3zm-1 1H6V7l-5 5 5 5v-3h3v-4zm14 2l-5-5v3h-3v4h3v3l5-5zm-9 3h-4v3H7l5 5 5-5h-3v-3z"/></svg>
+        </div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+    });
+    
+    activePolygonCenterMarker = L.marker([center.lat, center.lng], {
+        icon: moveIcon,
+        draggable: true,
+        zIndexOffset: 3600
+    }).addTo(map);
+
+    let startCenterPos = null;
+    let startCenterLatLngs = null;
+    let startSubstationCenter = null;
+
+    activePolygonCenterMarker.on('dragstart', (e) => {
+        map.dragging.disable();
+        if (e.originalEvent) L.DomEvent.stopPropagation(e.originalEvent);
+        startCenterPos = activePolygonCenterMarker.getLatLng();
+        if (poly.isWalkway) {
+            startCenterLatLngs = poly.getLatLngs().map(pt => L.latLng(pt.lat, pt.lng));
+        } else if (poly instanceof L.Polygon) {
+            startCenterLatLngs = poly.getLatLngs()[0].map(pt => L.latLng(pt.lat, pt.lng));
+        } else {
+            startCenterLatLngs = poly.getLatLngs().map(pt => L.latLng(pt.lat, pt.lng));
+        }
+        if (poly.isSubstation) {
+            startSubstationCenter = L.latLng(poly.substationCenter.lat, poly.substationCenter.lng);
+        }
+        const badge = activePolygonCenterMarker.getElement() ? activePolygonCenterMarker.getElement().querySelector('.poly-move-badge') : null;
+        if (badge) badge.classList.add('dragging');
+    });
+
+    activePolygonCenterMarker.on('drag', (e) => {
+        const curPos = e.target.getLatLng();
+        const dLat = curPos.lat - startCenterPos.lat;
+        const dLng = curPos.lng - startCenterPos.lng;
+        
+        const newLatLngs = startCenterLatLngs.map(pt => L.latLng(pt.lat + dLat, pt.lng + dLng));
+        if (poly instanceof L.Polygon) {
+            poly.setLatLngs([newLatLngs]);
+        } else {
+            poly.setLatLngs(newLatLngs);
+        }
+        
+        if (activePolygonVertexMarkers && activePolygonVertexMarkers.length === newLatLngs.length) {
+            newLatLngs.forEach((pt, i) => {
+                activePolygonVertexMarkers[i].setLatLng(pt);
+            });
+        }
+        
+        if (selectedEdgeHighlightLine && typeof activeSelectedEdgeIndex !== 'undefined' && activeSelectedEdgeIndex !== -1) {
+            const p1 = newLatLngs[activeSelectedEdgeIndex];
+            const p2 = newLatLngs[(activeSelectedEdgeIndex + 1) % newLatLngs.length];
+            selectedEdgeHighlightLine.setLatLngs([p1, p2]);
+        }
+        
+        if (poly.isSubstation) {
+            poly.substationCenter = L.latLng(startSubstationCenter.lat + dLat, startSubstationCenter.lng + dLng);
+        }
+        
+        if (isSite) {
+            updateSiteCenterFromBoundary(poly);
+        }
+    });
+
+    activePolygonCenterMarker.on('dragend', () => {
+        map.dragging.enable();
+        const badge = activePolygonCenterMarker.getElement() ? activePolygonCenterMarker.getElement().querySelector('.poly-move-badge') : null;
+        if (badge) badge.classList.remove('dragging');
+        if (isSite) {
+            inferParametersFromSiteBoundary(poly, true);
+        } else {
+            calculateOutputs();
+            updateAllVisuals();
+        }
     });
 }
 
@@ -2146,6 +2240,9 @@ function setPlanningModeState(mode, stateVal) {
             if (lblEdit) lblEdit.classList.add('active');
             if (lblLock) lblLock.classList.remove('active');
             enterSiteBoundaryDrawMode();
+            if (customSiteBoundary) {
+                try { customSiteBoundary.bringToFront(); } catch (e) {}
+            }
         } else {
             if (block) block.classList.remove('active-edit', 'edit-site');
             if (lblEdit) lblEdit.classList.remove('active');
@@ -2170,6 +2267,9 @@ function setPlanningModeState(mode, stateVal) {
             if (lblEdit) lblEdit.classList.add('active');
             if (lblLock) lblLock.classList.remove('active');
             exitExclusionDrawMode();
+            exclusionPolygons.forEach(p => {
+                try { p.bringToFront(); } catch (e) {}
+            });
         } else {
             if (block) block.classList.remove('active-edit', 'edit-exclusion');
             if (lblEdit) lblEdit.classList.remove('active');
@@ -2195,6 +2295,9 @@ function setPlanningModeState(mode, stateVal) {
             if (lblEdit) lblEdit.classList.add('active');
             if (lblLock) lblLock.classList.remove('active');
             exitObstacleDrawMode();
+            obstaclePolygons.forEach(p => {
+                try { p.bringToFront(); } catch (e) {}
+            });
         } else {
             if (block) block.classList.remove('active-edit', 'edit-obstacle');
             if (lblEdit) lblEdit.classList.remove('active');
@@ -3419,6 +3522,8 @@ function makePolygonSelectable(poly) {
         if (poly.isObstacle && obstacleState !== 'edit') return;
         if (poly !== customSiteBoundary && !poly.isObstacle && exclusionState !== 'edit') return;
         
+        try { poly.bringToFront(); } catch (err) {}
+        
         // Determine closest edge to click point
         let closestEdge = -1;
         if (!poly.isWalkway) {
@@ -3596,35 +3701,34 @@ function makePolygonDraggable(polygon) {
     let startMouseLatLng = null;
     let startLatLngs = null;
     let startSubstationCenter = null;
-    
-    polygon.on('mousedown', (e) => {
-        if (isSiteBoundaryDrawMode || isExclusionDrawMode || isObstacleDrawMode) return;
-        
-        // Check active mode state
-        if (polygon === customSiteBoundary && siteBoundaryState !== 'edit') return;
-        if (polygon.isObstacle && obstacleState !== 'edit') return;
-        if (polygon !== customSiteBoundary && !polygon.isObstacle && exclusionState !== 'edit') return;
-        
-        const closestEdge = findClosestEdge(polygon, e.latlng);
-        // If clicking near an edge, let click handler manage edge selection and toolbox
+
+    const startPolyDrag = (latlng) => {
+        if (isSiteBoundaryDrawMode || isExclusionDrawMode || isObstacleDrawMode) return false;
+        if (polygon === customSiteBoundary && siteBoundaryState !== 'edit') return false;
+        if (polygon.isObstacle && obstacleState !== 'edit') return false;
+        if (polygon !== customSiteBoundary && !polygon.isObstacle && exclusionState !== 'edit') return false;
+
+        const closestEdge = findClosestEdge(polygon, latlng);
         if (closestEdge !== -1) {
-            return;
+            return false;
         }
-        
-        // Interior click -> whole polygon drag with move cursor
+
+        try { polygon.bringToFront(); } catch (err) {}
         map.dragging.disable();
         isDraggingPoly = true;
-        startMouseLatLng = e.latlng;
-        
-        map.getContainer().style.cursor = 'move';
+        startMouseLatLng = latlng;
+
+        if (map && map.getContainer()) {
+            map.getContainer().style.cursor = 'move';
+        }
         const panel = document.getElementById('polygon-toolbox-panel');
         if (panel) panel.style.display = 'none';
-        
+
         activeSelectedPolygon = polygon;
         activeSelectedEdgeIndex = -1;
         updateSelectedPolygonVisuals(polygon, -1);
         updatePolygonVertexHandles(polygon);
-        
+
         if (polygon.isWalkway) {
             startLatLngs = polygon.getLatLngs().map(pt => L.latLng(pt.lat, pt.lng));
         } else if (polygon instanceof L.Polygon) {
@@ -3635,48 +3739,50 @@ function makePolygonDraggable(polygon) {
         if (polygon.isSubstation) {
             startSubstationCenter = L.latLng(polygon.substationCenter.lat, polygon.substationCenter.lng);
         }
-        L.DomEvent.stopPropagation(e);
-    });
-    
-    map.on('mousemove', (e) => {
-        if (!isDraggingPoly) return;
-        const currentMouseLatLng = e.latlng;
+        return true;
+    };
+
+    const doPolyDrag = (currentMouseLatLng) => {
+        if (!isDraggingPoly || !startMouseLatLng || !startLatLngs) return;
         const dLat = currentMouseLatLng.lat - startMouseLatLng.lat;
         const dLng = currentMouseLatLng.lng - startMouseLatLng.lng;
-        
+
         const newLatLngs = startLatLngs.map(pt => L.latLng(pt.lat + dLat, pt.lng + dLng));
         if (polygon instanceof L.Polygon) {
             polygon.setLatLngs([newLatLngs]);
         } else {
             polygon.setLatLngs(newLatLngs);
         }
-        
+
+        if (activePolygonVertexMarkers && activePolygonVertexMarkers.length === newLatLngs.length) {
+            newLatLngs.forEach((pt, i) => {
+                activePolygonVertexMarkers[i].setLatLng(pt);
+            });
+        }
+        if (activePolygonCenterMarker) {
+            const newCenter = getPolygonCenter(polygon);
+            activePolygonCenterMarker.setLatLng(newCenter);
+        }
+
         if (selectedEdgeHighlightLine && activeSelectedPolygon === polygon && activeSelectedEdgeIndex !== -1) {
             const p1 = newLatLngs[activeSelectedEdgeIndex];
             const p2 = newLatLngs[(activeSelectedEdgeIndex + 1) % newLatLngs.length];
             selectedEdgeHighlightLine.setLatLngs([p1, p2]);
         }
-        
+
         if (polygon.isSubstation) {
             polygon.substationCenter = L.latLng(
                 startSubstationCenter.lat + dLat,
                 startSubstationCenter.lng + dLng
             );
-            
-            if (activeSubstationPoly === polygon) {
-                if (substationCenterMarker) substationCenterMarker.setLatLng(polygon.substationCenter);
-                const rotateLatLng = projectLatLng(polygon.substationCenter, polygon.substationAngle, 4.0);
-                if (substationRotationMarker) substationRotationMarker.setLatLng(rotateLatLng);
-                if (substationConnectLine) substationConnectLine.setLatLngs([polygon.substationCenter, rotateLatLng]);
-            }
         }
-        
+
         if (polygon === customSiteBoundary) {
             updateSiteCenterFromBoundary(customSiteBoundary);
         }
-    });
-    
-    const endDrag = () => {
+    };
+
+    const endPolyDrag = () => {
         if (isDraggingPoly) {
             isDraggingPoly = false;
             map.dragging.enable();
@@ -3691,9 +3797,57 @@ function makePolygonDraggable(polygon) {
             }
         }
     };
-    
-    map.on('mouseup', endDrag);
-    polygon.on('mouseup', endDrag);
+
+    polygon.on('mousedown', (e) => {
+        if (startPolyDrag(e.latlng)) {
+            L.DomEvent.stopPropagation(e);
+        }
+    });
+
+    map.on('mousemove', (e) => {
+        if (isDraggingPoly) {
+            doPolyDrag(e.latlng);
+        }
+    });
+
+    map.on('mouseup', endPolyDrag);
+    polygon.on('mouseup', endPolyDrag);
+
+    // Support touch interactions on mobile for the polygon path
+    setTimeout(() => {
+        const polyPath = polygon._path || (polygon.getElement ? polygon.getElement() : null);
+        if (polyPath) {
+            L.DomEvent.on(polyPath, 'touchstart', (e) => {
+                if (e.touches && e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    const touchLatLng = map.mouseEventToLatLng(touch);
+                    if (startPolyDrag(touchLatLng)) {
+                        L.DomEvent.stopPropagation(e);
+                        if (e.cancelable) L.DomEvent.preventDefault(e);
+                    }
+                }
+            });
+        }
+    }, 100);
+
+    const mapContainer = map.getContainer();
+    if (mapContainer && !mapContainer._polyTouchBound) {
+        mapContainer._polyTouchBound = true;
+        L.DomEvent.on(mapContainer, 'touchmove', (e) => {
+            if (isDraggingPoly && e.touches && e.touches.length === 1) {
+                const touch = e.touches[0];
+                const touchLatLng = map.mouseEventToLatLng(touch);
+                doPolyDrag(touchLatLng);
+                if (e.cancelable) L.DomEvent.preventDefault(e);
+            }
+        });
+        L.DomEvent.on(mapContainer, 'touchend', () => {
+            if (isDraggingPoly) endPolyDrag();
+        });
+        L.DomEvent.on(mapContainer, 'touchcancel', () => {
+            if (isDraggingPoly) endPolyDrag();
+        });
+    }
 }
 
 function exitNormalMode() {
