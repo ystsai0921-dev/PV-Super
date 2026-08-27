@@ -3990,14 +3990,14 @@ tr.tr-azimuth-row td {
     height: 1.5cm !important;
     margin-left: calc(-0.75cm) !important;
     margin-top: calc(-0.75cm) !important;
-    border: 2px solid rgba(56, 189, 248, 0.95) !important;
+    border: 2.5px solid rgba(56, 189, 248, 1);
     border-radius: 50% !important;
-    background: rgba(56, 189, 248, 0.05) !important;
+    background: rgba(0, 0, 0, 0.25) !important;
     position: relative !important;
     box-sizing: border-box !important;
     cursor: move !important;
     touch-action: none !important;
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.6) !important;
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.8), inset 0 0 8px rgba(0, 0, 0, 0.5) !important;
     pointer-events: auto !important;
     display: flex !important;
     align-items: center !important;
@@ -4005,38 +4005,51 @@ tr.tr-azimuth-row td {
     transition: opacity 0.2s ease;
 }
 
-.touch-vertex-outer::before {
-    content: '' !important;
+.touch-vertex-cross-h {
     position: absolute !important;
-    left: 20% !important;
-    right: 20% !important;
+    left: 15% !important;
+    right: 15% !important;
     top: 50% !important;
     height: 2px !important;
-    background: rgba(56, 189, 248, 1) !important;
+    background: #ffffff !important;
     transform: translateY(-50%) !important;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.8) !important;
+    pointer-events: none !important;
 }
 
-.touch-vertex-outer::after {
-    content: '' !important;
+.touch-vertex-cross-v {
     position: absolute !important;
-    top: 20% !important;
-    bottom: 20% !important;
+    top: 15% !important;
+    bottom: 15% !important;
     left: 50% !important;
     width: 2px !important;
-    background: rgba(56, 189, 248, 1) !important;
+    background: #ffffff !important;
     transform: translateX(-50%) !important;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.8) !important;
+    pointer-events: none !important;
 }
 
-/* 鎖定後的角點小實心圓 */
-.touch-vertex-solid {
-    width: 8px !important;
-    height: 8px !important;
-    margin-left: -4px !important;
-    margin-top: -4px !important;
+.touch-vertex-center-dot {
+    position: absolute !important;
+    width: 6px !important;
+    height: 6px !important;
     background: #ffffff !important;
-    border: 2px solid rgba(56, 189, 248, 1) !important;
+    border: 2px solid rgba(56, 189, 248, 1);
     border-radius: 50% !important;
-    box-shadow: 0 0 4px rgba(0, 0, 0, 0.5) !important;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.9) !important;
+    pointer-events: none !important;
+}
+
+/* 鎖定後的角點小實心圓 (12px 粗邊高對比圓點) */
+.touch-vertex-solid {
+    width: 12px !important;
+    height: 12px !important;
+    margin-left: -6px !important;
+    margin-top: -6px !important;
+    background: #ffffff !important;
+    border: 3px solid rgba(56, 189, 248, 1);
+    border-radius: 50% !important;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.7), 0 0 6px rgba(56, 189, 248, 0.8) !important;
     pointer-events: none !important;
 }
 

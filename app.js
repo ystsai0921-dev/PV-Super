@@ -2363,6 +2363,10 @@ function updateSiteBoundaryDrawState() {
         if (redrawBtn) {
             redrawBtn.style.display = (siteBoundaryState === 'edit' && customSiteBoundary) ? 'block' : 'none';
         }
+        if (map) {
+            map.getContainer().style.cursor = 'url("images/draw_pencil.svg") 2 30, crosshair';
+            map.on('mousemove', handleSiteBoundaryMouseMove);
+        }
     }
 }
 
@@ -2376,17 +2380,23 @@ function addDrawingVertexMarker(clickedLatLng, pointsArray, tempLine, color, sna
         activeDrawingTouchMarker = null;
     }
 
+    const strokeColor = color || 'rgba(56, 189, 248, 1)';
     const pointIndex = pointsArray.length - 1;
     const marker = L.marker(clickedLatLng, {
         icon: L.divIcon({
             className: 'touch-vertex-marker-container',
-            html: '<div class="touch-vertex-outer"></div>',
+            html: `<div class="touch-vertex-outer" style="border-color: ${strokeColor} !important; box-shadow: 0 0 14px ${strokeColor} !important;">
+                <div class="touch-vertex-cross-h"></div>
+                <div class="touch-vertex-cross-v"></div>
+                <div class="touch-vertex-center-dot" style="border-color: ${strokeColor} !important;"></div>
+            </div>`,
             iconSize: [0, 0]
         }),
         draggable: true,
         zIndexOffset: 1000
     }).addTo(map);
 
+    marker._vertexColor = strokeColor;
     activeDrawingTouchMarker = marker;
     snappersArray.push(marker);
 
@@ -2423,9 +2433,10 @@ function addDrawingVertexMarker(clickedLatLng, pointsArray, tempLine, color, sna
 
 function lockActiveDrawingVertex(marker) {
     if (!marker || !map || !map.hasLayer(marker)) return;
+    const strokeColor = marker._vertexColor || 'rgba(56, 189, 248, 1)';
     const el = marker.getElement();
     if (el) {
-        el.innerHTML = '<div class="touch-vertex-solid"></div>';
+        el.innerHTML = `<div class="touch-vertex-solid" style="border-color: ${strokeColor} !important; box-shadow: 0 0 8px rgba(0,0,0,0.7), 0 0 6px ${strokeColor} !important;"></div>`;
     }
     if (marker.dragging) marker.dragging.disable();
 }
@@ -2549,15 +2560,7 @@ function handleSiteBoundaryMapClick(latlng) {
         }).addTo(map);
     }
     
-    const snapper = L.circleMarker(clickedLatLng, {
-        radius: 4,
-        color: 'rgba(56, 189, 248, 1)',
-        fillColor: 'rgba(255, 255, 255, 1)',
-        fillOpacity: 1.0,
-        weight: 2,
-        interactive: false
-    }).addTo(map);
-    siteBoundarySnappers.push(snapper);
+    addDrawingVertexMarker(clickedLatLng, siteBoundaryPoints, siteBoundaryTempLine, 'rgba(56, 189, 248, 1)', siteBoundarySnappers);
 }
 
 function handleSiteBoundaryMouseMove(e) {
@@ -3022,15 +3025,7 @@ function handleObstacleMapClick(latlng) {
         }).addTo(map);
     }
     
-    const snapper = L.circleMarker(clickedLatLng, {
-        radius: 4,
-        color: 'rgba(239, 68, 68, 1)',
-        fillColor: 'rgba(255, 255, 255, 1)',
-        fillOpacity: 1.0,
-        weight: 2,
-        interactive: false
-    }).addTo(map);
-    exclusionSnappers.push(snapper);
+    addDrawingVertexMarker(clickedLatLng, obstaclePoints, obstacleTempLine, 'rgba(239, 68, 68, 1)', exclusionSnappers);
 }
 
 function handleExclusionMouseMove(e) {
@@ -3165,15 +3160,7 @@ function handleExclusionMapClick(latlng) {
             }).addTo(map);
         }
         
-        const snapper = L.circleMarker(clickedLatLng, {
-            radius: 4,
-            color: 'rgba(251, 191, 36, 1)',
-            fillColor: 'rgba(255, 255, 255, 1)',
-            fillOpacity: 1.0,
-            weight: 2,
-            interactive: false
-        }).addTo(map);
-        exclusionSnappers.push(snapper);
+        addDrawingVertexMarker(clickedLatLng, exclusionPoints, exclusionTempLine, 'rgba(249, 115, 22, 1)', exclusionSnappers);
     }
 }
 
