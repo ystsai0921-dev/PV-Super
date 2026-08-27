@@ -2133,35 +2133,45 @@ function updatePolygonVertexHandles(poly) {
 
 function clearActivePolygonSelection() {
     try {
+        const panel = document.getElementById('polygon-toolbox-panel');
+        if (panel) {
+            panel.style.display = 'none';
+        }
+        
         activeSelectedPolygonPopup = null;
         clearSubstationEditHandles();
         clearPolygonVertexHandles();
-        if (activeSelectedPolygon) {
+        
+        const restorePolyStyle = (p) => {
+            if (!p) return;
             let defaultColor = 'rgba(234, 88, 12, 1)';
             let defaultWeight = 2.5;
-            let defaultOpacity = 0.2;
+            let defaultOpacity = 0.25;
             
-            if (activeSelectedPolygon === customSiteBoundary) {
+            if (p === customSiteBoundary) {
                 defaultColor = 'rgba(56, 189, 248, 1)';
                 defaultOpacity = 0;
-            } else if (activeSelectedPolygon.isObstacle) {
+            } else if (p.isObstacle) {
                 defaultColor = 'rgba(239, 68, 68, 1)';
                 defaultOpacity = 0.35;
-            } else if (activeSelectedPolygon.isWalkway) {
-                defaultColor = activeSelectedPolygon.walkwayWidth === 0.5 ? 'rgba(16, 185, 129, 1)' : 'rgba(251, 191, 36, 1)';
+            } else if (p.isWalkway) {
+                defaultColor = p.walkwayWidth === 0.5 ? 'rgba(16, 185, 129, 1)' : 'rgba(251, 191, 36, 1)';
                 defaultWeight = 4.0;
                 defaultOpacity = 0.8;
             }
             
-            activeSelectedPolygon.setStyle({
+            p.setStyle({
                 color: defaultColor,
                 weight: defaultWeight,
                 fillOpacity: defaultOpacity
             });
-            if (activeSelectedPolygon._path) {
-                activeSelectedPolygon._path.classList.remove('polygon-selected-flash');
+            if (p._path) {
+                p._path.classList.remove('polygon-selected-flash');
             }
-            
+        };
+
+        if (activeSelectedPolygon) {
+            restorePolyStyle(activeSelectedPolygon);
             const polyToClear = activeSelectedPolygon;
             activeSelectedPolygon = null;
             
@@ -2169,6 +2179,10 @@ function clearActivePolygonSelection() {
                 polyToClear.closePopup();
             }
             map.closePopup();
+        } else {
+            if (customSiteBoundary) restorePolyStyle(customSiteBoundary);
+            if (exclusionPolygons && exclusionPolygons.length > 0) exclusionPolygons.forEach(restorePolyStyle);
+            if (obstaclePolygons && obstaclePolygons.length > 0) obstaclePolygons.forEach(restorePolyStyle);
         }
     } catch (err) {
         console.error("Error clearing polygon selection: ", err);
