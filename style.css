@@ -2338,36 +2338,36 @@ tr.tr-azimuth-row td {
         z-index: 2 !important;
     }
 
-    /* 手機版 "B(數值)" 欄寬縮小 20% (175px -> 140px) */
+    /* "B(數值)" 欄寬縮減與緊湊化 */
     .excel-table th.col-b,
     .excel-table th:nth-child(3),
     .excel-table td:nth-child(3) {
-        min-width: 140px !important;
-        width: 140px !important;
+        min-width: 135px !important;
+        width: 135px !important;
     }
 
     .excel-table {
-        min-width: 310px !important;
+        min-width: 290px !important;
     }
 
     .slider-cell input[type="number"] {
-        width: 44px !important;
+        width: 36px !important;
         height: 22px !important;
-        font-size: 12px !important;
-        padding: 0 2px !important;
+        font-size: 11px !important;
+        padding: 0 1px !important;
         text-align: center !important;
         flex-shrink: 0 !important;
     }
 
     #val-azimuth {
-        width: 54px !important;
+        width: 46px !important;
     }
 
     .slider-wrapper {
-        min-width: 48px !important;
+        min-width: 40px !important;
         flex: 1 1 auto !important;
         gap: 0px !important;
-        margin: 0 2px !important;
+        margin: 0 1px !important;
         position: relative !important;
         z-index: 1 !important;
     }
@@ -2375,26 +2375,21 @@ tr.tr-azimuth-row td {
     .slider-nodes-container {
         height: 11px !important;
         margin-top: 0px !important;
-        padding: 0 3px !important; /* 確保 90°、180°、270° 節點縮在滑桿內，絕不覆蓋到兩側 - + 按鈕 */
+        padding: 0 2px !important;
         box-sizing: border-box !important;
     }
 
     .slider-node-btn {
         font-size: 0.52rem !important;
-        padding: 0 1.5px !important;
+        max-width: 28px !important;
+        padding: 0 1px !important;
         line-height: 1 !important;
         border-radius: 2px !important;
         z-index: 1 !important;
     }
 
-    .excel-table th.col-header:nth-child(3),
-    .excel-table td:nth-child(3) {
-        min-width: 330px !important;
-        width: 330px !important;
-    }
-
     .excel-table td, .excel-table th {
-        padding: 3px 3px !important;
+        padding: 2px 2px !important;
     }
 
     .excel-table tr {
@@ -2915,8 +2910,8 @@ tr.tr-azimuth-row td {
 
 /* 11.3 表格欄寬與輸出單元格標籤類別 */
 .col-header-blank { width: 24px; }
-.col-header-a { width: 106px; }
-.col-b { width: 215px !important; }
+.col-header-a { width: 100px; }
+.col-b { width: 175px !important; }
 .col-header-unit { width: 32px; }
 .cell-label-output { font-weight: 600; }
 .cell-unit-output { font-weight: 600; }
@@ -3748,17 +3743,17 @@ tr.tr-azimuth-row td {
     .excel-table td.slider-cell,
     .excel-table td:nth-child(3) {
         width: auto !important;
-        min-width: 172px !important; /* Reduced 20% from 215px */
-        padding: 2px 2px !important;
+        min-width: 135px !important;
+        padding: 2px 1px !important;
     }
 
     .excel-table th.col-header-unit,
     .excel-table td.cell-unit {
-        width: 30px !important;
-        min-width: 28px !important;
-        max-width: 34px !important;
-        padding: 4px 2px !important;
-        font-size: 0.70rem !important;
+        width: 28px !important;
+        min-width: 26px !important;
+        max-width: 32px !important;
+        padding: 4px 1px !important;
+        font-size: 0.68rem !important;
         text-align: center !important;
         font-weight: 600 !important;
     }
@@ -3772,47 +3767,47 @@ tr.tr-azimuth-row td {
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
-        gap: 2px !important;
+        gap: 1px !important;
         width: 100% !important;
-        min-width: 168px !important;
+        min-width: 130px !important;
         padding: 2px 0 !important;
         box-sizing: border-box !important;
     }
 
     .slider-cell input[type="number"] {
-        width: 40px !important;
-        min-width: 36px !important;
-        max-width: 44px !important;
-        height: 24px !important;
-        font-size: 0.72rem !important; /* Consistent with Column A (0.72rem) */
-        padding: 1px !important;
+        width: 35px !important;
+        min-width: 30px !important;
+        max-width: 40px !important;
+        height: 22px !important;
+        font-size: 0.68rem !important;
+        padding: 1px 0 !important;
         text-align: center !important;
-        border-radius: 4px !important;
+        border-radius: 3px !important;
         flex-shrink: 0 !important;
         box-sizing: border-box !important;
     }
 
     .lock-toggle-btn {
-        width: 22px !important;
-        height: 26px !important;
-        min-width: 22px !important;
-        font-size: 0.80rem !important;
+        width: 18px !important;
+        height: 22px !important;
+        min-width: 18px !important;
+        font-size: 0.72rem !important;
         padding: 0 !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
         flex-shrink: 0 !important;
-        border-radius: 4px !important;
+        border-radius: 3px !important;
     }
 
     .slider-cell .slider-btn,
     .slider-cell .slider-btn.slider-btn-large {
-        width: 24px !important;
-        height: 26px !important;
-        min-width: 24px !important;
-        font-size: 0.95rem !important;
+        width: 19px !important;
+        height: 22px !important;
+        min-width: 19px !important;
+        font-size: 0.85rem !important;
         padding: 0 !important;
-        border-radius: 4px !important;
+        border-radius: 3px !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -3828,7 +3823,7 @@ tr.tr-azimuth-row td {
         align-items: center !important;
         justify-content: center !important;
         position: static !important;
-        height: 26px !important;
+        height: 22px !important;
     }
 
     .slider-nodes-container {
@@ -3838,7 +3833,7 @@ tr.tr-azimuth-row td {
         justify-content: space-evenly !important;
         width: 100% !important;
         gap: 2px !important;
-        height: 26px !important;
+        height: 22px !important;
         margin: 0 !important;
         padding: 0 !important;
         transform: none !important;
@@ -3847,11 +3842,11 @@ tr.tr-azimuth-row td {
     .slider-node-btn {
         flex: 1 1 0 !important;
         min-width: 0 !important;
-        max-width: 44px !important;
-        height: 24px !important;
-        font-size: 0.65rem !important;
-        padding: 1px 1px !important;
-        border-radius: 3px !important;
+        max-width: 30px !important;
+        height: 20px !important;
+        font-size: 0.55rem !important;
+        padding: 0 1px !important;
+        border-radius: 2.5px !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
