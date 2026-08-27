@@ -1168,16 +1168,17 @@ tr.tr-azimuth-row td {
 }
 
 .sim-label {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    font-size: 0.68rem;
-    font-weight: 600;
-    color: rgba(148, 163, 184, 1);
-    white-space: nowrap;
-    width: 44px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 3px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    color: rgba(148, 163, 184, 1) !important;
+    white-space: nowrap !important;
+    width: auto !important;
+    min-width: 44px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 3px !important;
 }
 
 .sim-label .btn-icon {
@@ -1258,14 +1259,17 @@ tr.tr-azimuth-row td {
 }
 
 .sim-value {
-    font-weight: 700;
-    color: rgba(255, 255, 255, 1);
-    width: 100px;
-    text-align: right;
-    white-space: nowrap;
-    overflow: visible;
-    flex-shrink: 0;
-    font-family: var(--font-mono);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+    width: auto !important;
+    min-width: 80px !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    flex-shrink: 0 !important;
+    margin-left: 2px !important;
 }
 
 /* Snapping & Measure Tape Label Styles */
