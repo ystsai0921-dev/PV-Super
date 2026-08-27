@@ -3538,24 +3538,14 @@ function makePolygonSelectable(poly) {
             closestEdge = findClosestEdge(poly, e.latlng);
         }
         
-        if (closestEdge !== -1) {
-            // Clicked edge -> select edge and show docked left-middle toolbox
-            clearActivePolygonSelection();
-            activeSelectedPolygon = poly;
-            activeSelectedEdgeIndex = closestEdge;
-            updatePolygonVertexHandles(poly);
-            updateSelectedPolygonVisuals(poly, activeSelectedEdgeIndex);
-            showPolygonToolboxPanel(poly);
-        } else {
-            // Clicked interior -> select whole polygon, do not show toolbox
-            clearActivePolygonSelection();
-            activeSelectedPolygon = poly;
-            activeSelectedEdgeIndex = -1;
-            updatePolygonVertexHandles(poly);
-            updateSelectedPolygonVisuals(poly, -1);
-            const panel = document.getElementById('polygon-toolbox-panel');
-            if (panel) panel.style.display = 'none';
-        }
+        clearActivePolygonSelection();
+        activeSelectedPolygon = poly;
+        activeSelectedEdgeIndex = closestEdge;
+        
+        updatePolygonVertexHandles(poly);
+        updateSelectedPolygonVisuals(poly, activeSelectedEdgeIndex);
+        showPolygonToolboxPanel(poly);
+        updateToolboxPopupEdgeUI();
         
         L.DomEvent.stopPropagation(e);
     });
@@ -3729,13 +3719,13 @@ function makePolygonDraggable(polygon) {
         if (map && map.getContainer()) {
             map.getContainer().style.cursor = 'move';
         }
-        const panel = document.getElementById('polygon-toolbox-panel');
-        if (panel) panel.style.display = 'none';
 
         activeSelectedPolygon = polygon;
         activeSelectedEdgeIndex = -1;
         updateSelectedPolygonVisuals(polygon, -1);
         updatePolygonVertexHandles(polygon);
+        showPolygonToolboxPanel(polygon);
+        updateToolboxPopupEdgeUI();
 
         if (polygon.isWalkway) {
             startLatLngs = polygon.getLatLngs().map(pt => L.latLng(pt.lat, pt.lng));
