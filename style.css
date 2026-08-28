@@ -4693,19 +4693,18 @@ tr.tr-azimuth-row td {
     transition: all 0.2s ease;
 }
 
-.control-btn.pegman-control-btn.active,
-.control-btn.pegman-control-btn:hover {
+.control-btn.pegman-control-btn img {
+    filter: grayscale(100%) invert(1);
+    transition: all 0.2s ease;
+}
+
+.control-btn.pegman-control-btn.active {
     background: rgba(245, 158, 11, 0.25);
     border-color: #f59e0b;
     box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
 }
 
-.control-btn.pegman-control-btn img {
-    filter: grayscale(100%);
-}
-
-.control-btn.pegman-control-btn.active img,
-.control-btn.pegman-control-btn:hover img {
+.control-btn.pegman-control-btn.active img {
     filter: invert(72%) sepia(85%) saturate(1200%) hue-rotate(355deg) brightness(102%) contrast(101%);
 }
 
