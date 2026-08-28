@@ -4701,6 +4701,11 @@ tr.tr-azimuth-row td {
 }
 
 .control-btn.pegman-control-btn img {
+    filter: grayscale(100%);
+}
+
+.control-btn.pegman-control-btn.active img,
+.control-btn.pegman-control-btn:hover img {
     filter: invert(72%) sepia(85%) saturate(1200%) hue-rotate(355deg) brightness(102%) contrast(101%);
 }
 
