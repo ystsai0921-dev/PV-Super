@@ -473,7 +473,10 @@ function updateStreetViewPopup(lat, lng) {
                 </iframe>
             </div>
             <div class="streetview-popup-info">
-                <span class="streetview-coords">📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}</span>
+                <div class="streetview-coords">
+                    <img src="images/positioning.svg" class="streetview-coords-icon" />
+                    <span>${lat.toFixed(6)}, ${lng.toFixed(6)}</span>
+                </div>
                 <div class="streetview-footer-actions">
                     <button type="button" class="streetview-remove-btn" onclick="removePegmanMarker()">關閉街景</button>
                     <div class="streetview-resize-handle" title="按住拖曳等比例縮放視窗">
