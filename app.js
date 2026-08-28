@@ -12195,8 +12195,15 @@ async function exportSlideshowPDF() {
         gridItems.push(addItem('5', 'PV 模組規格', selectedModel, 2));
         gridItems.push(addItem('6', 'PV 長度 (L)', `${state.pvL} mm`));
         gridItems.push(addItem('7', 'PV 寬度 (W)', `${state.pvW} mm`));
-        gridItems.push(addItem('8', 'PV 單片瓦數', `${state.pvP} W`));
-        gridItems.push(addItem('9', '方位角 (Azimuth)', `${state.azimuth}°`));
+        let azimuthDisplay = `${state.azimuth}°`;
+        if (state.pitchStyle === 'double' || state.pitchStyle === 'double-v') {
+            const curAz = parseFloat(state.azimuth) || 0;
+            const oppAz = (curAz + 180) % 360;
+            const a1 = Math.min(curAz, oppAz);
+            const a2 = Math.max(curAz, oppAz);
+            azimuthDisplay = `${a1}/${a2}°`;
+        }
+        gridItems.push(addItem('9', '方位角 (Azimuth)', azimuthDisplay));
         gridItems.push(addItem('10', '橫向排列片數 (i)', `${state.arrI} 片`));
         gridItems.push(addItem('11', '縱向排列片數 (j)', `${state.arrJ} 片`));
         
