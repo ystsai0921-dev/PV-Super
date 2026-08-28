@@ -4221,21 +4221,132 @@ function initMaterials() {
     });
 }
 
+function robustEarClipping(pts, signedArea) {
+    const n = pts.length;
+    if (n < 3) return [];
+    if (n === 3) return [[0, 1, 2]];
+
+    const isCCW = signedArea > 0;
+    const indices = [];
+    for (let i = 0; i < n; i++) indices.push(i);
+
+    const isPointInTriangle = (p, a, b, c) => {
+        const areaABC = (b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x);
+        const areaPBC = (b.x - p.x) * (c.z - p.z) - (b.z - p.z) * (c.x - p.x);
+        const areaAPC = (p.x - a.x) * (c.z - a.z) - (p.z - a.z) * (c.x - a.x);
+        const areaABP = (b.x - a.x) * (p.z - a.z) - (b.z - a.z) * (p.x - a.x);
+        
+        if (Math.abs(areaABC) < 1e-10) return false;
+        
+        const s = areaPBC / areaABC;
+        const t = areaAPC / areaABC;
+        const u = areaABP / areaABC;
+        
+        return s >= -1e-6 && t >= -1e-6 && u >= -1e-6 && Math.abs(s + t + u - 1.0) < 1e-5;
+    };
+
+    const isConvex = (a, b, c) => {
+        const cross = (b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x);
+        return isCCW ? cross > 1e-9 : cross < -1e-9;
+    };
+
+    const faces = [];
+    let count = indices.length;
+    let stop = 2 * count * count; // Prevent infinite loop
+    let idx = 0;
+
+    while (indices.length > 3 && stop > 0) {
+        stop--;
+        const len = indices.length;
+        const prevIdx = indices[(idx - 1 + len) % len];
+        const currIdx = indices[idx % len];
+        const nextIdx = indices[(idx + 1) % len];
+
+        const pPrev = pts[prevIdx];
+        const pCurr = pts[currIdx];
+        const pNext = pts[nextIdx];
+
+        if (isConvex(pPrev, pCurr, pNext)) {
+            // Check if any other vertex is inside this triangle
+            let isEar = true;
+            for (let i = 0; i < len; i++) {
+                const vi = indices[i];
+                if (vi === prevIdx || vi === currIdx || vi === nextIdx) continue;
+                if (isPointInTriangle(pts[vi], pPrev, pCurr, pNext)) {
+                    isEar = false;
+                    break;
+                }
+            }
+
+            if (isEar) {
+                faces.push([prevIdx, currIdx, nextIdx]);
+                indices.splice(idx % len, 1);
+                idx = (idx - 1 + indices.length) % indices.length;
+                continue;
+            }
+        }
+        idx = (idx + 1) % indices.length;
+    }
+
+    if (indices.length === 3) {
+        faces.push([indices[0], indices[1], indices[2]]);
+    }
+
+    return faces;
+}
+
 function createObstacle3DGeometry(latlngs, extrudeHeight, isOnRoof, siteType, roofH, azimuthDeg, getRoofYFunc) {
-    const points2D = latlngs.map(pt => {
+    if (!latlngs || latlngs.length < 3) return null;
+
+    // 1. Clean and deduplicate polygon vertices
+    const cleanPts = [];
+    for (let i = 0; i < latlngs.length; i++) {
+        const pt = latlngs[i];
         const dy = (pt.lat - state.lat) * 111320;
         const dx = (pt.lng - state.lng) * 111320 * Math.cos((state.lat * Math.PI) / 180);
-        return { x: dx, z: -dy }; // world X is East (dx), world Z is South (-dy)
-    });
-    
-    const n = points2D.length;
+        const newP = { x: dx, z: -dy }; // world X is East (dx), world Z is South (-dy)
+        if (cleanPts.length === 0) {
+            cleanPts.push(newP);
+        } else {
+            const prev = cleanPts[cleanPts.length - 1];
+            const distSq = (newP.x - prev.x) ** 2 + (newP.z - prev.z) ** 2;
+            if (distSq > 1e-6) {
+                cleanPts.push(newP);
+            }
+        }
+    }
+    // Remove closing point if equal to start point
+    if (cleanPts.length > 1) {
+        const first = cleanPts[0];
+        const last = cleanPts[cleanPts.length - 1];
+        if ((first.x - last.x) ** 2 + (first.z - last.z) ** 2 < 1e-6) {
+            cleanPts.pop();
+        }
+    }
+
+    let n = cleanPts.length;
     if (n < 3) return null;
-    
+
+    // 2. Compute signed area in X-Z plane
+    let signedArea = 0;
+    for (let i = 0; i < n; i++) {
+        const next = (i + 1) % n;
+        signedArea += (cleanPts[i].x * cleanPts[next].z - cleanPts[next].x * cleanPts[i].z);
+    }
+    signedArea *= 0.5;
+
+    // Standardize to CCW in X-Z space (signedArea > 0)
+    let points2D = cleanPts;
+    if (signedArea < 0) {
+        points2D = cleanPts.slice().reverse();
+        signedArea = -signedArea;
+    }
+
     const thetaRad = (-azimuthDeg * Math.PI) / 180;
     const cosTheta = Math.cos(thetaRad);
     const sinTheta = Math.sin(thetaRad);
-    
-    // Compute elevation for each 2D point
+
+    // 3. Compute elevation for each 2D point
     const baseElevations = [];
     for (let i = 0; i < n; i++) {
         const pt = points2D[i];
@@ -4252,50 +4363,67 @@ function createObstacle3DGeometry(latlngs, extrudeHeight, isOnRoof, siteType, ro
         }
         baseElevations.push(baseH);
     }
-    
-    // Triangulate 2D polygon shape
-    const shapePoints = points2D.map(p => ({ x: p.x, y: p.z }));
+
+    // 4. Robust 2D Triangulation for complex/concave polygons
     let faces2D = [];
-    try {
-        if (THREE.ShapeUtils && THREE.ShapeUtils.triangulateShape) {
-            faces2D = THREE.ShapeUtils.triangulateShape(shapePoints, []);
+
+    // Method A: THREE.Earcut
+    if (typeof THREE !== 'undefined' && THREE.Earcut && typeof THREE.Earcut.triangulate === 'function') {
+        const flatCoords = [];
+        for (let i = 0; i < n; i++) {
+            flatCoords.push(points2D[i].x, points2D[i].z);
         }
-    } catch (e) {
-        console.warn("Triangulation error:", e);
+        const indices = THREE.Earcut.triangulate(flatCoords, null, 2);
+        if (indices && indices.length >= 3) {
+            for (let i = 0; i < indices.length; i += 3) {
+                faces2D.push([indices[i], indices[i + 1], indices[i + 2]]);
+            }
+        }
     }
-    
-    // Fallback fan triangulation if needed
+
+    // Method B: THREE.ShapeUtils.triangulateShape
+    if ((!faces2D || faces2D.length === 0) && THREE.ShapeUtils && THREE.ShapeUtils.triangulateShape) {
+        const shapePoints = points2D.map(p => ({ x: p.x, y: p.z }));
+        try {
+            const result = THREE.ShapeUtils.triangulateShape(shapePoints, []);
+            if (result && result.length > 0) {
+                faces2D = result;
+            }
+        } catch (e) {
+            console.warn("ShapeUtils triangulation failed:", e);
+        }
+    }
+
+    // Method C: Robust Ear Clipping Algorithm (Never cuts across concave indents)
     if (!faces2D || faces2D.length === 0) {
-        faces2D = [];
-        for (let i = 1; i < n - 1; i++) {
-            faces2D.push([0, i, i + 1]);
-        }
+        faces2D = robustEarClipping(points2D, signedArea);
     }
-    
+
+    if (!faces2D || faces2D.length === 0) return null;
+
     const positions = [];
-    
-    // 1. Bottom Cap (Facing down)
+
+    // 5. Bottom Cap (Facing down: p0 -> p1 -> p2)
     for (let f = 0; f < faces2D.length; f++) {
         const tri = faces2D[f];
         const i0 = tri[0], i1 = tri[1], i2 = tri[2];
-        // Reverse order so normal points downwards
-        const p0 = points2D[i0], p1 = points2D[i2], p2 = points2D[i1];
+        const p0 = points2D[i0], p1 = points2D[i1], p2 = points2D[i2];
         positions.push(p0.x, baseElevations[i0], p0.z);
-        positions.push(p1.x, baseElevations[i2], p1.z);
-        positions.push(p2.x, baseElevations[i1], p2.z);
+        positions.push(p1.x, baseElevations[i1], p1.z);
+        positions.push(p2.x, baseElevations[i2], p2.z);
     }
-    
-    // 2. Top Cap (Facing up)
+
+    // 6. Top Cap (Facing up: p0 -> p2 -> p1)
     for (let f = 0; f < faces2D.length; f++) {
         const tri = faces2D[f];
         const i0 = tri[0], i1 = tri[1], i2 = tri[2];
         const p0 = points2D[i0], p1 = points2D[i1], p2 = points2D[i2];
         positions.push(p0.x, baseElevations[i0] + extrudeHeight, p0.z);
-        positions.push(p1.x, baseElevations[i1] + extrudeHeight, p1.z);
         positions.push(p2.x, baseElevations[i2] + extrudeHeight, p2.z);
+        positions.push(p1.x, baseElevations[i1] + extrudeHeight, p1.z);
     }
-    
-    // 3. Side Walls (Connecting each edge from bottom to top)
+
+    // 7. Side Walls (Connecting each edge CCW: outward normal)
     for (let i = 0; i < n; i++) {
         const next = (i + 1) % n;
         const pA = points2D[i];
@@ -4304,18 +4432,18 @@ function createObstacle3DGeometry(latlngs, extrudeHeight, isOnRoof, siteType, ro
         const bB = baseElevations[next];
         const tA = bA + extrudeHeight;
         const tB = bB + extrudeHeight;
-        
+
         // Triangle 1: bA -> bB -> tB
         positions.push(pA.x, bA, pA.z);
         positions.push(pB.x, bB, pB.z);
         positions.push(pB.x, tB, pB.z);
-        
+
         // Triangle 2: bA -> tB -> tA
         positions.push(pA.x, bA, pA.z);
         positions.push(pB.x, tB, pB.z);
         positions.push(pA.x, tA, pA.z);
     }
-    
+
     const geom = new THREE.BufferGeometry();
     geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geom.computeVertexNormals();
