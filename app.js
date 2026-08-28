@@ -287,6 +287,13 @@ function initMap(lat, lng, onMarkerDrag) {
             handleObstacleMapClick(event.latlng);
             return;
         }
+        if (isPegmanMode) {
+            showStreetView(event.latlng.lat, event.latlng.lng);
+            isPegmanMode = false;
+            if (elements.btnMapPegman) elements.btnMapPegman.classList.remove('active');
+            if (map.getContainer()) map.getContainer().style.cursor = '';
+            return;
+        }
         
         // Clear active selection and substation edit handles when clicking map
         clearActivePolygonSelection();
@@ -329,6 +336,9 @@ function initMap(lat, lng, onMarkerDrag) {
             if (isObstacleDrawMode) {
                 clearObstacleDrawingState();
                 exitObstacleDrawMode();
+            }
+            if (isPegmanMode || pegmanMarker) {
+                removePegmanMarker();
             }
         }
     });
@@ -373,6 +383,197 @@ function initMap(lat, lng, onMarkerDrag) {
     map.on('viewreset', keepToolboxPopupInViewport);
 
     updateMarkerDragStates();
+    initPegmanControl();
+}
+
+// ==========================================
+// Street View Pegman (街景小人) Management
+// ==========================================
+let pegmanMarker = null;
+let isPegmanMode = false;
+let pegmanGhostEl = null;
+
+function removePegmanMarker() {
+    if (pegmanMarker && map) {
+        map.removeLayer(pegmanMarker);
+        pegmanMarker = null;
+    }
+    if (elements.btnMapPegman) {
+        elements.btnMapPegman.classList.remove('active');
+    }
+    isPegmanMode = false;
+    if (map && map.getContainer()) {
+        map.getContainer().style.cursor = '';
+    }
+}
+
+function showStreetView(lat, lng) {
+    if (!map) return;
+    
+    // Create pegman icon with SVG and pulsing radar ring
+    const pegmanIcon = L.divIcon({
+        className: 'pegman-map-marker',
+        html: `
+            <div class="pegman-marker-pulse"></div>
+            <div class="pegman-marker-icon" title="拖曳以更換街景位置">
+                <img src="images/man.svg" />
+            </div>
+        `,
+        iconSize: [36, 44],
+        iconAnchor: [18, 38],
+        popupAnchor: [0, -38]
+    });
+
+    if (!pegmanMarker) {
+        pegmanMarker = L.marker([lat, lng], {
+            icon: pegmanIcon,
+            draggable: true,
+            zIndexOffset: 10000
+        }).addTo(map);
+
+        pegmanMarker.on('dragend', (e) => {
+            const newPos = e.target.getLatLng();
+            updateStreetViewPopup(newPos.lat, newPos.lng);
+        });
+
+        pegmanMarker.on('popupclose', () => {
+            removePegmanMarker();
+        });
+    } else {
+        pegmanMarker.setLatLng([lat, lng]);
+    }
+
+    updateStreetViewPopup(lat, lng);
+}
+
+function updateStreetViewPopup(lat, lng) {
+    if (!pegmanMarker) return;
+
+    const popupHtml = `
+        <div class="streetview-popup-box">
+            <div class="streetview-popup-bar">
+                <div class="streetview-bar-title">
+                    <img src="images/man.svg" class="streetview-bar-icon" />
+                    <span>360° 實景街景</span>
+                </div>
+                <a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat.toFixed(6)},${lng.toFixed(6)}" target="_blank" rel="noopener noreferrer" class="streetview-external-link" title="在 Google Maps 開啟全螢幕街景">
+                    <span>另開全螢幕 ↗</span>
+                </a>
+            </div>
+            <div class="streetview-iframe-container">
+                <iframe 
+                    src="https://maps.google.com/maps?q=${lat.toFixed(6)},${lng.toFixed(6)}&layer=c&cbll=${lat.toFixed(6)},${lng.toFixed(6)}&cbp=12,0,0,0,0&output=svembed" 
+                    allowfullscreen 
+                    loading="lazy">
+                </iframe>
+            </div>
+            <div class="streetview-popup-info">
+                <span class="streetview-coords">📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}</span>
+                <button type="button" class="streetview-remove-btn" onclick="removePegmanMarker()">關閉街景</button>
+            </div>
+        </div>
+    `;
+
+    pegmanMarker.bindPopup(popupHtml, {
+        maxWidth: 400,
+        minWidth: 320,
+        className: 'streetview-custom-popup',
+        autoPan: true,
+        autoPanPadding: [20, 20],
+        closeButton: true
+    }).openPopup();
+}
+
+function initPegmanControl() {
+    const btn = document.getElementById('btn-map-pegman');
+    if (!btn || !map) return;
+
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let didMove = false;
+
+    const onPointerDown = (e) => {
+        isDragging = true;
+        didMove = false;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        dragStartX = clientX;
+        dragStartY = clientY;
+
+        // Create ghost avatar
+        if (!pegmanGhostEl) {
+            pegmanGhostEl = document.createElement('div');
+            pegmanGhostEl.className = 'pegman-drag-ghost';
+            pegmanGhostEl.innerHTML = '<img src="images/man.svg" />';
+            pegmanGhostEl.style.left = `${clientX}px`;
+            pegmanGhostEl.style.top = `${clientY}px`;
+            pegmanGhostEl.style.display = 'none';
+            document.body.appendChild(pegmanGhostEl);
+        }
+
+        window.addEventListener('mousemove', onPointerMove, { passive: false });
+        window.addEventListener('touchmove', onPointerMove, { passive: false });
+        window.addEventListener('mouseup', onPointerUp, { once: true });
+        window.addEventListener('touchend', onPointerUp, { once: true });
+    };
+
+    const onPointerMove = (e) => {
+        if (!isDragging) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        const dist = Math.hypot(clientX - dragStartX, clientY - dragStartY);
+        if (dist > 8) {
+            didMove = true;
+            if (pegmanGhostEl) {
+                pegmanGhostEl.style.display = 'block';
+                pegmanGhostEl.style.left = `${clientX}px`;
+                pegmanGhostEl.style.top = `${clientY}px`;
+            }
+            if (e.cancelable) e.preventDefault();
+        }
+    };
+
+    const onPointerUp = (e) => {
+        window.removeEventListener('mousemove', onPointerMove);
+        window.removeEventListener('touchmove', onPointerMove);
+        isDragging = false;
+
+        const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+        const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+
+        if (pegmanGhostEl) {
+            pegmanGhostEl.remove();
+            pegmanGhostEl = null;
+        }
+
+        if (didMove) {
+            // Drop on map check
+            const mapEl = map.getContainer();
+            const rect = mapEl.getBoundingClientRect();
+            if (
+                clientX >= rect.left &&
+                clientX <= rect.right &&
+                clientY >= rect.top &&
+                clientY <= rect.bottom
+            ) {
+                const pt = L.point(clientX - rect.left, clientY - rect.top);
+                const latlng = map.containerPointToLatLng(pt);
+                showStreetView(latlng.lat, latlng.lng);
+            }
+        } else {
+            // Toggle placement click mode
+            isPegmanMode = !isPegmanMode;
+            btn.classList.toggle('active', isPegmanMode);
+            if (map.getContainer()) {
+                map.getContainer().style.cursor = isPegmanMode ? 'crosshair' : '';
+            }
+        }
+    };
+
+    btn.addEventListener('mousedown', onPointerDown);
+    btn.addEventListener('touchstart', onPointerDown, { passive: true });
 }
 
 function updateMarker(lat, lng) {
@@ -6270,6 +6471,7 @@ const elements = {
     btnViewTop: document.getElementById('btn-view-top'),
     btnViewSide: document.getElementById('btn-view-side'),
     btnViewFit: document.getElementById('btn-view-fit'),
+    btnMapPegman: document.getElementById('btn-map-pegman'),
     btnMapCenter: document.getElementById('btn-map-center'),
     btnMapMyLocation: document.getElementById('btn-map-mylocation'),
     btnMapMeasure: document.getElementById('btn-map-measure'),

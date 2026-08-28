@@ -4683,4 +4683,207 @@ tr.tr-azimuth-row td {
     width: 2px;
     height: 20px;
     background: #38bdf8;
+}
+
+/* ==========================================================================
+   Street View Pegman (街景小人) & 360° Popup Styles
+   ========================================================================== */
+.control-btn.pegman-control-btn {
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.control-btn.pegman-control-btn.active,
+.control-btn.pegman-control-btn:hover {
+    background: rgba(245, 158, 11, 0.25);
+    border-color: #f59e0b;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+}
+
+.control-btn.pegman-control-btn img {
+    filter: invert(72%) sepia(85%) saturate(1200%) hue-rotate(355deg) brightness(102%) contrast(101%);
+}
+
+.pegman-drag-ghost {
+    position: fixed;
+    width: 42px;
+    height: 42px;
+    pointer-events: none;
+    z-index: 999999;
+    transform: translate(-50%, -50%);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+    animation: pegmanBounce 0.6s infinite alternate ease-in-out;
+}
+
+.pegman-drag-ghost img {
+    width: 100%;
+    height: 100%;
+    filter: invert(72%) sepia(85%) saturate(1200%) hue-rotate(355deg) brightness(102%) contrast(101%);
+}
+
+@keyframes pegmanBounce {
+    0% { transform: translate(-50%, -50%) scale(1.0); }
+    100% { transform: translate(-50%, -55%) scale(1.1); }
+}
+
+.pegman-map-marker {
+    background: transparent;
+    border: none;
+}
+
+.pegman-marker-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+    cursor: grab;
+    transition: transform 0.2s ease;
+}
+
+.pegman-marker-icon:hover {
+    transform: scale(1.12);
+}
+
+.pegman-marker-icon img {
+    width: 22px;
+    height: 22px;
+    filter: brightness(0) invert(1);
+}
+
+.pegman-marker-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 48px;
+    height: 48px;
+    margin-top: -24px;
+    margin-left: -24px;
+    border-radius: 50%;
+    background: rgba(245, 158, 11, 0.4);
+    animation: markerPulse 2s infinite ease-out;
+    z-index: 1;
+    pointer-events: none;
+}
+
+@keyframes markerPulse {
+    0% { transform: scale(0.6); opacity: 1; }
+    100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* Custom Street View Popup */
+.leaflet-popup.streetview-custom-popup .leaflet-popup-content-wrapper {
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(56, 189, 248, 0.4);
+    border-radius: 12px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
+    padding: 0;
+    overflow: hidden;
+    color: #f8fafc;
+}
+
+.leaflet-popup.streetview-custom-popup .leaflet-popup-content {
+    margin: 0;
+    width: 360px !important;
+    line-height: 1.4;
+}
+
+.leaflet-popup.streetview-custom-popup .leaflet-popup-tip {
+    background: rgba(15, 23, 42, 0.95);
+    border: 1.5px solid rgba(56, 189, 248, 0.4);
+}
+
+.streetview-popup-box {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.streetview-popup-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(30, 41, 59, 0.85);
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(51, 65, 85, 0.8);
+}
+
+.streetview-bar-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #38bdf8;
+}
+
+.streetview-bar-icon {
+    width: 18px;
+    height: 18px;
+    filter: invert(72%) sepia(85%) saturate(1200%) hue-rotate(355deg) brightness(102%) contrast(101%);
+}
+
+.streetview-external-link {
+    font-size: 0.75rem;
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 4px;
+    padding: 3px 8px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-weight: 600;
+}
+
+.streetview-external-link:hover {
+    background: rgba(56, 189, 248, 0.3);
+    border-color: #38bdf8;
+    color: #ffffff;
+}
+
+.streetview-iframe-container {
+    width: 100%;
+    height: 230px;
+    background: #0f172a;
+    position: relative;
+}
+
+.streetview-iframe-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.streetview-popup-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(30, 41, 59, 0.7);
+    border-top: 1px solid rgba(51, 65, 85, 0.5);
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+.streetview-remove-btn {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #f87171;
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.streetview-remove-btn:hover {
+    background: rgba(239, 68, 68, 0.3);
+    color: #ffffff;
 }
