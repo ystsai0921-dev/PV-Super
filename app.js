@@ -3769,11 +3769,8 @@ function findClosestEdge(polygon, clickLatLng) {
         }
     }
     
-    // Within 22px of edge counts as selecting that edge; outside counts as selecting whole polygon
-    if (minDistance < 22) {
-        return closestIndex;
-    }
-    return -1;
+    // Always select the closest edge on or near the polygon
+    return closestIndex >= 0 ? closestIndex : 0;
 }
 
 function distToSegment(p, v, w) {
@@ -4827,7 +4824,7 @@ function createObstacle3DGeometry(latlngs, extrudeHeight, isOnRoof, siteType, ro
 
     // Method B: THREE.ShapeUtils.triangulateShape
     if ((!faces2D || faces2D.length === 0) && THREE.ShapeUtils && THREE.ShapeUtils.triangulateShape) {
-        const shapePoints = points2D.map(p => ({ x: p.x, y: p.z }));
+        const shapePoints = points2D.map(p => new THREE.Vector2(p.x, p.z));
         try {
             const result = THREE.ShapeUtils.triangulateShape(shapePoints, []);
             if (result && result.length > 0) {
