@@ -7019,6 +7019,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     applyDefaultsIntoDOM(defaults);
     
     syncStateFromDOM();
+    handleSiteTypeChangeUI(); // 確保初次載入即判定各項參數 (包含第13項組列間距) 之 Mute / Readonly 狀態
+    updateSupportHLockState();
     calculateOutputs();
     
     // Initialize Leaflet Map
@@ -9020,6 +9022,8 @@ function showToast(message, type) {
             setPlanningModeState('obstacle', 'locked');
             
             syncStateFromDOM();
+            handleSiteTypeChangeUI();
+            updateSupportHLockState();
             calculateOutputs();
             updateMarker(state.lat, state.lng);
             centerMap(state.lat, state.lng);
