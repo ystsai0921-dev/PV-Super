@@ -502,22 +502,58 @@ function updateStreetViewPopup(lat, lng) {
         if (popupEl) {
             L.DomEvent.disableClickPropagation(popupEl);
             L.DomEvent.disableScrollPropagation(popupEl);
+            clampStreetViewPopupInBounds(popupEl);
             setupStreetViewResize(popupEl);
             setupStreetViewMove(popupEl);
         }
     }, 50);
 }
 
+function clampStreetViewPopupInBounds(popupEl) {
+    if (!popupEl || !map) return;
+    const mapEl = map.getContainer();
+    if (!mapEl) return;
+
+    const mapRect = mapEl.getBoundingClientRect();
+    const parentEl = popupEl.offsetParent || document.body;
+    const parentRect = parentEl.getBoundingClientRect();
+    const popupRect = popupEl.getBoundingClientRect();
+
+    const minTop = mapRect.top + 45; // 避開地圖頂部標題列
+    const maxBottom = mapRect.bottom - 10;
+    const minLeft = mapRect.left + 10;
+    const maxRight = mapRect.right - 10;
+
+    let curLeft = popupRect.left;
+    let curTop = popupRect.top;
+
+    if (curTop < minTop) curTop = minTop;
+    if (curTop + popupRect.height > maxBottom) {
+        curTop = Math.max(minTop, maxBottom - popupRect.height);
+    }
+    if (curLeft < minLeft) curLeft = minLeft;
+    if (curLeft + popupRect.width > maxRight) {
+        curLeft = Math.max(minLeft, maxRight - popupRect.width);
+    }
+
+    popupEl.style.transform = 'none';
+    popupEl.style.left = `${curLeft - parentRect.left}px`;
+    popupEl.style.top = `${curTop - parentRect.top}px`;
+}
+
 function setupStreetViewMove(popupEl) {
     const titleBar = popupEl.querySelector('.streetview-popup-bar');
     const iframe = popupEl.querySelector('.streetview-iframe-container iframe');
-    if (!titleBar) return;
+    if (!titleBar || !map) return;
 
     let isMoving = false;
     let startX = 0;
     let startY = 0;
     let initialLeft = 0;
     let initialTop = 0;
+    let popupW = 0;
+    let popupH = 0;
+    let parentRect = { left: 0, top: 0 };
 
     const onPointerMove = (e) => {
         if (!isMoving) return;
@@ -526,13 +562,24 @@ function setupStreetViewMove(popupEl) {
         const dx = clientX - startX;
         const dy = clientY - startY;
 
-        popupEl.style.left = `${initialLeft + dx}px`;
-        popupEl.style.top = `${initialTop + dy}px`;
+        const mapEl = map.getContainer();
+        const mapRect = mapEl.getBoundingClientRect();
+
+        const minTop = mapRect.top + 45 - parentRect.top;
+        const maxTop = Math.max(minTop, mapRect.bottom - popupH - 10 - parentRect.top);
+        const minLeft = mapRect.left + 10 - parentRect.left;
+        const maxLeft = Math.max(minLeft, mapRect.right - popupW - 10 - parentRect.left);
+
+        const nextLeft = Math.max(minLeft, Math.min(maxLeft, initialLeft + dx));
+        const nextTop = Math.max(minTop, Math.min(maxTop, initialTop + dy));
+
+        popupEl.style.left = `${nextLeft}px`;
+        popupEl.style.top = `${nextTop}px`;
 
         if (e.cancelable) e.preventDefault();
     };
 
-    const onPointerUp = (e) => {
+    const onPointerUp = () => {
         if (!isMoving) return;
         isMoving = false;
         isInteractingWithStreetView = false;
@@ -541,7 +588,6 @@ function setupStreetViewMove(popupEl) {
         if (iframe) iframe.style.pointerEvents = 'auto';
         if (map && map.dragging) map.dragging.enable();
 
-        // 吸收可能冒泡至地圖的點擊事件，防止地圖關閉彈窗
         const absorbClick = (evt) => {
             evt.stopPropagation();
             evt.preventDefault();
@@ -562,7 +608,11 @@ function setupStreetViewMove(popupEl) {
         startY = e.touches ? e.touches[0].clientY : e.clientY;
 
         const rect = popupEl.getBoundingClientRect();
-        const parentRect = popupEl.offsetParent ? popupEl.offsetParent.getBoundingClientRect() : { left: 0, top: 0 };
+        popupW = rect.width;
+        popupH = rect.height;
+
+        const parentEl = popupEl.offsetParent || document.body;
+        parentRect = parentEl.getBoundingClientRect();
         initialLeft = rect.left - parentRect.left;
         initialTop = rect.top - parentRect.top;
 
@@ -587,16 +637,27 @@ function setupStreetViewResize(popupEl) {
     const handle = popupEl.querySelector('.streetview-resize-handle');
     const box = popupEl.querySelector('.streetview-popup-box');
     const iframe = popupEl.querySelector('.streetview-iframe-container iframe');
-    if (!handle || !box) return;
+    if (!handle || !box || !map) return;
 
     let startX = 0;
     let startW = 0;
+    let currentPopupLeft = 0;
+    let currentPopupTop = 0;
     const aspectRatio = 380 / 290;
 
     const onPointerMove = (e) => {
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const deltaX = clientX - startX;
-        let newW = Math.max(260, Math.min(window.innerWidth * 0.92, startW + deltaX));
+
+        const mapEl = map.getContainer();
+        const mapRect = mapEl.getBoundingClientRect();
+
+        // 確保視窗右側與底側不會超出地圖可見邊界
+        const maxWByRight = mapRect.right - currentPopupLeft - 15;
+        const maxWByBottom = (mapRect.bottom - currentPopupTop - 15) * aspectRatio;
+        const maxLimit = Math.max(260, Math.min(window.innerWidth * 0.92, maxWByRight, maxWByBottom));
+
+        let newW = Math.max(260, Math.min(maxLimit, startW + deltaX));
         let newH = Math.round(newW / aspectRatio);
 
         streetViewPopupW = Math.round(newW);
@@ -613,14 +674,13 @@ function setupStreetViewResize(popupEl) {
         if (e.cancelable) e.preventDefault();
     };
 
-    const onPointerUp = (e) => {
+    const onPointerUp = () => {
         isInteractingWithStreetView = false;
         window.removeEventListener('mousemove', onPointerMove);
         window.removeEventListener('touchmove', onPointerMove);
         if (iframe) iframe.style.pointerEvents = 'auto';
         if (map && map.dragging) map.dragging.enable();
 
-        // 吸收可能冒泡至地圖的點擊事件，防止地圖關閉彈窗
         const absorbClick = (evt) => {
             evt.stopPropagation();
             evt.preventDefault();
@@ -636,7 +696,11 @@ function setupStreetViewResize(popupEl) {
 
         // 鎖定左上角座標：將 Leaflet 的 transform 轉換為絕對 left 與 top 定位，確保左上角完全固定不動
         const rect = popupEl.getBoundingClientRect();
-        const parentRect = popupEl.offsetParent ? popupEl.offsetParent.getBoundingClientRect() : { left: 0, top: 0 };
+        currentPopupLeft = rect.left;
+        currentPopupTop = rect.top;
+
+        const parentEl = popupEl.offsetParent || document.body;
+        const parentRect = parentEl.getBoundingClientRect();
         const fixedLeft = rect.left - parentRect.left;
         const fixedTop = rect.top - parentRect.top;
 
