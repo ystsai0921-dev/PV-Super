@@ -1018,21 +1018,21 @@ main {
     transform: scale(1.05);
 }
 
-/* Azimuth Row 2-Tier Node Layout (Increased height by 50% to 108px) */
+/* Azimuth Row 2-Tier Node Layout (Height reduced to 60px) */
 tr.tr-azimuth-row {
-    height: 108px !important;
-    min-height: 108px !important;
+    height: 60px !important;
+    min-height: 60px !important;
 }
 
 tr.tr-azimuth-row td {
-    padding-top: 6px !important;
-    padding-bottom: 6px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
     vertical-align: middle !important;
 }
 
 .slider-cell-azimuth {
-    padding-top: 4px !important;
-    padding-bottom: 4px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
 }
 
 .slider-wrapper-azimuth {
@@ -1040,23 +1040,23 @@ tr.tr-azimuth-row td {
     flex-direction: column !important;
     justify-content: center !important;
     align-items: stretch !important;
-    gap: 2px !important;
+    gap: 0px !important;
 }
 
 .slider-nodes-top {
     display: flex !important;
     justify-content: space-evenly !important;
     width: 100% !important;
-    margin-bottom: 2px !important;
-    height: 14px !important;
+    margin-bottom: 0px !important;
+    height: 11px !important;
 }
 
 .slider-nodes-bottom {
     display: flex !important;
     justify-content: space-between !important;
     width: 100% !important;
-    margin-top: 2px !important;
-    height: 14px !important;
+    margin-top: 0px !important;
+    height: 11px !important;
 }
 
 .slider-node-btn:hover:not(:disabled),
@@ -2091,6 +2091,65 @@ tr.tr-azimuth-row td {
     stroke: #ffffff !important;
 }
 
+/* 多邊形複製光影輪動高亮樣式 (Light Sweep / Shimmer Glow) */
+@keyframes polygon-clone-sweep {
+    0% {
+        stroke: #38bdf8 !important;
+        stroke-width: 5px !important;
+        stroke-dasharray: 8 16;
+        stroke-dashoffset: 0;
+        filter: drop-shadow(0 0 4px #38bdf8) drop-shadow(0 0 12px #38bdf8);
+        opacity: 1;
+    }
+    50% {
+        stroke: #ec4899 !important;
+        stroke-width: 7px !important;
+        stroke-dasharray: 16 8;
+        stroke-dashoffset: -50;
+        filter: drop-shadow(0 0 10px #ec4899) drop-shadow(0 0 24px #ec4899) drop-shadow(0 0 36px #ec4899);
+        opacity: 1;
+    }
+    100% {
+        stroke: #38bdf8 !important;
+        stroke-width: 5px !important;
+        stroke-dasharray: 8 16;
+        stroke-dashoffset: -100;
+        filter: drop-shadow(0 0 4px #38bdf8) drop-shadow(0 0 12px #38bdf8);
+        opacity: 0.9;
+    }
+}
+.polygon-clone-shimmer {
+    animation: polygon-clone-sweep 1.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 複製提示浮動標籤 (Toast Notification) */
+.clone-toast-notification {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+    border: 1.5px solid rgba(56, 189, 248, 0.85);
+    color: #f8fafc;
+    padding: 8px 20px;
+    border-radius: 9999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(56, 189, 248, 0.4);
+    z-index: 10000;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    font-family: var(--font-ui);
+}
+.clone-toast-notification.active {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
 /* 閃亮洋紅吸附提示標籤與圖示樣式 */
 @keyframes snap-pulse {
     0% { transform: scale(1); filter: drop-shadow(0 0 3px rgba(255, 0, 128, 0.8)); }
@@ -2523,9 +2582,14 @@ tr.tr-azimuth-row td {
         height: 18px !important;
     }
 
-    #obstacle-tool-panel span {
-        font-size: 0.56rem !important;
-        line-height: 1.1 !important;
+    .obs-on-roof-label {
+        font-size: 0.6rem !important;
+        margin: 2px 0 !important;
+        gap: 4px !important;
+    }
+    .obs-on-roof-label input[type="checkbox"] {
+        width: 11px !important;
+        height: 11px !important;
     }
 
     #btn-obs-cancel {
@@ -2892,20 +2956,43 @@ tr.tr-azimuth-row td {
     line-height: 1.4;
 }
 .pv-super-logo-link {
-    display: flex;
+    display: inline-flex;
     align-items: center;
+    justify-content: flex-start;
+    position: relative;
     text-decoration: none;
     cursor: pointer;
+    height: 72px;
+    box-sizing: border-box;
 }
 .pv-super-logo-img {
     height: 72px;
     width: auto;
+    max-width: none;
     object-fit: contain;
+    object-position: left center;
     cursor: pointer;
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), filter 0.2s ease;
 }
 .pv-super-logo-link:hover .pv-super-logo-img {
     transform: scale(1.03);
+}
+.pv-super-version {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    font-size: 0.4em;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.5px;
+    color: #475569;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    user-select: none;
+}
+.pv-super-logo-link:hover .pv-super-version {
+    opacity: 1;
 }
 
 /* 11.3 表格欄寬與輸出單元格標籤類別 */
@@ -3160,13 +3247,25 @@ tr.tr-azimuth-row td {
     width: 100%;
     cursor: pointer;
 }
-.obs-hint-text {
-    font-size: 0.56rem;
-    color: rgba(203, 213, 225, 1);
+.obs-on-roof-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: rgba(241, 245, 249, 1);
     font-family: var(--font-ui);
-    line-height: 1.1;
-    margin-top: 1px;
-    display: block;
+    cursor: pointer;
+    margin: 4px 0 2px 0;
+    user-select: none;
+    font-weight: 500;
+}
+.obs-on-roof-label input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: #ef4444;
+    width: 13px;
+    height: 13px;
+    margin: 0;
 }
 
 

@@ -185,7 +185,8 @@ function initMap(lat, lng, onMarkerDrag) {
     // 1. Initialize Map (disable default zoomControl to prevent layout overlap)
     map = L.map('leaflet-map', {
         zoomControl: false,
-        maxZoom: 20,
+        minZoom: 2,
+        maxZoom: 24,
         preferCanvas: true
     }).setView([lat, lng], 18);
 
@@ -199,16 +200,16 @@ function initMap(lat, lng, onMarkerDrag) {
     // Google Satellite Hybrid (Satellite + Labels) - Very high resolution globally
     const googleHybrid = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
         attribution: '&copy; Google Maps',
-        maxNativeZoom: 19,
-        maxZoom: 20,
+        maxNativeZoom: 20,
+        maxZoom: 24,
         crossOrigin: 'anonymous'
     });
 
     // Taiwan NLSC Orthophoto (Taiwan local sub-meter aerial survey - ultra high resolution locally)
     const nlscPhoto = L.tileLayer('https://wmts.nlsc.gov.tw/wmts/PHOTO2/default/GoogleMapsCompatible/{z}/{y}/{x}', {
         attribution: '&copy; 內政部國土測繪中心',
-        maxNativeZoom: 19,
-        maxZoom: 20,
+        maxNativeZoom: 20,
+        maxZoom: 24,
         crossOrigin: 'anonymous'
     });
 
@@ -216,14 +217,14 @@ function initMap(lat, lng, onMarkerDrag) {
     const esriSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
         maxNativeZoom: 19,
-        maxZoom: 20,
+        maxZoom: 24,
         crossOrigin: 'anonymous'
     });
     // OSM Map Labels Overlay
     const esriLabels = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
         subdomains: 'abcd',
-        maxZoom: 20,
+        maxZoom: 24,
         crossOrigin: 'anonymous'
     });
     const esriGroup = L.layerGroup([esriSatellite, esriLabels]);
@@ -231,15 +232,15 @@ function initMap(lat, lng, onMarkerDrag) {
     // NLSC Electronic Map (Taiwan Local Street Map)
     const nlscEmap = L.tileLayer('https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}', {
         attribution: '&copy; 內政部國土測繪中心',
-        maxNativeZoom: 19,
-        maxZoom: 20,
+        maxNativeZoom: 20,
+        maxZoom: 24,
         crossOrigin: 'anonymous'
     });
 
     // OpenStreetMap standard road map
     const osmRoad = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
-        maxZoom: 20,
+        maxZoom: 24,
         crossOrigin: 'anonymous'
     });
 
@@ -3023,6 +3024,8 @@ function handleObstacleMapClick(latlng) {
             promptPolygonKeepOrDiscard("障礙區域", () => {
                 poly.isObstacle = true;
                 poly.obstacleHeight = h;
+                const onRoofChk = document.getElementById('chk-obs-on-roof');
+                poly.isOnRoof = onRoofChk ? onRoofChk.checked : true;
                 makePolygonDraggable(poly);
                 makePolygonSelectable(poly);
                 obstaclePolygons.push(poly);
@@ -3588,7 +3591,10 @@ function showPolygonToolboxPanel(poly) {
     } else if (poly === customSiteBoundary) {
         title = "案場邊界";
     } else if (poly.isObstacle) {
-        title = `障礙物 (${poly.obstacleHeight || 5.0}m)`;
+        const onRoofLabel = (poly.isOnRoof !== false && state.siteType !== 'ground') ? ' [建物上]' : '';
+        title = `障礙物 (${poly.obstacleHeight || 5.0}m)${onRoofLabel}`;
+        const onRoofChk = document.getElementById('chk-obs-on-roof');
+        if (onRoofChk) onRoofChk.checked = (poly.isOnRoof !== false);
     } else {
         if (poly.isSubstation) title = "升壓站";
         else if (poly.isPathway) title = `${poly.pathwayWidth}m 走道`;
@@ -3721,13 +3727,186 @@ function showPolygonToolboxPanel(poly) {
     panel.style.display = 'block';
 }
 
+function duplicatePolygon(sourcePolygon, offsetLat = 0, offsetLng = 0) {
+    if (!sourcePolygon || !map) return null;
+    const rawLatLngs = getOuterRingLatLngs(sourcePolygon);
+    if (!rawLatLngs || rawLatLngs.length < 3) return null;
+    
+    const clonedLatLngs = rawLatLngs.map(pt => L.latLng(pt.lat + offsetLat, pt.lng + offsetLng));
+    let newPoly = null;
+    
+    if (sourcePolygon.isObstacle) {
+        newPoly = L.polygon(clonedLatLngs, {
+            color: 'rgba(239, 68, 68, 1)',
+            fillColor: 'rgba(239, 68, 68, 1)',
+            fillOpacity: 0.35,
+            weight: 2.5,
+            dashArray: '6, 6',
+            interactive: true
+        }).addTo(map);
+        newPoly.isObstacle = true;
+        newPoly.obstacleHeight = sourcePolygon.obstacleHeight !== undefined ? sourcePolygon.obstacleHeight : 5.0;
+        newPoly.isOnRoof = sourcePolygon.isOnRoof !== false;
+        makePolygonDraggable(newPoly);
+        makePolygonSelectable(newPoly);
+        obstaclePolygons.push(newPoly);
+    } else {
+        const isWalkway = !!sourcePolygon.isWalkway;
+        newPoly = L.polygon(clonedLatLngs, {
+            color: isWalkway ? 'rgba(56, 189, 248, 1)' : 'rgba(249, 115, 22, 1)',
+            fillColor: isWalkway ? 'rgba(56, 189, 248, 1)' : 'rgba(249, 115, 22, 1)',
+            fillOpacity: isWalkway ? 0.45 : 0.35,
+            weight: 2.5,
+            dashArray: '6, 6',
+            interactive: true
+        }).addTo(map);
+        newPoly.isExclusion = true;
+        if (isWalkway) newPoly.isWalkway = true;
+        if (sourcePolygon.isSubstation) {
+            newPoly.isSubstation = true;
+            newPoly.substationWidth = sourcePolygon.substationWidth;
+            newPoly.substationHeight = sourcePolygon.substationHeight;
+            newPoly.substationAngle = sourcePolygon.substationAngle;
+            if (sourcePolygon.substationCenter) {
+                newPoly.substationCenter = L.latLng(
+                    sourcePolygon.substationCenter.lat + offsetLat,
+                    sourcePolygon.substationCenter.lng + offsetLng
+                );
+            }
+        }
+        if (sourcePolygon.isPathway) {
+            newPoly.isPathway = true;
+            newPoly.pathwayWidth = sourcePolygon.pathwayWidth;
+        }
+        makePolygonDraggable(newPoly);
+        makePolygonSelectable(newPoly);
+        exclusionPolygons.push(newPoly);
+    }
+    
+    return newPoly;
+}
+
+function triggerPolygonCloneEffect(poly, message = "已複製多邊形") {
+    if (!poly) return;
+    try {
+        const el = poly._path || (poly.getElement ? poly.getElement() : null);
+        if (el) {
+            el.classList.remove('polygon-clone-shimmer');
+            void el.offsetWidth;
+            el.classList.add('polygon-clone-shimmer');
+            setTimeout(() => {
+                try { if (el) el.classList.remove('polygon-clone-shimmer'); } catch(e) {}
+            }, 1400);
+        }
+    } catch(err) {}
+    showCloneToast(message);
+}
+
+let cloneToastTimeout = null;
+function showCloneToast(message) {
+    let toast = document.getElementById('clone-toast-banner');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'clone-toast-banner';
+        toast.className = 'clone-toast-notification';
+        document.body.appendChild(toast);
+    }
+    toast.innerHTML = `<span style="font-size: 1.1rem; filter: drop-shadow(0 0 6px rgba(56,189,248,0.8));">✨</span> <span>${message}</span>`;
+    toast.classList.add('active');
+    
+    if (cloneToastTimeout) clearTimeout(cloneToastTimeout);
+    cloneToastTimeout = setTimeout(() => {
+        if (toast) toast.classList.remove('active');
+    }, 1800);
+}
+
+function snapPolygonToSiteBoundary(newLatLngs) {
+    const targetBoundary = customSiteBoundary || coveragePolygon;
+    if (!targetBoundary || !map) return null;
+    const boundaryLatLngs = getOuterRingLatLngs(targetBoundary);
+    if (!boundaryLatLngs || boundaryLatLngs.length < 3) return null;
+    
+    const snapThresholdPixels = 16;
+    let bestSnap = null;
+    let minSnapDist = Infinity;
+    
+    // 1. Check Vertex-to-Vertex snapping
+    for (let i = 0; i < newLatLngs.length; i++) {
+        const polyPt = map.latLngToContainerPoint(newLatLngs[i]);
+        
+        // Check corner endpoints of site boundary
+        for (let j = 0; j < boundaryLatLngs.length; j++) {
+            const bPt = map.latLngToContainerPoint(boundaryLatLngs[j]);
+            const dist = polyPt.distanceTo(bPt);
+            if (dist < snapThresholdPixels && dist < minSnapDist) {
+                minSnapDist = dist;
+                bestSnap = {
+                    dLat: boundaryLatLngs[j].lat - newLatLngs[i].lat,
+                    dLng: boundaryLatLngs[j].lng - newLatLngs[i].lng,
+                    snapLatLng: boundaryLatLngs[j],
+                    type: 'endpoint'
+                };
+            }
+        }
+        
+        // Check edge midpoints of site boundary
+        for (let j = 0; j < boundaryLatLngs.length; j++) {
+            const b1 = boundaryLatLngs[j];
+            const b2 = boundaryLatLngs[(j + 1) % boundaryLatLngs.length];
+            const mid = L.latLng((b1.lat + b2.lat) / 2, (b1.lng + b2.lng) / 2);
+            const bPt = map.latLngToContainerPoint(mid);
+            const dist = polyPt.distanceTo(bPt);
+            if (dist < snapThresholdPixels && dist < minSnapDist) {
+                minSnapDist = dist;
+                bestSnap = {
+                    dLat: mid.lat - newLatLngs[i].lat,
+                    dLng: mid.lng - newLatLngs[i].lng,
+                    snapLatLng: mid,
+                    type: 'midpoint'
+                };
+            }
+        }
+    }
+    
+    // 2. Check Vertex-to-Edge projection snapping
+    if (!bestSnap) {
+        for (let i = 0; i < newLatLngs.length; i++) {
+            const p = map.latLngToContainerPoint(newLatLngs[i]);
+            for (let j = 0; j < boundaryLatLngs.length; j++) {
+                const a = map.latLngToContainerPoint(boundaryLatLngs[j]);
+                const b = map.latLngToContainerPoint(boundaryLatLngs[(j + 1) % boundaryLatLngs.length]);
+                
+                const ab2 = (b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y);
+                if (ab2 === 0) continue;
+                let t = ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / ab2;
+                t = Math.max(0, Math.min(1, t));
+                const proj = L.point(a.x + t * (b.x - a.x), a.y + t * (b.y - a.y));
+                const dist = p.distanceTo(proj);
+                if (dist < snapThresholdPixels && dist < minSnapDist) {
+                    minSnapDist = dist;
+                    const projLatLng = map.containerPointToLatLng(proj);
+                    bestSnap = {
+                        dLat: projLatLng.lat - newLatLngs[i].lat,
+                        dLng: projLatLng.lng - newLatLngs[i].lng,
+                        snapLatLng: projLatLng,
+                        type: 'midpoint'
+                    };
+                }
+            }
+        }
+    }
+    
+    return bestSnap;
+}
+
 function makePolygonDraggable(polygon) {
     let isDraggingPoly = false;
     let startMouseLatLng = null;
     let startLatLngs = null;
     let startSubstationCenter = null;
+    let activeDragPoly = polygon;
 
-    const startPolyDrag = (latlng) => {
+    const startPolyDrag = (latlng, isModifierDown = false) => {
         if (isSiteBoundaryDrawMode || isExclusionDrawMode || isObstacleDrawMode) return false;
         if (polygon === customSiteBoundary && siteBoundaryState !== 'edit') return false;
         if (polygon.isObstacle && obstacleState !== 'edit') return false;
@@ -3738,7 +3917,18 @@ function makePolygonDraggable(polygon) {
             return false;
         }
 
-        try { polygon.bringToFront(); } catch (err) {}
+        activeDragPoly = polygon;
+
+        // If Ctrl / Cmd is pressed on desktop during drag start on obstacle / exclusion, duplicate!
+        if (isModifierDown && polygon !== customSiteBoundary) {
+            const cloned = duplicatePolygon(polygon, 0, 0);
+            if (cloned) {
+                triggerPolygonCloneEffect(cloned, "✨ 已複製多邊形 (Ctrl+拖曳)");
+                activeDragPoly = cloned;
+            }
+        }
+
+        try { activeDragPoly.bringToFront(); } catch (err) {}
         map.dragging.disable();
         isDraggingPoly = true;
         startMouseLatLng = latlng;
@@ -3747,36 +3937,50 @@ function makePolygonDraggable(polygon) {
             map.getContainer().style.cursor = 'move';
         }
 
-        activeSelectedPolygon = polygon;
+        activeSelectedPolygon = activeDragPoly;
         activeSelectedEdgeIndex = -1;
-        updateSelectedPolygonVisuals(polygon, -1);
-        updatePolygonVertexHandles(polygon);
-        showPolygonToolboxPanel(polygon);
+        updateSelectedPolygonVisuals(activeDragPoly, -1);
+        updatePolygonVertexHandles(activeDragPoly);
+        showPolygonToolboxPanel(activeDragPoly);
         updateToolboxPopupEdgeUI();
 
-        if (polygon.isWalkway) {
-            startLatLngs = polygon.getLatLngs().map(pt => L.latLng(pt.lat, pt.lng));
-        } else if (polygon instanceof L.Polygon) {
-            startLatLngs = polygon.getLatLngs()[0].map(pt => L.latLng(pt.lat, pt.lng));
+        if (activeDragPoly.isWalkway) {
+            startLatLngs = activeDragPoly.getLatLngs().map(pt => L.latLng(pt.lat, pt.lng));
+        } else if (activeDragPoly instanceof L.Polygon) {
+            startLatLngs = activeDragPoly.getLatLngs()[0].map(pt => L.latLng(pt.lat, pt.lng));
         } else {
-            startLatLngs = polygon.getLatLngs().map(pt => L.latLng(pt.lat, pt.lng));
+            startLatLngs = activeDragPoly.getLatLngs().map(pt => L.latLng(pt.lat, pt.lng));
         }
-        if (polygon.isSubstation) {
-            startSubstationCenter = L.latLng(polygon.substationCenter.lat, polygon.substationCenter.lng);
+        if (activeDragPoly.isSubstation && activeDragPoly.substationCenter) {
+            startSubstationCenter = L.latLng(activeDragPoly.substationCenter.lat, activeDragPoly.substationCenter.lng);
         }
         return true;
     };
+
+    polygon.startPolyDragHandler = startPolyDrag;
 
     const doPolyDrag = (currentMouseLatLng) => {
         if (!isDraggingPoly || !startMouseLatLng || !startLatLngs) return;
         const dLat = currentMouseLatLng.lat - startMouseLatLng.lat;
         const dLng = currentMouseLatLng.lng - startMouseLatLng.lng;
 
-        const newLatLngs = startLatLngs.map(pt => L.latLng(pt.lat + dLat, pt.lng + dLng));
-        if (polygon instanceof L.Polygon) {
-            polygon.setLatLngs([newLatLngs]);
+        let newLatLngs = startLatLngs.map(pt => L.latLng(pt.lat + dLat, pt.lng + dLng));
+
+        // Snap to site boundary edges / corners if applicable
+        if (activeDragPoly !== customSiteBoundary) {
+            const snap = snapPolygonToSiteBoundary(newLatLngs);
+            if (snap) {
+                newLatLngs = newLatLngs.map(pt => L.latLng(pt.lat + snap.dLat, pt.lng + snap.dLng));
+                updateSnapMarkerVisual({ latlng: snap.snapLatLng, type: snap.type });
+            } else {
+                updateSnapMarkerVisual(null);
+            }
+        }
+
+        if (activeDragPoly instanceof L.Polygon) {
+            activeDragPoly.setLatLngs([newLatLngs]);
         } else {
-            polygon.setLatLngs(newLatLngs);
+            activeDragPoly.setLatLngs(newLatLngs);
         }
 
         if (activePolygonVertexMarkers && activePolygonVertexMarkers.length === newLatLngs.length) {
@@ -3785,24 +3989,24 @@ function makePolygonDraggable(polygon) {
             });
         }
         if (activePolygonCenterMarker) {
-            const newCenter = getPolygonCenter(polygon);
+            const newCenter = getPolygonCenter(activeDragPoly);
             activePolygonCenterMarker.setLatLng(newCenter);
         }
 
-        if (selectedEdgeHighlightLine && activeSelectedPolygon === polygon && activeSelectedEdgeIndex !== -1) {
+        if (selectedEdgeHighlightLine && activeSelectedPolygon === activeDragPoly && activeSelectedEdgeIndex !== -1) {
             const p1 = newLatLngs[activeSelectedEdgeIndex];
             const p2 = newLatLngs[(activeSelectedEdgeIndex + 1) % newLatLngs.length];
             selectedEdgeHighlightLine.setLatLngs([p1, p2]);
         }
 
-        if (polygon.isSubstation) {
-            polygon.substationCenter = L.latLng(
+        if (activeDragPoly.isSubstation && startSubstationCenter) {
+            activeDragPoly.substationCenter = L.latLng(
                 startSubstationCenter.lat + dLat,
                 startSubstationCenter.lng + dLng
             );
         }
 
-        if (polygon === customSiteBoundary) {
+        if (activeDragPoly === customSiteBoundary) {
             updateSiteCenterFromBoundary(customSiteBoundary);
         }
     };
@@ -3810,11 +4014,12 @@ function makePolygonDraggable(polygon) {
     const endPolyDrag = () => {
         if (isDraggingPoly) {
             isDraggingPoly = false;
+            updateSnapMarkerVisual(null);
             map.dragging.enable();
             if (map && map.getContainer()) {
                 map.getContainer().style.cursor = '';
             }
-            if (polygon === customSiteBoundary) {
+            if (activeDragPoly === customSiteBoundary) {
                 inferParametersFromSiteBoundary(customSiteBoundary);
             } else {
                 calculateOutputs();
@@ -3824,7 +4029,8 @@ function makePolygonDraggable(polygon) {
     };
 
     polygon.on('mousedown', (e) => {
-        if (startPolyDrag(e.latlng)) {
+        const isModifier = e.originalEvent && (e.originalEvent.ctrlKey || e.originalEvent.metaKey);
+        if (startPolyDrag(e.latlng, isModifier)) {
             L.DomEvent.stopPropagation(e);
         }
     });
@@ -3838,7 +4044,7 @@ function makePolygonDraggable(polygon) {
     map.on('mouseup', endPolyDrag);
     polygon.on('mouseup', endPolyDrag);
 
-    // Support touch interactions on mobile for the polygon path
+    // Support touch interactions & double-tap to duplicate on mobile
     setTimeout(() => {
         const polyPath = polygon._path || (polygon.getElement ? polygon.getElement() : null);
         if (polyPath) {
@@ -3846,7 +4052,30 @@ function makePolygonDraggable(polygon) {
                 if (e.touches && e.touches.length === 1) {
                     const touch = e.touches[0];
                     const touchLatLng = map.mouseEventToLatLng(touch);
-                    if (startPolyDrag(touchLatLng)) {
+                    
+                    // Double Tap detection on mobile / touch devices
+                    const now = Date.now();
+                    if (polygon._lastTapTime && (now - polygon._lastTapTime < 350)) {
+                        if (polygon !== customSiteBoundary) {
+                            const offsetLat = 0.00004;
+                            const offsetLng = 0.00004;
+                            const cloned = duplicatePolygon(polygon, offsetLat, offsetLng);
+                            if (cloned) {
+                                triggerPolygonCloneEffect(cloned, "✨ 已複製多邊形 (連點二次)");
+                                activeSelectedPolygon = cloned;
+                                showPolygonToolboxPanel(cloned);
+                                calculateOutputs();
+                                updateAllVisuals(true);
+                            }
+                            polygon._lastTapTime = 0;
+                            L.DomEvent.stopPropagation(e);
+                            if (e.cancelable) L.DomEvent.preventDefault(e);
+                            return;
+                        }
+                    }
+                    polygon._lastTapTime = now;
+
+                    if (startPolyDrag(touchLatLng, false)) {
                         L.DomEvent.stopPropagation(e);
                         if (e.cancelable) L.DomEvent.preventDefault(e);
                     }
@@ -3985,6 +4214,109 @@ function initMaterials() {
         roughness: 0.65,
         metalness: 0.1
     });
+}
+
+function createObstacle3DGeometry(latlngs, extrudeHeight, isOnRoof, siteType, roofH, azimuthDeg, getRoofYFunc) {
+    const points2D = latlngs.map(pt => {
+        const dy = (pt.lat - state.lat) * 111320;
+        const dx = (pt.lng - state.lng) * 111320 * Math.cos((state.lat * Math.PI) / 180);
+        return { x: dx, z: -dy }; // world X is East (dx), world Z is South (-dy)
+    });
+    
+    const n = points2D.length;
+    if (n < 3) return null;
+    
+    const thetaRad = (-azimuthDeg * Math.PI) / 180;
+    const cosTheta = Math.cos(thetaRad);
+    const sinTheta = Math.sin(thetaRad);
+    
+    // Compute elevation for each 2D point
+    const baseElevations = [];
+    for (let i = 0; i < n; i++) {
+        const pt = points2D[i];
+        let baseH = 0;
+        if (siteType !== 'ground' && isOnRoof) {
+            const rx = pt.x;
+            const ry = -pt.z; // North
+            const localZ = rx * sinTheta - ry * cosTheta;
+            let y_roof = 0;
+            if (siteType === 'roof-slope' && getRoofYFunc) {
+                y_roof = getRoofYFunc(localZ);
+            }
+            baseH = roofH + y_roof;
+        }
+        baseElevations.push(baseH);
+    }
+    
+    // Triangulate 2D polygon shape
+    const shapePoints = points2D.map(p => ({ x: p.x, y: p.z }));
+    let faces2D = [];
+    try {
+        if (THREE.ShapeUtils && THREE.ShapeUtils.triangulateShape) {
+            faces2D = THREE.ShapeUtils.triangulateShape(shapePoints, []);
+        }
+    } catch (e) {
+        console.warn("Triangulation error:", e);
+    }
+    
+    // Fallback fan triangulation if needed
+    if (!faces2D || faces2D.length === 0) {
+        faces2D = [];
+        for (let i = 1; i < n - 1; i++) {
+            faces2D.push([0, i, i + 1]);
+        }
+    }
+    
+    const positions = [];
+    
+    // 1. Bottom Cap (Facing down)
+    for (let f = 0; f < faces2D.length; f++) {
+        const tri = faces2D[f];
+        const i0 = tri[0], i1 = tri[1], i2 = tri[2];
+        // Reverse order so normal points downwards
+        const p0 = points2D[i0], p1 = points2D[i2], p2 = points2D[i1];
+        positions.push(p0.x, baseElevations[i0], p0.z);
+        positions.push(p1.x, baseElevations[i2], p1.z);
+        positions.push(p2.x, baseElevations[i1], p2.z);
+    }
+    
+    // 2. Top Cap (Facing up)
+    for (let f = 0; f < faces2D.length; f++) {
+        const tri = faces2D[f];
+        const i0 = tri[0], i1 = tri[1], i2 = tri[2];
+        const p0 = points2D[i0], p1 = points2D[i1], p2 = points2D[i2];
+        positions.push(p0.x, baseElevations[i0] + extrudeHeight, p0.z);
+        positions.push(p1.x, baseElevations[i1] + extrudeHeight, p1.z);
+        positions.push(p2.x, baseElevations[i2] + extrudeHeight, p2.z);
+    }
+    
+    // 3. Side Walls (Connecting each edge from bottom to top)
+    for (let i = 0; i < n; i++) {
+        const next = (i + 1) % n;
+        const pA = points2D[i];
+        const pB = points2D[next];
+        const bA = baseElevations[i];
+        const bB = baseElevations[next];
+        const tA = bA + extrudeHeight;
+        const tB = bB + extrudeHeight;
+        
+        // Triangle 1: bA -> bB -> tB
+        positions.push(pA.x, bA, pA.z);
+        positions.push(pB.x, bB, pB.z);
+        positions.push(pB.x, tB, pB.z);
+        
+        // Triangle 2: bA -> tB -> tA
+        positions.push(pA.x, bA, pA.z);
+        positions.push(pB.x, tB, pB.z);
+        positions.push(pA.x, tA, pA.z);
+    }
+    
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    geom.computeBoundingBox();
+    geom.computeBoundingSphere();
+    return geom;
 }
 
 function updateViewer(params) {
@@ -5198,40 +5530,47 @@ function updateViewer(params) {
             const latlngs = getOuterRingLatLngs(poly) || [];
             if (latlngs.length < 3) return;
             
-            const points = latlngs.map(pt => {
-                const dy = (pt.lat - state.lat) * 111320;
-                const dx = (pt.lng - state.lng) * 111320 * Math.cos((state.lat * Math.PI) / 180);
-                return new THREE.Vector2(dx, dy);
-            });
-            
-            const shape = new THREE.Shape();
-            shape.moveTo(points[0].x, points[0].y);
-            for (let i = 1; i < points.length; i++) {
-                shape.lineTo(points[i].x, points[i].y);
-            }
-            shape.closePath();
-            
             const extrudeHeight = poly.obstacleHeight !== undefined ? poly.obstacleHeight : 5.0;
-            const extrudeSettings = {
-                depth: extrudeHeight,
-                bevelEnabled: false
-            };
+            const isOnRoof = (poly.isOnRoof !== undefined) ? poly.isOnRoof : true;
             
-            const geom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-            geom.rotateX(-Math.PI / 2);
+            const geom = createObstacle3DGeometry(
+                latlngs,
+                extrudeHeight,
+                isOnRoof,
+                siteType,
+                roofH,
+                params.azimuth || 180,
+                getRoofY
+            );
+            if (!geom) return;
             
-            // Beautiful concrete texture look
+            // High-visibility obstacle red material (matching 2D map theme)
             const obsMat = new THREE.MeshStandardMaterial({
-                color: 0x94a3b8, // Slate gray
-                roughness: 0.8,
+                color: 0xef4444, // Bright obstacle red
+                roughness: 0.35,
                 metalness: 0.1,
                 transparent: true,
-                opacity: 0.85
+                opacity: 0.8,
+                side: THREE.DoubleSide
             });
             
             const mesh = new THREE.Mesh(geom, obsMat);
             mesh.castShadow = true;
             mesh.receiveShadow = true;
+            mesh.renderOrder = 2;
+            
+            // Enable physically accurate real-time shadow projection onto roof and PV panels
+            mesh.customDepthMaterial = new THREE.MeshDepthMaterial({
+                depthPacking: THREE.RGBADepthPacking,
+                side: THREE.DoubleSide
+            });
+            
+            // Add crisp structural outline edges
+            const edgeGeo = new THREE.EdgesGeometry(geom);
+            const edgeMat = new THREE.LineBasicMaterial({ color: 0x991b1b, linewidth: 2 });
+            const edgeLines = new THREE.LineSegments(edgeGeo, edgeMat);
+            edgeLines.renderOrder = 3;
+            mesh.add(edgeLines);
             
             obstacleGroup.add(mesh);
         });
@@ -5954,10 +6293,21 @@ function isModuleExcluded(localX, rowZ, params) {
         }
         
         for (const poly of obstaclePolygons) {
-            const obsHeight = poly.obstacleHeight !== undefined ? poly.obstacleHeight : 5.0;
+            const rawH = poly.obstacleHeight !== undefined ? poly.obstacleHeight : 5.0;
+            const isOnRoof = (poly.isOnRoof !== undefined) ? poly.isOnRoof : true;
+            let obsBaseY = 0;
+            if (config.siteType !== 'ground' && isOnRoof) {
+                if (config.siteType === 'roof-flat') {
+                    obsBaseY = roofH;
+                } else if (config.siteType === 'roof-slope') {
+                    const roofTiltRad = ((config.roofTilt || 0) * Math.PI) / 180;
+                    obsBaseY = roofH + rowZ * Math.sin(roofTiltRad);
+                }
+            }
+            const obsTotalHeight = obsBaseY + rawH;
             
-            // If obstacle height does not even reach the base of support structure / roof surface, no physical clash
-            if (obsHeight < supportBaseY - 0.001) {
+            // If obstacle total height does not even reach the base of support structure / roof surface, no physical clash
+            if (obsTotalHeight < supportBaseY - 0.001) {
                 continue;
             }
             
@@ -6172,7 +6522,7 @@ function updateLogoTheme() {
     }
     
     const normalSrc = isDark ? 'images/pv_super_logo_dark.png' : 'images/pv_super_logo_light.png';
-    const hoverSrc = isDark ? 'images/pv_super_logo_light.png' : 'images/pv_super_logo_dark.png';
+    const hoverSrc = 'images/favicon.png';
     
     logoImg.src = normalSrc;
     
@@ -6183,6 +6533,22 @@ function updateLogoTheme() {
     preloadNormal.src = normalSrc;
     
     const logoLink = logoImg.closest('.pv-super-logo-link') || logoImg;
+    
+    const updateContainerWidth = () => {
+        if (logoImg.naturalWidth && logoImg.naturalHeight) {
+            const fullW = (logoImg.naturalWidth / logoImg.naturalHeight) * (logoImg.clientHeight || 72);
+            logoLink.style.minWidth = `${fullW}px`;
+        } else if (logoImg.offsetWidth > 0) {
+            logoLink.style.minWidth = `${logoImg.offsetWidth}px`;
+        }
+    };
+    
+    if (logoImg.complete && logoImg.naturalWidth > 0) {
+        updateContainerWidth();
+    } else {
+        logoImg.addEventListener('load', updateContainerWidth, { once: true });
+    }
+    
     if (!logoLink._hasHoverListener) {
         logoLink._hasHoverListener = true;
         logoLink.addEventListener('mouseenter', () => {
@@ -8254,7 +8620,23 @@ function showToast(message, type) {
             if (activeSelectedPolygon && activeSelectedPolygon.isObstacle) {
                 activeSelectedPolygon.obstacleHeight = val;
                 const handle = document.querySelector('.toolbox-drag-handle');
-                if (handle) handle.innerHTML = `障礙物 (${val.toFixed(1)}m) ⋮⋮`;
+                const onRoofLabel = (activeSelectedPolygon.isOnRoof !== false && state.siteType !== 'ground') ? ' [建物上]' : '';
+                if (handle) handle.innerHTML = `障礙物 (${val.toFixed(1)}m)${onRoofLabel} ⋮⋮`;
+                calculateOutputs();
+                updateAllVisuals(true);
+            }
+        });
+    }
+    
+    const obsOnRoofChk = document.getElementById('chk-obs-on-roof');
+    if (obsOnRoofChk) {
+        obsOnRoofChk.addEventListener('change', () => {
+            if (activeSelectedPolygon && activeSelectedPolygon.isObstacle) {
+                activeSelectedPolygon.isOnRoof = obsOnRoofChk.checked;
+                const handle = document.querySelector('.toolbox-drag-handle');
+                const onRoofLabel = (activeSelectedPolygon.isOnRoof && state.siteType !== 'ground') ? ' [建物上]' : '';
+                const hVal = (activeSelectedPolygon.obstacleHeight || 5.0).toFixed(1);
+                if (handle) handle.innerHTML = `障礙物 (${hVal}m)${onRoofLabel} ⋮⋮`;
                 calculateOutputs();
                 updateAllVisuals(true);
             }

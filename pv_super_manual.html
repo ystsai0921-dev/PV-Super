@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -33,7 +33,7 @@
         }
 
         .container {
-            max-width: 940px;
+            max-width: 960px;
             margin: 30px auto;
             padding: 40px 48px;
             background-color: #ffffff;
@@ -93,7 +93,7 @@
         }
 
         h2 {
-            font-size: 18px;
+            font-size: 17px;
             color: var(--slate-800);
             border-left: 5px solid var(--primary-light);
             padding-left: 12px;
@@ -103,10 +103,10 @@
         }
 
         h3 {
-            font-size: 15px;
+            font-size: 14px;
             color: #0284c7;
-            margin-top: 25px;
-            margin-bottom: 10px;
+            margin-top: 22px;
+            margin-bottom: 8px;
             page-break-after: avoid;
         }
 
@@ -129,13 +129,13 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
+            margin: 18px 0;
             page-break-inside: avoid;
         }
 
         th, td {
             border: 1px solid var(--slate-200);
-            padding: 10px 12px;
+            padding: 9px 12px;
             text-align: left;
             font-size: 13px;
         }
@@ -144,7 +144,7 @@
             background-color: var(--slate-50);
             color: var(--slate-800);
             font-weight: 600;
-            width: 25%;
+            width: 24%;
         }
 
         .step-box {
@@ -152,8 +152,8 @@
             border: 1px solid var(--slate-200);
             border-left: 4px solid var(--primary-light);
             border-radius: 8px;
-            padding: 18px 22px;
-            margin-bottom: 24px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
             page-break-inside: avoid;
         }
 
@@ -176,7 +176,7 @@
             font-weight: 700;
             color: var(--slate-800);
             margin-bottom: 10px;
-            font-size: 15px;
+            font-size: 14px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -241,15 +241,15 @@
             border: 1px solid #fef3c7;
             border-left: 4px solid var(--amber);
             border-radius: 8px;
-            padding: 14px 18px;
-            margin: 18px 0;
+            padding: 12px 16px;
+            margin: 16px 0;
             font-size: 13px;
         }
 
         .tip-title {
             font-weight: 700;
             color: #b45309;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
 
         .feature-tag {
@@ -283,6 +283,19 @@
             border-radius: 2px;
         }
 
+        kbd {
+            display: inline-block;
+            padding: 2px 5px;
+            font-size: 11px;
+            font-family: monospace;
+            line-height: 1;
+            color: #334155;
+            background-color: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 3px;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+        }
+
         @media print {
             body { background-color: #ffffff; font-size: 12px; }
             .container { padding: 0; margin: 0; box-shadow: none; max-width: 100%; }
@@ -293,284 +306,342 @@
 </head>
 <body>
     <div class="container">
+        <!-- 頂部標題區 -->
         <div class="header-container">
             <div>
-                <h1>PV Super 案場規劃工具使用說明書 <span class="version-badge">v2.6 最新旗艦版</span></h1>
+                <h1>PV Super 案場規劃工具使用說明書 <span class="version-badge">v2.6</span></h1>
             </div>
             <div class="logo-box">
                 <img src="images/pv_super_logo_light.png" alt="PV Super" style="height: 48px; width: auto; object-fit: contain; filter: invert(1);">
             </div>
         </div>
-        <div class="subtitle">曜昇綠能股份有限公司 &copy; 2026 版權所有 ‧ 太陽光電專業 3D 快速排板與評估系統</div>
+        <div class="subtitle">曜昇綠能股份有限公司 &copy; 2026 ‧ 太陽光電 3D 快速排板與評估系統操作指南</div>
 
-        <h2>一、 快速上手指南（五大規劃步驟）</h2>
-        <p>本工具專為地面型與屋頂型（平屋頂、斜屋頂單斜／雙斜）太陽能案場提供即時三維排版、障礙物實體干涉、遮陰模擬與工程級簡報輸出。完整規劃流程分為五大步驟：</p>
-
-        <!-- Step 1 -->
-        <div class="step-box">
-            <div class="step-title">
-                <span>步驟 1：定位 (Positioning)</span>
-                <span class="btn-badge btn-blue"><img src="images/positioning.svg" alt=""> 空間座標</span>
-            </div>
-            <p>在開始設計前，先定位至目標案場之衛星圖位置：</p>
-            <ul>
-                <li><span class="highlight">地址/關鍵字搜尋</span>：在衛星地圖左下角搜尋框中輸入地址、地標、地號或經緯度，點擊右側的
-                    <span class="btn-badge btn-blue"><img src="images/search.svg" alt="搜尋"></span>
-                    搜尋按鈕即可精準飛越並置中定位。</li>
-                <li><span class="highlight">GPS 快速定位</span>：點擊地圖右上角的
-                    <span class="btn-badge"><img src="images/positioning.svg" alt="定位"></span>
-                    按鈕，透過瀏覽器直接獲取您目前的現場 GPS 座標。</li>
-                <li><span class="highlight">中心對齊</span>：點擊地圖右上角的
-                    <span class="btn-badge"><img src="images/re-center.svg" alt="中心"></span>
-                    按鈕，隨時將地圖視角重置對準案場中心點。</li>
-                <li><span class="highlight">五大高精度圖層切換</span>：點擊地圖右下角的
-                    <span class="btn-badge"><img src="images/layer.svg" alt="圖層"></span>
-                    圖層選單按鈕，可在以下圖資間隨時無縫切換：
-                    <ul>
-                        <li><b>Google 衛星混合圖</b>（衛星影像 + 繁體地名標注，推薦使用）</li>
-                        <li><b>國土測繪航照圖</b>（台灣本地超高解析度公測航拍）</li>
-                        <li><b>Esri 衛星地圖</b>（全球衛星影像與道路網絡）</li>
-                        <li><b>國土測繪電子地圖</b>（台灣本地街道與地號基礎圖）</li>
-                        <li><b>OpenStreetMap 道路圖</b>（開放開源地圖數據）</li>
-                    </ul>
-                </li>
-                <li><span class="highlight">地圖距離量測</span>：點擊地圖右上角的
-                    <span class="btn-badge"><img src="images/ruler.svg" alt="量測"></span>
-                    量測按鈕，可在地圖上連續點擊以量測地面直線與折線長度，按 <kbd>Esc</kbd> 退出並清空量測標記。</li>
-            </ul>
-        </div>
-
-        <!-- Step 2 -->
-        <div class="step-box step-blue">
-            <div class="step-title blue-title">
-                <span>步驟 2：範圍 (Boundary) ‧ 手繪多邊形邊界</span>
-                <span class="btn-badge btn-blue"><img src="images/area.svg" alt=""> 編輯狀態：半透明亮藍填色</span>
-            </div>
-            <p>定義太陽能模組鋪設的案場主要外框邊界：</p>
-            <ul>
-                <li>點擊左側試算表上方的 <span class="btn-badge btn-blue">案場範圍</span> 控制項，將滑桿切換至 <span class="highlight">「編輯」</span> 狀態。此時側邊欄的案場規劃區塊會填入<b>半透明亮藍色背景（<code>rgba(14, 165, 233, 0.15)</code>）</b>與亮藍色邊框，提示處於邊界繪製中。</li>
-                <li>地圖上將浮現
-                    <span class="btn-badge btn-blue"><img src="images/area.svg" alt="範圍"> 範圍工具面板</span>
-                    （位於地圖右下角，支援拖曳微調）。</li>
-                <li><span class="highlight">手繪多邊形</span>：點選面板中的
-                    <span class="btn-badge btn-blue"><img src="images/draw_pencil.svg" alt="繪製"> 手繪多邊形</span>
-                    後，依序點選角點於地圖上描繪案場外框，最後點擊起點閉合完成。各角點均備有<b>亮藍色圓形微調把手</b>，可直接滑鼠抓取任意角點拉動形變，放開後內部排板即時以毫秒級重新計算覆蓋。</li>
-                <li><span class="highlight">幾何方位角自動推算</span>：完成範圍閉合時，系統會自動分析多邊形最長邊之法線幾何，智慧推算最佳「方位角」並填入試算表第 9 項。</li>
-                <li>確認邊界無誤後，點選下方懸浮確認框中的 <span class="btn-badge btn-green">保留</span>；完成後將範圍滑桿切換回 <span class="highlight">「鎖定」</span> 狀態。</li>
-            </ul>
-        </div>
-
-        <!-- Step 3 -->
-        <div class="step-box">
-            <div class="step-title">
-                <span>步驟 3：參數與排版 (Parameters &amp; Layout)</span>
-                <span class="btn-badge btn-blue">⚙️ 毫秒級運算</span>
-            </div>
-            <p>在左側側邊欄的 Excel 風格試算表中調整參數，系統將即時計算並同步更新 3D 視場：</p>
-            <ul>
-                <li><span class="highlight">案場型式與坡向（第 2–3 項）</span>：可選地面型（Ground）、平屋頂（Flat Roof）或斜屋頂（Slope Roof）。斜屋頂支援「單斜」與「雙斜」建築結構。</li>
-                <li><span class="highlight">斜屋頂「平鋪」與「架高」結構架構</span>：
-                    <ul>
-                        <li><b>平鋪模式（角度相同）</b>：當 <span class="feature-tag">16. 安裝傾角 θ</span> 與 <span class="feature-tag">17. 屋頂傾角</span> 數值相同時，系統自動判定為<b>「平鋪」</b>。此時模組底面均勻離屋面 <b>200mm</b>，每片模組下方配置 <b>2 支專用陽極鋁支架</b>，精確分配於離兩側各 <b>1/5 L（1/5 PV 長度）</b>之標準力學支撐位置。</li>
-                        <li><b>架高模式（角度不同）</b>：當安裝傾角與屋頂傾角不相同時，系統自動判定為<b>「架高」</b>。此時 <span class="feature-tag">19. 支架高度 h</span> 數值具有實體意義，代表陣列<b>最高點的支架高度</b>，並自動生成斜撐鋼樑、立柱與屋頂固定結構。</li>
-                    </ul>
-                </li>
-                <li><span class="highlight">PV 擺放選擇（第 4 項）</span>：可選短向傾斜（橫放 Landscape）或長向傾斜（直放 Portrait）。</li>
-                <li><span class="highlight">模組規格（第 5–8 項）</span>：內建 VSUN、隆基 (LONGi)、茂迪 (Motech)、元晶 (TSEC) 等主流一線大廠標準規格，亦可選擇「自訂模組尺寸」自由微調長度 (L)、寬度 (W) 與額定瓦數 (Wp)。</li>
-                <li><span class="highlight">方位角快捷節點（第 9 項）</span>：提供
-                    <span class="btn-badge">135° (東南)</span>、<span class="btn-badge">225° (西南)</span>（上方節點）與
-                    <span class="btn-badge">90° (東)</span>、<span class="btn-badge">180° (正南)</span>、<span class="btn-badge">270° (西)</span>（下方節點）快捷點擊，兩旁備有
-                    <span class="btn-badge"><img src="images/minus.svg" alt="減"></span> /
-                    <span class="btn-badge"><img src="images/plus.svg" alt="加"></span>
-                    ±0.5° 高精度微調按鈕。</li>
-                <li><span class="highlight">工程間距與角度快捷節點（第 10–19 項）</span>：
-                    <ul>
-                        <li><span class="feature-tag">14. 橫向間距 x</span> 提供 <span class="btn-badge">20</span>、<span class="btn-badge">40</span>、<span class="btn-badge">80</span> mm 常用固定夾具間距。</li>
-                        <li><span class="feature-tag">15. 縱向間距 y</span> 提供 <span class="btn-badge">26</span>、<span class="btn-badge">50</span> mm 節點。</li>
-                        <li><span class="feature-tag">16. 安裝傾角 θ</span> 提供 <span class="btn-badge">6°</span>、<span class="btn-badge">8°</span>、<span class="btn-badge">10°</span> 快捷節點。</li>
-                        <li><span class="feature-tag">19. 支架高度 h</span> 備有 <span class="btn-badge">1500</span>、<span class="btn-badge">2500</span>、<span class="btn-badge">3500</span> mm 快捷節點。</li>
-                    </ul>
-                </li>
-                <li><span class="highlight">雙重狀態鎖頭 (Padlock)</span>：參數鎖定時呈<b>高對比鮮紅色背景、白色閉鎖圖樣</b>；解鎖時呈<b>灰色虛線框開鎖圖樣</b>，狀態清晰明確。</li>
-            </ul>
-        </div>
-
-        <!-- Step 4 -->
-        <div class="step-box step-orange">
-            <div class="step-title orange-title">
-                <span>步驟 4：排除區域 (Exclusion Zone)</span>
-                <span class="btn-badge btn-orange"><img src="images/exclude.svg" alt=""> 編輯狀態：半透明橘色填色</span>
-            </div>
-            <p>設定案場內不鋪設太陽能板的區域（例如採光罩、通風管道、維修步道或特定保留區）：</p>
-            <ul>
-                <li>將左側的 <span class="btn-badge btn-orange">排除區域</span> 控制項切換至 <span class="highlight">「編輯」</span> 狀態。此時側邊欄區塊會填入<b>半透明橘色背景（<code>rgba(249, 115, 22, 0.15)</code>）</b>與橘色外框。</li>
-                <li>地圖上將浮現
-                    <span class="btn-badge btn-orange"><img src="images/exclude.svg" alt="排除"> 排除工具面板</span>。</li>
-                <li><span class="highlight">繪製與調整</span>：點選
-                    <span class="btn-badge btn-orange"><img src="images/draw_pencil.svg" alt="繪製"> 手繪多邊形</span>
-                    繪製排除區，封閉多邊形各角點備有橘色把手可隨時拉動形變。</li>
-                <li>完成後切換回 <span class="highlight">「鎖定」</span> 狀態，內部排版將即時扣除該區域內的所有模組並更新發電量。</li>
-            </ul>
-        </div>
-
-        <!-- Step 5 -->
-        <div class="step-box step-red">
-            <div class="step-title red-title">
-                <span>步驟 5：障礙物 3D 實體、干涉剔除與日照模擬 (Obstacles &amp; Sun Simulation)</span>
-                <span class="btn-badge btn-red"><img src="images/obstacle.svg" alt=""> 編輯狀態：半透明紅色填色</span>
-            </div>
-            <p>設定案場內部或周邊會產生立體空間干涉與遮擋陽光的立體障礙物（女兒牆、水塔、電梯機房、周邊樹木、鄰棟建築等）：</p>
-            <ul>
-                <li>將左側的 <span class="btn-badge btn-red">障礙區域</span> 控制項切換至 <span class="highlight">「編輯」</span> 狀態。側邊欄區塊會填入<b>半透明紅色背景（<code>rgba(239, 68, 68, 0.15)</code>）</b>與紅色外框。</li>
-                <li>地圖上浮現
-                    <span class="btn-badge btn-red"><img src="images/obstacle.svg" alt="障礙"> 障礙工具面板</span>，可手動設定障礙物高度（公尺 m）並透過滑桿或輸入框即時調整。</li>
-                <li><span class="highlight">3D 實體即時擠出呈現</span>：
-                    當在確認框中點選「保留」或進行微調時，3D 視場中會<b>即刻呈現半透明紅色實體多邊形柱體</b>，不再需要等待鎖定即可直觀檢視空間立體關係。</li>
-                <li><span class="highlight">模組與支架組件 3D 干涉剔除邏輯</span>：
-                    <ul>
-                        <li><b>全結構干涉檢測</b>：系統不僅檢測太陽能模組面，亦將模組下方的<b>鋼支架、基柱與基腳基礎高度</b>納入立體碰撞檢驗。</li>
-                        <li><b>自動剔除與容量扣除</b>：當障礙物的平面投影與垂直高度觸及或干涉到太陽能模組或其支架組件時，系統會<b>自動剔除該片模組及其對應支架組件</b>，整體總設置片數與容量（kWp）亦同步精準扣除。</li>
-                        <li><b>動態調整高度即時重新檢核</b>：當障礙物高度原本未干涉，經過工具箱（+0.5m / -0.5m）或滑桿調高後產生干涉時，系統會即時重新計算並剔除該片模組；反之調低消除干涉後模組會即時自動恢復。</li>
-                    </ul>
-                </li>
-                <li><span class="highlight">無眩光工程材質與日照模擬</span>：
-                    <ul>
-                        <li><b>無眩光高質感材質</b>：太陽能板、金屬邊框、鋼構支架、鋁導軌均採啞光霧面設定，消除反射強光，呈現高品質立體層次。</li>
-                        <li><b>月份快捷節點</b>：滑動條備有 <span class="btn-badge">6/21 (夏至)</span> 與 <span class="btn-badge">12/21 (冬至)</span> 節點，可一鍵切換檢驗全年極端太陽高度角下的陰影變化。</li>
-                        <li><b>時間快捷節點</b>：備有 <span class="btn-badge">09:00</span> 與 <span class="btn-badge">15:00</span> 節點，點擊可快速查看早晨與午後的斜射遮陰覆蓋範圍。</li>
-                    </ul>
-                </li>
-            </ul>
-        </div>
-
-        <h2>二、 精簡調整工具箱 (Object Transform Toolbox)</h2>
-        <p>在地圖鎖定狀態下，點選地圖上的任何多邊形物件，將於多邊形上方浮現<b>極簡微型黑色調整卡片</b>（深黑背景 <code>rgba(15, 23, 42, 0.98)</code>、白字與白色細邊框），支援自由抓取拖曳移動：</p>
+        <!-- 一、 系統介面架構 -->
+        <h2>一、 系統介面架構</h2>
+        <p>PV Super 操作介面主要由三大作業視窗與頂部控制列構成，畫面各區塊功能如下：</p>
         <table>
             <thead>
                 <tr>
-                    <th>對應物件</th>
-                    <th>控制按鈕</th>
-                    <th>操作說明與功能</th>
+                    <th>介面分區</th>
+                    <th>位置</th>
+                    <th>主要功能與操作內容</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><b>左側試算表區 (Sidebar)</b></td>
+                    <td>畫面左側</td>
+                    <td>
+                        • 專案動作按鈕（匯出簡報、匯出資料、預設值管理）<br>
+                        • 繪圖模式切換開關（案場範圍、排除區域、障礙區域）<br>
+                        • Excel 樣式參數控制表（輸入案場型式、模組型號、角度、間距等）<br>
+                        • 系統即時計算結果（總裝機容量 kWp、模組總片數、佔地面積）
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>衛星地圖 (Map View)</b></td>
+                    <td>右側 / 下方</td>
+                    <td>
+                        • 衛星影像定位、地址與座標搜尋<br>
+                        • 多邊形案場邊界、排除區、障礙區之手繪與頂點拖曳<br>
+                        • 圖層切換（Google 衛星、國土測繪航照/電子圖、Esri、OSM）<br>
+                        • 地面直線與折線長度量測
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>3D 預覽 (3D Viewport)</b></td>
+                    <td>右側 / 上方</td>
+                    <td>
+                        • 即時 3D 模型渲染（太陽能板、支架鋼構、基礎基樁、立體障礙物）<br>
+                        • 多視角切換（等角透視、俯視、側視、法向 Normal、Zoom to Fit）<br>
+                        • 全年與全日時照軌跡與遮陰模擬滑桿<br>
+                        • 顯示設定控制（光影渲染切換、支架組件全開/全關）<br>
+                        • 右鍵選單匯出 4K PNG 圖片與 SVG 向量圖
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- 二、 案場定位與地圖操作 -->
+        <h2>二、 案場定位與地圖操作</h2>
+        <p>在進行排板設計前，請先透過衛星地圖定位至目標案場位置：</p>
+        <ul>
+            <li><span class="highlight">地址／關鍵字搜尋</span>：在衛星地圖左下角搜尋框輸入地址、地標、地號或經緯度座標，點擊右側 <span class="btn-badge btn-blue"><img src="images/search.svg" alt="搜尋"> 搜尋</span> 按鈕即可飛越至目標位置並置中顯示。</li>
+            <li><span class="highlight">GPS 快速定位</span>：點擊地圖右上角 <span class="btn-badge"><img src="images/positioning.svg" alt="定位"></span> 按鈕，透過瀏覽器取得目前所在地的 GPS 座標。</li>
+            <li><span class="highlight">中心重置</span>：點擊地圖右上角 <span class="btn-badge"><img src="images/re-center.svg" alt="中心"></span> 按鈕，隨時將地圖視角重置對齊至目前案場中心。</li>
+            <li><span class="highlight">圖層切換選單</span>：點擊地圖右下角 <span class="btn-badge"><img src="images/layer.svg" alt="圖層"></span> 按鈕，可於 5 種圖資間自由切換：
+                <ul>
+                    <li><b>Google 衛星混合圖</b>：全球衛星空拍圖與繁體地名標注（預設推薦）。</li>
+                    <li><b>國土測繪航照圖</b>：台灣本地公測空拍航照圖。</li>
+                    <li><b>Esri 衛星地圖</b>：全球高解析衛星影像。</li>
+                    <li><b>國土測繪電子地圖</b>：台灣街道地圖與地籍基礎圖資。</li>
+                    <li><b>OpenStreetMap</b>：開放開源向量街道地圖。</li>
+                </ul>
+            </li>
+            <li><span class="highlight">地面距離量測</span>：點擊地圖右上角 <span class="btn-badge"><img src="images/ruler.svg" alt="量測"></span> 按鈕，在衛星地圖上連續點擊以量測地面距離；按 <kbd>Esc</kbd> 鍵結束量測並清空標記。</li>
+        </ul>
+
+        <!-- 三、 區域繪製與幾何編輯 -->
+        <h2>三、 區域繪製與幾何編輯</h2>
+        <p>透過左側邊欄頂部的開關切換繪圖模式，在地圖上繪製多邊形區域：</p>
+
+        <!-- 3.1 案場範圍 -->
+        <div class="step-box step-blue">
+            <div class="step-title blue-title">
+                <span>1. 案場範圍 (Boundary) ‧ 主要外框</span>
+                <span class="btn-badge btn-blue"><img src="images/area.svg" alt=""> 編輯狀態：亮藍填色</span>
+            </div>
+            <ul>
+                <li>將左側 <span class="btn-badge btn-blue">案場範圍</span> 切換至 <span class="highlight">「編輯」</span> 狀態。</li>
+                <li>在地圖右下角浮動的範圍面板中點選 <span class="btn-badge btn-blue"><img src="images/draw_pencil.svg" alt="繪製"> 手繪多邊形</span>，依序點擊案場角點，最後點擊起點完成閉合。</li>
+                <li><b>頂點微調</b>：多邊形各頂點皆具備圓形把手，可直接拖曳調整形狀，放開後內部排板即時重新計算。</li>
+                <li><b>方位角自動推算</b>：範圍閉合後，系統自動分析多邊形最長邊之法線方向，推算最佳方位角並填入試算表第 9 項。</li>
+                <li>點擊懸浮確認框的 <span class="btn-badge btn-green">保留</span>，並將控制項切換回 <span class="highlight">「鎖定」</span> 狀態。</li>
+            </ul>
+        </div>
+
+        <!-- 3.2 排除區域 -->
+        <div class="step-box step-orange">
+            <div class="step-title orange-title">
+                <span>2. 排除區域 (Exclusion Zone) ‧ 採光罩／走道／保留區</span>
+                <span class="btn-badge btn-orange"><img src="images/exclude.svg" alt=""> 編輯狀態：橘色填色</span>
+            </div>
+            <ul>
+                <li>將左側 <span class="btn-badge btn-orange">排除區域</span> 切換至 <span class="highlight">「編輯」</span> 狀態。</li>
+                <li>點選 <span class="btn-badge btn-orange"><img src="images/draw_pencil.svg" alt="繪製"> 手繪多邊形</span> 繪製排除範圍，封閉多邊形各角點可自由拖曳調整。</li>
+                <li>完成後切換回 <span class="highlight">「鎖定」</span> 狀態，系統將自動扣除該區域內的所有模組並更新總發電量。</li>
+            </ul>
+        </div>
+
+        <!-- 3.3 障礙區域 -->
+        <div class="step-box step-red">
+            <div class="step-title red-title">
+                <span>3. 障礙區域 (Obstacles) ‧ 水塔／女兒牆／機房／鄰棟</span>
+                <span class="btn-badge btn-red"><img src="images/obstacle.svg" alt=""> 編輯狀態：紅色填色</span>
+            </div>
+            <ul>
+                <li>將左側 <span class="btn-badge btn-red">障礙區域</span> 切換至 <span class="highlight">「編輯」</span> 狀態。</li>
+                <li>在障礙工具面板設定障礙物高度（公尺 m），並可勾選<b>「在建物上」</b>（預設開啟）。當案場為屋頂型（平屋頂/斜屋頂）時，障礙物高度將自動由該多邊形位置之屋頂高程起算往上疊加，且斜屋頂四周立面均保持完整封閉，無縫貼合屋面；未勾選則由地面起算。</li>
+                <li>點選手繪多邊形描繪障礙物底面，閉合後即完成建立。</li>
+                <li><b>3D 實體即時擠出</b>：繪製完成後，3D 視圖即刻呈現半透明立體柱體。</li>
+                <li><b>干涉扣除機制</b>：當障礙物立體空間觸及太陽能模組或下方支架組件時，系統自動剔除受干涉模組並扣除容量。</li>
+            </ul>
+        </div>
+
+        <!-- 物件調整工具箱 -->
+        <h3>物件調整工具箱 (Object Transform Toolbox)</h3>
+        <p>在鎖定狀態下點選地圖上的任一多邊形，物件上方將浮現微型黑色調整面板：</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>選取物件</th>
+                    <th>可用按鈕</th>
+                    <th>操作說明</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td><span class="btn-badge btn-blue"><img src="images/area.svg" alt="範圍"> 案場範圍</span></td>
                     <td><span class="btn-badge btn-red">刪除</span> / <span class="btn-badge">返回</span></td>
-                    <td>點擊 <span class="btn-badge">刪除</span> 一鍵清空案場邊界；點擊 <span class="btn-badge">返回</span> 關閉工具箱。</td>
+                    <td>點擊「刪除」清空案場邊界；點擊「返回」關閉面板。</td>
                 </tr>
                 <tr>
                     <td><span class="btn-badge btn-orange"><img src="images/exclude.svg" alt="排除"> 排除區域</span></td>
                     <td><span class="btn-badge">內縮</span> / <span class="btn-badge">外擴</span> / <span class="btn-badge btn-red">刪除</span></td>
-                    <td>
-                        • 點選多邊形之某一邊線後，點擊 <span class="btn-badge">內縮</span> / <span class="btn-badge">外擴</span> 可將該邊線單獨往內/往外平行平移 0.5m。
-                        <br>• 點擊 <span class="btn-badge">刪除</span> 移除該排除區。
-                    </td>
+                    <td>點選多邊形之某一邊線後，點擊「內縮」或「外擴」可將該邊線平行平移 0.5m；點擊「刪除」移除該排除區。</td>
                 </tr>
                 <tr>
                     <td><span class="btn-badge btn-red"><img src="images/obstacle.svg" alt="障礙"> 障礙區域</span></td>
                     <td><span class="btn-badge">加高</span> / <span class="btn-badge">降低</span> / <span class="btn-badge btn-red">刪除</span></td>
-                    <td>
-                        • 點擊 <span class="btn-badge">加高</span> 或 <span class="btn-badge">降低</span> 即可即時將立體障礙物增減 0.5m，並即時觸發碰撞干涉計算。
-                        <br>• 點擊 <span class="btn-badge">刪除</span> 移除該障礙物。
-                    </td>
+                    <td>點擊「加高」或「降低」可增減障礙物高度 0.5m，並即時重新計算立體干涉；點擊「刪除」移除該障礙物。</td>
                 </tr>
             </tbody>
         </table>
 
-        <h2>三、 3D 視角操控與顯示設定</h2>
-        <p>3D 視場標題列與控制按鈕提供多種專業工程檢視模式：</p>
+        <!-- 多邊形快速複製、吸附與極限縮放 -->
+        <h3>多邊形快速複製、邊線吸附與極限微調縮放 (Advanced Map Editing)</h3>
+        <ul>
+            <li><b>超高解析度極限縮放（Zoom 24）</b>：地圖支援更深層的放大極限（最高 24 級放大），即便是 20kWp 以下之微型住宅屋頂，亦可清晰辨識並進行公分級精準微調。</li>
+            <li><b>多邊形快速複製 (Duplicate Polygon)</b>：
+                <ul>
+                    <li><b>Windows 系統</b>：按住鍵盤 <kbd>Ctrl</kbd> 鍵不放並拖曳既存之「排除」或「障礙」多邊形，即可直接拖曳複製出新多邊形。</li>
+                    <li><b>Mac OS 系統</b>：按住鍵盤 <kbd>Cmd (⌘)</kbd> 鍵不放並拖曳多邊形進行複製。</li>
+                    <li><b>觸控／行動裝置</b>：在排除或障礙多邊形上方<b>「連續點觸兩次 (Double Tap)」</b>，系統即自動原地複製並選取新多邊形。</li>
+                    <li><b>光影輪動提示動效</b>：觸發複製時，多邊形邊界具備高亮流光光影輪動動效，並於螢幕下方浮現複製成功提示標籤。</li>
+                </ul>
+            </li>
+            <li><b>自動吸附案場範圍邊線 (Edge Snapping)</b>：拖曳或平移任何排除/障礙多邊形時，系統會自動搜尋案場範圍（Site Boundary）各頂點、中點及邊線投影，當游標接近時自動精準吸附對齊，確保留白或走道邊緣完全貼齊。</li>
+        </ul>
+
+        <!-- 四、 試算表參數配置與運算規則 -->
+        <h2>四、 試算表參數配置與運算規則</h2>
+        <p>左側 Excel 參數控制表各欄位說明與幾何運算邏輯：</p>
         <table>
             <thead>
                 <tr>
-                    <th>按鈕圖示</th>
-                    <th>功能說明</th>
+                    <th>項目編號與名稱</th>
+                    <th>可選值／單位</th>
+                    <th>說明與操作方式</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td><span class="btn-badge"><img src="images/perspective_view.svg" alt="重設視角"> 重設視角</span></td>
-                    <td>重設回預設 45° 等角透視視角（Perspective View）。</td>
+                    <td><span class="feature-tag">1. 案場名稱</span></td>
+                    <td>文字</td>
+                    <td>案場識別名稱，將帶入專案簡報與匯出檔案中。</td>
                 </tr>
                 <tr>
-                    <td><span class="btn-badge"><img src="images/top_view.svg" alt="俯視"> 俯視視角</span></td>
-                    <td>切換至正上方俯瞰視角（Top View）。</td>
+                    <td><span class="feature-tag">2. 案場型式</span></td>
+                    <td>地面型 / 平屋頂 / 斜屋頂</td>
+                    <td>選擇基礎場域結構型式。</td>
                 </tr>
                 <tr>
-                    <td><span class="btn-badge"><img src="images/side_view.svg" alt="側視"> 側視視角</span></td>
-                    <td>切換至側面橫向水平視角（Side View）。</td>
+                    <td><span class="feature-tag">3. 屋頂坡向</span></td>
+                    <td>單斜 / 雙斜</td>
+                    <td>當案場型式為「斜屋頂」時開放設定。</td>
                 </tr>
                 <tr>
-                    <td><span class="btn-badge"><img src="images/normal_view.svg" alt="法向"> Normal 視角</span></td>
-                    <td>點選特定屋頂或模組面後，以垂直於該平面的法向視角填滿畫面。</td>
+                    <td><span class="feature-tag">4. PV 擺放</span></td>
+                    <td>直放 (Portrait) / 橫放 (Landscape)</td>
+                    <td>切換太陽能模組之長短邊擺放朝向。</td>
                 </tr>
                 <tr>
-                    <td><span class="btn-badge"><img src="images/zoom_to_fit.svg" alt="填滿"> Zoom to Fit</span></td>
-                    <td>自動計算包圍盒（Bounding Box），讓整個案場所有結構與地坪完整置中填滿畫面。</td>
+                    <td><span class="feature-tag">5–8. 模組規格</span></td>
+                    <td>預設廠牌 / mm / Wp</td>
+                    <td>內建 VSUN、LONGi、Motech、TSEC 等大廠標準尺寸，亦可選擇「自訂模組尺寸」自行輸入長度 (L)、寬度 (W) 與額定瓦數 (P)。</td>
                 </tr>
                 <tr>
-                    <td><span class="btn-badge"><img src="images/ruler.svg" alt="量測"> 距離量測</span></td>
-                    <td>在 3D 視場空間中連續點選以量測三維空間真實距離，按 <kbd>Esc</kbd> 退出並清除量測標記。</td>
+                    <td><span class="feature-tag">9. 方位角</span></td>
+                    <td>度 (°)</td>
+                    <td>模組陣列朝向角度（0° 正北、90° 正東、180° 正南、270° 正西）。提供 135°、225°、90°、180°、270° 快捷節點與 ±0.5° 微調按鈕。</td>
+                </tr>
+                <tr>
+                    <td><span class="feature-tag">10–13. 陣列配置</span></td>
+                    <td>數值</td>
+                    <td>包含滿版覆蓋行數 (arrI)、列數 (arrJ)、模組串數 (arrM) 與容配比 (arrP)。</td>
+                </tr>
+                <tr>
+                    <td><span class="feature-tag">14–15. 工程間距</span></td>
+                    <td>mm</td>
+                    <td>橫向間距 spX 提供 20、40、80 mm 快捷節點；縱向間距 spY 提供 26、50 mm 快捷節點。</td>
+                </tr>
+                <tr>
+                    <td><span class="feature-tag">16–19. 傾角與高度</span></td>
+                    <td>度 (°) / mm / m</td>
+                    <td>
+                        • 安裝傾角 θ 提供 6°、8°、10° 快捷節點。<br>
+                        • 屋頂傾角與屋頂高度於屋頂型案場生效。<br>
+                        • 支架高度 h 提供 1m (1000mm)、2m (2000mm)、4m (4000mm) 快捷節點。
+                    </td>
+                </tr>
+                <tr>
+                    <td><span class="feature-tag">20–23. 計算輸出</span></td>
+                    <td>kWp / 片 / m²</td>
+                    <td>系統依排板幾何即時計算之總裝置容量、總片數與陣列佔地面積。</td>
                 </tr>
             </tbody>
         </table>
 
-        <h3>顯示設定（光影與支架全開/全關）</h3>
+        <!-- 平鋪與架高判斷邏輯 -->
+        <h3>斜屋頂結構模式判斷（平鋪 vs. 架高）</h3>
         <ul>
-            <li>點擊 3D 視角右下角的
-                <span class="btn-badge"><img src="images/eye.svg" alt="顯示設定"> 顯示設定</span>
-                面板，提供兩大獨立控制開關：
+            <li><b>平鋪模式（安裝傾角 = 屋頂傾角）</b>：系統自動判定為平鋪結構。模組底面離屋面固定 200mm，每片模組下方配置 2 支專用陽極鋁軌，均勻分布於離模組兩端各 1/5 長度處。</li>
+            <li><b>架高模式（安裝傾角 ≠ 屋頂傾角）</b>：系統自動判定為架高結構。支架高度 h 代表陣列最高點之離地/離屋面高度，自動生成斜撐鋼樑、立柱與基座支撐。</li>
+        </ul>
+
+        <!-- 五、 3D 視角操控與日照模擬 -->
+        <h2>五、 3D 視角操控與日照模擬</h2>
+        <p>3D 視圖視窗支援多種視角模式、空間量測與即時日照陰影模擬：</p>
+
+        <!-- 視角切換表格 -->
+        <table>
+            <thead>
+                <tr>
+                    <th>控制按鈕</th>
+                    <th>名稱</th>
+                    <th>操作功能說明</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="btn-badge"><img src="images/perspective_view.svg" alt="透視"></span></td>
+                    <td><b>重設視角</b></td>
+                    <td>將相機視角重置回預設 45° 等角透視視角（Perspective View）。</td>
+                </tr>
+                <tr>
+                    <td><span class="btn-badge"><img src="images/top_view.svg" alt="俯視"></span></td>
+                    <td><b>俯視視角</b></td>
+                    <td>切換至正上方垂直向下之俯瞰視角（Top View）。</td>
+                </tr>
+                <tr>
+                    <td><span class="btn-badge"><img src="images/side_view.svg" alt="側視"></span></td>
+                    <td><b>側視視角</b></td>
+                    <td>切換至水平橫向側視角度（Side View），檢視陣列坡度與支架高度。</td>
+                </tr>
+                <tr>
+                    <td><span class="btn-badge"><img src="images/normal_view.svg" alt="法向"></span></td>
+                    <td><b>Normal 視角</b></td>
+                    <td>點選特定平面後，將視角自動垂直對齊該平面法向。</td>
+                </tr>
+                <tr>
+                    <td><span class="btn-badge"><img src="images/zoom_to_fit.svg" alt="填滿"></span></td>
+                    <td><b>Zoom to Fit</b></td>
+                    <td>自動計算案場邊界包圍盒，將所有模型結構置中填滿畫面。</td>
+                </tr>
+                <tr>
+                    <td><span class="btn-badge"><img src="images/ruler.svg" alt="量測"></span></td>
+                    <td><b>3D 距離量測</b></td>
+                    <td>在 3D 空間中連續點選模型節點以量測真實空間距離，按 <kbd>Esc</kbd> 結束量測。</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- 日照與顯示設定 -->
+        <h3>日照模擬與顯示設定</h3>
+        <ul>
+            <li><span class="highlight">月份滑桿</span>：模擬全年度太陽高度角變化，備有 <span class="btn-badge">6/21 (夏至)</span> 與 <span class="btn-badge">12/21 (冬至)</span> 快捷按鈕。</li>
+            <li><span class="highlight">時刻滑桿</span>：模擬全日日照軌跡與陰影投射，備有 <span class="btn-badge">09:00</span> 與 <span class="btn-badge">15:00</span> 快捷按鈕。</li>
+            <li><span class="highlight">顯示設定面板（右下角）</span>：
                 <ul>
-                    <li><span class="highlight">光影開關</span>：開啟/關閉即時太陽光影追蹤渲染。</li>
-                    <li><span class="highlight">支架開關（全開/全關）</span>：一鍵控制全場所有支架組件（鋼樑、斜撐、直柱、水泥基樁、陽極鋁軌、L型腳座）的顯示與隱藏。關閉時<b>僅保留太陽能模組懸浮顯示</b>，方便快速檢視模組純淨排版陣列。</li>
+                    <li><b>光影開關</b>：開啟或關閉 3D 視場之即時太陽光影追蹤。</li>
+                    <li><b>支架開關（全開／全關）</b>：一鍵控制全場支架結構（鋼樑、斜撐、立柱、鋁導軌、基樁）之顯示與隱藏；關閉時僅保留太陽能模組懸浮顯示。</li>
+                </ul>
+            </li>
+            <li><span class="highlight">右鍵快捷匯出選單</span>：在 3D 視圖內任一處點擊<b>滑鼠右鍵</b>：
+                <ul>
+                    <li>📷 <b>擷取 3D 圖片 (PNG)</b>：輸出 3840px 高解析度 4K PNG 圖片。</li>
+                    <li>📐 <b>匯出向量圖 (SVG)</b>：將目前 3D 視場線條轉換為 1920×1080 向量 SVG 圖檔。</li>
                 </ul>
             </li>
         </ul>
 
-        <h2>四、 成果輸出與專業簡報 (PDF &amp; 數據匯出)</h2>
+        <!-- 六、 資料管理與成果輸出 -->
+        <h2>六、 資料管理與成果輸出</h2>
+        <p>系統提供多種專案輸出與設定檔儲存功能：</p>
         <ul>
-            <li><span class="highlight">匯出案場簡報 (A4 橫式 PDF 專業報告書)</span>：點擊左側動作區的
-                <span class="btn-badge btn-blue"><img src="images/export_slide.svg" alt="匯出簡報"> 匯出案場簡報</span>
-                按鈕，一鍵輸出高品質 3 頁完整工程規劃簡報：
+            <li><span class="highlight">匯出案場簡報 (A4 橫式 PDF)</span>：點擊左側 <span class="btn-badge btn-blue"><img src="images/export_slide.svg" alt="匯出簡報"> 匯出案場簡報</span>，自動生成 3 頁標準工程規劃報告：
                 <ul>
-                    <li><b>Slide 1：專案綜述與技術參數表</b>（案場名稱、地址座標、裝機容量 kWp、模組總片數、長寬間距與角度規格）。</li>
-                    <li><b>Slide 2：3D 四視角模擬矩陣</b>（包含全景透視圖、正上方俯視圖、局部特寫圖、與<b>正交平行投影側視圖</b>）：
-                        <ul>
-                            <li><b>正交相機平行投影（Orthographic Projection）</b>：側視圖全面採用平行投影，消除透視變形，真實呈現坡度、高程與支架斷面。</li>
-                            <li><b>約 10 片（或以內）模組構圖聚焦</b>：自動以傾斜坡向約 10 片模組跨距緊湊構圖，完美展現模組、支架與建物/地面之結構斷面。</li>
-                            <li><b>高聳建物自動破裂視圖截斷（Broken-out Section View）</b>：當建物高度較高時，系統自動截斷中下段建物牆面並繪製標準白色工程破裂折斷線（〰️），將太陽能模組與支架結構佔比放大至 70% 以上，確保結構細節極致清晰。</li>
-                            <li><b>加粗草綠色地面基準帶（Bold Solid Ground Band）</b>：地面基線配置厚達 0.60m 的實體草綠色基盤與亮綠色高光頂線，在深色底圖下無比清晰醒目。</li>
-                            <li><b>高對比色彩標示與動態圖例</b>：
-                                <span class="color-legend-pill"><span class="color-box" style="background:#1d4ed8; border:1px solid #60a5fa;"></span>模組 (湛藍)</span>
-                                <span class="color-legend-pill"><span class="color-box" style="background:#f59e0b; border:1px solid #fbbf24;"></span>支架組件 (琥珀金)</span>
-                                <span class="color-legend-pill"><span class="color-box" style="background:#94a3b8; border:1px solid #cbd5e1;"></span>建物 (淺灰)</span>
-                                <span class="color-legend-pill"><span class="color-box" style="background:#22c55e; border:1px solid #4ade80;"></span>地面 (草綠加粗)</span>。
-                            </li>
-                            <li><b>地面型智慧圖例判斷</b>：當案場為地面型（Ground）時，圖例會自動隱藏「建物」標籤，保持圖面專業簡潔。</li>
-                        </ul>
-                    </li>
-                    <li><b>Slide 3：衛星地圖邊界套疊圖</b>（高解析度正方形 1:1 衛星地圖與案場紅線邊界總覽）。</li>
+                    <li><b>Slide 1：專案綜述與技術參數表</b>（案場名稱、經緯度座標、總裝置容量 kWp、模組總片數、排列間距與角度規格）。</li>
+                    <li><b>Slide 2：3D 四視角模擬矩陣</b>（包含等角透視圖、正上方俯視圖、局部特寫圖、與正交平行投影側視斷面圖）。側視圖自動聚焦於約 10 片模組跨距，並配置色彩標示圖例（模組：藍色、支架：金色、建物：灰色、地面：綠色）。</li>
+                    <li><b>Slide 3：衛星地圖邊界套疊圖</b>（正方形 1:1 衛星空拍圖與案場紅線範圍總覽）。</li>
                 </ul>
             </li>
-            <li><span class="highlight">右鍵選單：4K 圖片與 SVG 向量圖匯出</span>：
-                在 3D 視場內任一處點擊<b>滑鼠右鍵</b>，即可呼叫快捷選單：
+            <li><span class="highlight">匯出案場資料 (JSON)</span>：點擊 <span class="btn-badge btn-blue"><img src="images/export_text.svg" alt="匯出資料"> 匯出案場資料</span>，將邊界座標、排除區、障礙物高度與所有試算表參數儲存為 JSON 檔案，便於日後重新載入或備份。</li>
+            <li><span class="highlight">預設值管理</span>：
                 <ul>
-                    <li>📷 <b>擷取 3D 圖片 (PNG)</b>：自動渲染輸出 3840px 超高清 4K 無失真 PNG 圖片。</li>
-                    <li>📐 <b>匯出向量圖 (SVG)</b>：將 3D 視場線條與多邊形轉換為可編輯的 1920×1080 向量 SVG 圖檔。</li>
+                    <li><b>儲存為預設</b>：將當前試算表參數直接儲存至 <code>defaults.json</code> 與瀏覽器 LocalStorage。</li>
+                    <li><b>返回預設</b>：放棄目前修改，將參數重置回 <code>defaults.json</code> 預設數值。</li>
                 </ul>
             </li>
-            <li><span class="highlight">匯出案場資料 (JSON)</span>：點擊
-                <span class="btn-badge btn-blue"><img src="images/export_text.svg" alt="匯出資料"> 匯出案場資料</span>
-                按鈕，儲存包含邊界坐標、障礙物高度、排除區與所有試算表參數的 JSON 專案檔，隨時可重新載入。</li>
-            <li><span class="highlight">目錄智慧記憶 (IndexedDB)</span>：
-                透過 File System Access API，系統會自動記住您上次選擇的匯出資料夾路徑，連續匯出 PDF、JSON、圖片時無需反覆選擇資料夾。</li>
-            <li><span class="highlight">預設值管理 (defaults.json &amp; LocalStorage)</span>：
-                系統優先讀取 <code>defaults.json</code> 設定檔（附加 timestamp 防止瀏覽器快取），並提供「儲存為預設」與「返回預設」按鈕，便於客製化標準範本。</li>
+            <li><span class="highlight">目錄智慧記憶</span>：系統透過 File System Access API 自動記錄上次匯出的資料夾路徑，連續輸出簡報與檔案時無需重複選擇目標路徑。</li>
         </ul>
 
         <div class="tip">
-            <div class="tip-title">💡 行動裝置與觸控適配 (Responsive Design)</div>
-            在智慧型手機或平板電腦上，試算表數值欄位具備自適應觸控寬度；所有微型浮動工具箱皆支援手指流暢拖曳；3D 月份/時間滑動軸經觸控最佳化；地圖中央配有「頁面滑動鎖」防止誤觸，讓您在現場勘查或會議室簡報時皆能快速順暢操作。
+            <div class="tip-title">💡 鍵盤快速鍵與操作提示</div>
+            • 距離量測中：按 <kbd>Esc</kbd> 鍵可退出量測模式並清除標記線。<br>
+            • 頂點調整：在地圖多邊形編輯模式下，滑鼠拖曳頂點圓形把手即可即時調整幾何外框。<br>
+            • 3D 視角旋轉：滑鼠左鍵拖曳旋轉視角、滑鼠右鍵拖曳平移視野、滾輪縮放視距。
         </div>
     </div>
 </body>
