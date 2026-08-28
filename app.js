@@ -2428,6 +2428,62 @@ function clearPolygonVertexHandles() {
         if (map) map.removeLayer(activePolygonCenterMarker);
         activePolygonCenterMarker = null;
     }
+let lastMoveBadgeTapTime = 0;
+let isMoveBadgeDoubleTap = false;
+
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Control' || e.key === 'Meta' || e.key === 'Alt') {
+        window.__isCtrlOrCmdPressed = true;
+        const badge = document.querySelector('.poly-move-badge.dragging');
+        if (badge) badge.classList.add('copy-mode');
+    }
+});
+window.addEventListener('keyup', (e) => {
+    if (e.key === 'Control' || e.key === 'Meta' || e.key === 'Alt') {
+        window.__isCtrlOrCmdPressed = false;
+    }
+});
+
+function clonePolygon(poly, latlngs) {
+    if (!poly || !map) return null;
+    const ring = (latlngs || getOuterRingLatLngs(poly)).map(pt => L.latLng(pt.lat, pt.lng));
+    if (!ring || ring.length < 3) return null;
+
+    let cloned = null;
+    if (poly.isObstacle) {
+        cloned = L.polygon(ring, {
+            color: 'rgba(239, 68, 68, 1)',
+            weight: 2.5,
+            fillColor: 'rgba(239, 68, 68, 1)',
+            fillOpacity: 0.35
+        }).addTo(map);
+        cloned.isObstacle = true;
+        cloned.obstacleHeight = poly.obstacleHeight || 5.0;
+        cloned.isOnRoof = poly.isOnRoof !== false;
+        obstaclePolygons.push(cloned);
+    } else {
+        const isWalk = !!poly.isWalkway;
+        const color = isWalk ? 'rgba(16, 185, 129, 1)' : 'rgba(234, 88, 12, 1)';
+        cloned = L.polygon(ring, {
+            color: color,
+            weight: 2.5,
+            fillColor: color,
+            fillOpacity: isWalk ? 0.35 : 0.25
+        }).addTo(map);
+        cloned.isWalkway = isWalk;
+        cloned.isPathway = !!poly.isPathway;
+        cloned.pathwayWidth = poly.pathwayWidth;
+        cloned.isSubstation = !!poly.isSubstation;
+        cloned.substationWidth = poly.substationWidth;
+        cloned.substationLength = poly.substationLength;
+        if (poly.isSubstation && poly.substationCenter) {
+            cloned.substationCenter = L.latLng(poly.substationCenter.lat, poly.substationCenter.lng);
+        }
+        exclusionPolygons.push(cloned);
+    }
+
+    makePolygonSelectable(cloned);
+    return cloned;
 }
 
 function updatePolygonVertexHandles(poly) {
@@ -2493,11 +2549,11 @@ function updatePolygonVertexHandles(poly) {
         activePolygonVertexMarkers.push(vMarker);
     });
 
-    // Add central Move Icon Badge
+    // Add central Move & Duplicate Icon Badge
     const center = getPolygonCenter(poly);
     const moveIcon = L.divIcon({
         className: 'poly-center-move-icon-container',
-        html: `<div class="poly-move-badge" title="按住此處可拖曳移動多邊形">
+        html: `<div class="poly-move-badge" title="拖曳可移動多邊形；按住 Ctrl / Cmd 或連點兩下拖曳可直接複製另一份">
             <svg viewBox="0 0 24 24"><path d="M10 9h4V6h3l-5-5-5 5h3v3zm-1 1H6V7l-5 5 5 5v-3h3v-4zm14 2l-5-5v3h-3v4h3v3l5-5zm-9 3h-4v3H7l5 5 5-5h-3v-3z"/></svg>
         </div>`,
         iconSize: [32, 32],
@@ -2514,6 +2570,16 @@ function updatePolygonVertexHandles(poly) {
     let startCenterLatLngs = null;
     let startSubstationCenter = null;
 
+    activePolygonCenterMarker.on('mousedown touchstart', () => {
+        const now = Date.now();
+        if (now - lastMoveBadgeTapTime < 450) {
+            isMoveBadgeDoubleTap = true;
+        } else {
+            isMoveBadgeDoubleTap = false;
+        }
+        lastMoveBadgeTapTime = now;
+    });
+
     activePolygonCenterMarker.on('dragstart', (e) => {
         map.dragging.disable();
         if (e.originalEvent) L.DomEvent.stopPropagation(e.originalEvent);
@@ -2528,8 +2594,20 @@ function updatePolygonVertexHandles(poly) {
         if (poly.isSubstation) {
             startSubstationCenter = L.latLng(poly.substationCenter.lat, poly.substationCenter.lng);
         }
+
+        const origEvt = e.originalEvent || {};
+        const isModifier = !!(origEvt.ctrlKey || origEvt.metaKey || origEvt.altKey || window.__isCtrlOrCmdPressed);
+        const isCloneMode = (poly !== customSiteBoundary) && (isModifier || isMoveBadgeDoubleTap);
+
+        if (isCloneMode) {
+            clonePolygon(poly, startCenterLatLngs);
+        }
+
         const badge = activePolygonCenterMarker.getElement() ? activePolygonCenterMarker.getElement().querySelector('.poly-move-badge') : null;
-        if (badge) badge.classList.add('dragging');
+        if (badge) {
+            badge.classList.add('dragging');
+            if (isCloneMode) badge.classList.add('copy-mode');
+        }
     });
 
     activePolygonCenterMarker.on('drag', (e) => {
@@ -2568,12 +2646,15 @@ function updatePolygonVertexHandles(poly) {
     activePolygonCenterMarker.on('dragend', () => {
         map.dragging.enable();
         const badge = activePolygonCenterMarker.getElement() ? activePolygonCenterMarker.getElement().querySelector('.poly-move-badge') : null;
-        if (badge) badge.classList.remove('dragging');
+        if (badge) {
+            badge.classList.remove('dragging', 'copy-mode');
+        }
+        isMoveBadgeDoubleTap = false;
         if (isSite) {
             inferParametersFromSiteBoundary(poly, true);
         } else {
             calculateOutputs();
-            updateAllVisuals();
+            updateAllVisuals(true);
         }
     });
 }
