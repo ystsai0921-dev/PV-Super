@@ -448,6 +448,7 @@ function showStreetView(lat, lng) {
 
 let streetViewPopupW = 380;
 let streetViewPopupH = 290;
+let isInteractingWithStreetView = false;
 
 function updateStreetViewPopup(lat, lng) {
     if (!pegmanMarker) return;
@@ -486,17 +487,21 @@ function updateStreetViewPopup(lat, lng) {
     `;
 
     pegmanMarker.bindPopup(popupHtml, {
-        maxWidth: 1200,
+        maxWidth: 2000,
         minWidth: 260,
         className: 'streetview-custom-popup',
-        autoPan: true,
-        autoPanPadding: [20, 20],
+        autoPan: false,
+        closeOnClick: false,
+        autoClose: false,
+        closeOnEscapeKey: true,
         closeButton: true
     }).openPopup();
 
     setTimeout(() => {
         const popupEl = document.querySelector('.leaflet-popup.streetview-custom-popup');
         if (popupEl) {
+            L.DomEvent.disableClickPropagation(popupEl);
+            L.DomEvent.disableScrollPropagation(popupEl);
             setupStreetViewResize(popupEl);
             setupStreetViewMove(popupEl);
         }
@@ -527,13 +532,21 @@ function setupStreetViewMove(popupEl) {
         if (e.cancelable) e.preventDefault();
     };
 
-    const onPointerUp = () => {
+    const onPointerUp = (e) => {
         if (!isMoving) return;
         isMoving = false;
+        isInteractingWithStreetView = false;
         window.removeEventListener('mousemove', onPointerMove);
         window.removeEventListener('touchmove', onPointerMove);
         if (iframe) iframe.style.pointerEvents = 'auto';
         if (map && map.dragging) map.dragging.enable();
+
+        // 吸收可能冒泡至地圖的點擊事件，防止地圖關閉彈窗
+        const absorbClick = (evt) => {
+            evt.stopPropagation();
+            evt.preventDefault();
+        };
+        window.addEventListener('click', absorbClick, { capture: true, once: true });
     };
 
     const onPointerDown = (e) => {
@@ -544,6 +557,7 @@ function setupStreetViewMove(popupEl) {
         e.stopPropagation();
 
         isMoving = true;
+        isInteractingWithStreetView = true;
         startX = e.touches ? e.touches[0].clientX : e.clientX;
         startY = e.touches ? e.touches[0].clientY : e.clientY;
 
@@ -599,16 +613,26 @@ function setupStreetViewResize(popupEl) {
         if (e.cancelable) e.preventDefault();
     };
 
-    const onPointerUp = () => {
+    const onPointerUp = (e) => {
+        isInteractingWithStreetView = false;
         window.removeEventListener('mousemove', onPointerMove);
         window.removeEventListener('touchmove', onPointerMove);
         if (iframe) iframe.style.pointerEvents = 'auto';
         if (map && map.dragging) map.dragging.enable();
+
+        // 吸收可能冒泡至地圖的點擊事件，防止地圖關閉彈窗
+        const absorbClick = (evt) => {
+            evt.stopPropagation();
+            evt.preventDefault();
+        };
+        window.addEventListener('click', absorbClick, { capture: true, once: true });
     };
 
     const onPointerDown = (e) => {
         e.preventDefault();
         e.stopPropagation();
+
+        isInteractingWithStreetView = true;
 
         // 鎖定左上角座標：將 Leaflet 的 transform 轉換為絕對 left 與 top 定位，確保左上角完全固定不動
         const rect = popupEl.getBoundingClientRect();
