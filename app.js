@@ -603,14 +603,28 @@ function setupStreetViewResize(popupEl) {
         window.removeEventListener('mousemove', onPointerMove);
         window.removeEventListener('touchmove', onPointerMove);
         if (iframe) iframe.style.pointerEvents = 'auto';
+        if (map && map.dragging) map.dragging.enable();
     };
 
     const onPointerDown = (e) => {
         e.preventDefault();
         e.stopPropagation();
+
+        // 鎖定左上角座標：將 Leaflet 的 transform 轉換為絕對 left 與 top 定位，確保左上角完全固定不動
+        const rect = popupEl.getBoundingClientRect();
+        const parentRect = popupEl.offsetParent ? popupEl.offsetParent.getBoundingClientRect() : { left: 0, top: 0 };
+        const fixedLeft = rect.left - parentRect.left;
+        const fixedTop = rect.top - parentRect.top;
+
+        popupEl.style.transform = 'none';
+        popupEl.style.left = `${fixedLeft}px`;
+        popupEl.style.top = `${fixedTop}px`;
+
         startX = e.touches ? e.touches[0].clientX : e.clientX;
         startW = box.getBoundingClientRect().width;
+
         if (iframe) iframe.style.pointerEvents = 'none';
+        if (map && map.dragging) map.dragging.disable();
 
         window.addEventListener('mousemove', onPointerMove, { passive: false });
         window.addEventListener('touchmove', onPointerMove, { passive: false });
