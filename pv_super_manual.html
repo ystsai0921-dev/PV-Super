@@ -309,7 +309,7 @@
         <!-- 頂部標題區 -->
         <div class="header-container">
             <div>
-                <h1>PV Super 案場規劃工具使用說明書 <span class="version-badge">v2.6</span></h1>
+                <h1>PV Super 案場規劃工具使用說明書 <span class="version-badge">v2.7</span></h1>
             </div>
             <div class="logo-box">
                 <img src="images/pv_super_logo_light.png" alt="PV Super" style="height: 48px; width: auto; object-fit: contain; filter: invert(1);">
@@ -519,7 +519,7 @@
                 <tr>
                     <td><span class="feature-tag">10–13. 陣列配置</span></td>
                     <td>數值</td>
-                    <td>包含滿版覆蓋行數 (arrI)、列數 (arrJ)、模組串數 (arrM) 與容配比 (arrP)。</td>
+                    <td>包含橫向片數 (arrI)、縱向片數 (arrJ)、組列數量 (arrM) 與組列間距 (arrP)。第 10、11 項右側快捷節點提供 <code>-&gt;|</code> 按鈕可一鍵自動取案場範圍內滿版最大片數；當組列數量 arrM = 1 時，第 13 項組列間距自動 Mute 鎖定。</td>
                 </tr>
                 <tr>
                     <td><span class="feature-tag">14–15. 工程間距</span></td>
@@ -620,11 +620,14 @@
         <h2>六、 資料管理與成果輸出</h2>
         <p>系統提供多種專案輸出與設定檔儲存功能：</p>
         <ul>
-            <li><span class="highlight">匯出案場簡報 (A4 橫式 PDF)</span>：點擊左側 <span class="btn-badge btn-blue"><img src="images/export_slide.svg" alt="匯出簡報"> 匯出案場簡報</span>，自動生成 3 頁標準工程規劃報告：
+            <li><span class="highlight">匯出案場簡報 (A4 橫式 PDF)</span>：點擊左側 <span class="btn-badge btn-blue"><img src="images/export_slide.svg" alt="匯出簡報"> 匯出案場簡報</span>，系統提供兩種視角擷取模式並自動生成 3 頁標準工程規劃報告：
                 <ul>
+                    <li><b>⚡ 自動截圖</b>：由系統全自動最佳化視角並高速依序擷取。</li>
+                    <li><b>📷 手動截圖（互動取景）</b>：進入 3D 視窗互動取景框（510×232 比例），提供 4 大視角切換按鈕（填滿畫面、俯視、側視、透視）與 <b>+</b> / <b>−</b> 縮放按鈕，依序引導自訂放大圖、透視圖、上視圖與側視圖（側視圖自動啟用平行投影 Orthographic Camera 與工程配色）。</li>
                     <li><b>Slide 1：專案綜述與技術參數表</b>（案場名稱、經緯度座標、總裝置容量 kWp、模組總片數、排列間距與角度規格）。</li>
-                    <li><b>Slide 2：3D 四視角模擬矩陣</b>（包含等角透視圖、正上方俯視圖、局部特寫圖、與正交平行投影側視斷面圖）。側視圖自動聚焦於約 10 片模組跨距，並配置色彩標示圖例（模組：藍色、支架：金色、建物：灰色、地面：綠色）。</li>
-                    <li><b>Slide 3：衛星地圖邊界套疊圖</b>（正方形 1:1 衛星空拍圖與案場紅線範圍總覽）。</li>
+                    <li><b>Slide 2：3D 四視角模擬矩陣</b>（包含等角透視圖、正上方俯視圖、局部特寫圖、與正交平行投影側視斷面圖，配置模組/支架/建物/地面圖例）。</li>
+                    <li><b>Slide 3：衛星地圖邊界套疊圖</b>（正方形 1:1 衛星空拍圖，範圍自動擴充 $\le 70\%$，帶入充足周邊地貌與道路）。</li>
+                    <li>全份簡報頁首頁尾均搭載新版 <code>pv_super_logo_light.png</code> 品牌識別標誌。</li>
                 </ul>
             </li>
             <li><span class="highlight">匯出案場資料 (JSON)</span>：點擊 <span class="btn-badge btn-blue"><img src="images/export_text.svg" alt="匯出資料"> 匯出案場資料</span>，將邊界座標、排除區、障礙物高度與所有試算表參數儲存為 JSON 檔案，便於日後重新載入或備份。</li>

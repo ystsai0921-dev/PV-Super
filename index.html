@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style.css?t=20260827_1201">
+    <link rel="stylesheet" href="style.css?t=20260828_1231">
 </head>
 
 <body>
@@ -71,7 +71,7 @@
                 <!-- PV Super 工具標誌 (點擊開啟線上使用說明書) -->
                 <a href="pv_super_manual.html" target="_blank" title="使用說明書" class="pv-super-logo-link">
                     <img id="pv-super-logo" src="images/pv_super_logo_light.png" alt="PV Super" class="pv-super-logo-img">
-                    <span class="pv-super-version">v2.6</span>
+                    <span class="pv-super-version">v2.7</span>
                 </a>
             </div>
 
@@ -109,19 +109,23 @@
                             <td class="cell-unit">-</td>
                         </tr>
 
-                        <!-- 第 3 項：坡向型式 (單斜 / 雙斜) -->
+                        <!-- 第 3 項：坡向型式 (單斜 / 雙斜 / 雙斜V) -->
                         <tr>
                             <td class="row-header">3</td>
                             <td class="cell-label">坡向型式</td>
                             <td>
                                 <div class="table-checker-group">
                                     <label class="table-checker-label">
-                                        <input id="chk-pitch-single" type="checkbox" name="pitch-style-chk" checked>
+                                        <input id="chk-pitch-single" type="radio" name="pitch-style-radio" value="single" checked>
                                         <span>單斜</span>
                                     </label>
                                     <label class="table-checker-label">
-                                        <input id="chk-pitch-double" type="checkbox" name="pitch-style-chk">
+                                        <input id="chk-pitch-double" type="radio" name="pitch-style-radio" value="double">
                                         <span>雙斜</span>
+                                    </label>
+                                    <label class="table-checker-label">
+                                        <input id="chk-pitch-double-v" type="radio" name="pitch-style-radio" value="double-v">
+                                        <span>雙斜V</span>
                                     </label>
                                 </div>
                                 <input id="val-pitch-style" type="hidden" value="single">
@@ -228,8 +232,8 @@
                                             title="20片">20</button>
                                         <button type="button" class="slider-node-btn" data-val="40"
                                             title="40片">40</button>
-                                        <button type="button" class="slider-node-btn" data-val="80"
-                                            title="80片">80</button>
+                                        <button type="button" class="slider-node-btn" data-val="max"
+                                            title="現有範圍內最大片數 (自動滿版)">-&gt;|</button>
                                     </div>
                                 </div>
                                 <button class="slider-btn" id="btn-arr-i-plus" title="增加1片">+</button>
@@ -251,8 +255,8 @@
                                         <button type="button" class="slider-node-btn active" data-val="4"
                                             title="4片">4</button>
                                         <button type="button" class="slider-node-btn" data-val="8" title="8片">8</button>
-                                        <button type="button" class="slider-node-btn" data-val="12"
-                                            title="12片">12</button>
+                                        <button type="button" class="slider-node-btn" data-val="max"
+                                            title="現有範圍內最大片數 (自動滿版)">-&gt;|</button>
                                     </div>
                                 </div>
                                 <button class="slider-btn" id="btn-arr-j-plus" title="增加1片">+</button>
@@ -844,7 +848,7 @@
 
     <!-- PV Super 應用程式主要與資材邏輯腳本 -->
     <script src="assets.js" defer></script>
-    <script src="app.js?t=20260827_1201" defer></script>
+    <script src="app.js?t=20260828_1231" defer></script>
 </body>
 
 </html>
