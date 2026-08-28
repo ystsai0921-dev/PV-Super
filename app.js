@@ -446,11 +446,14 @@ function showStreetView(lat, lng) {
     updateStreetViewPopup(lat, lng);
 }
 
+let streetViewPopupW = 380;
+let streetViewPopupH = 290;
+
 function updateStreetViewPopup(lat, lng) {
     if (!pegmanMarker) return;
 
     const popupHtml = `
-        <div class="streetview-popup-box">
+        <div class="streetview-popup-box" style="width: ${streetViewPopupW}px; height: ${streetViewPopupH}px;">
             <div class="streetview-popup-bar">
                 <div class="streetview-bar-title">
                     <img src="images/man.svg" class="streetview-bar-icon" />
@@ -469,19 +472,84 @@ function updateStreetViewPopup(lat, lng) {
             </div>
             <div class="streetview-popup-info">
                 <span class="streetview-coords">📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}</span>
-                <button type="button" class="streetview-remove-btn" onclick="removePegmanMarker()">關閉街景</button>
+                <div class="streetview-footer-actions">
+                    <button type="button" class="streetview-remove-btn" onclick="removePegmanMarker()">關閉街景</button>
+                    <div class="streetview-resize-handle" title="按住拖曳等比例縮放視窗">
+                        <svg viewBox="0 0 12 12" width="12" height="12">
+                            <path d="M10 2 L2 10 M11 6 L6 11 M11 10 L10 11" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                </div>
             </div>
         </div>
     `;
 
     pegmanMarker.bindPopup(popupHtml, {
-        maxWidth: 400,
-        minWidth: 320,
+        maxWidth: 1200,
+        minWidth: 260,
         className: 'streetview-custom-popup',
         autoPan: true,
         autoPanPadding: [20, 20],
         closeButton: true
     }).openPopup();
+
+    setTimeout(() => {
+        const popupEl = document.querySelector('.leaflet-popup.streetview-custom-popup');
+        if (popupEl) setupStreetViewResize(popupEl);
+    }, 50);
+}
+
+function setupStreetViewResize(popupEl) {
+    const handle = popupEl.querySelector('.streetview-resize-handle');
+    const box = popupEl.querySelector('.streetview-popup-box');
+    const iframe = popupEl.querySelector('.streetview-iframe-container iframe');
+    if (!handle || !box) return;
+
+    let startX = 0;
+    let startW = 0;
+    const aspectRatio = 380 / 290;
+
+    const onPointerMove = (e) => {
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const deltaX = clientX - startX;
+        let newW = Math.max(260, Math.min(window.innerWidth * 0.92, startW + deltaX));
+        let newH = Math.round(newW / aspectRatio);
+
+        streetViewPopupW = Math.round(newW);
+        streetViewPopupH = newH;
+
+        box.style.width = `${newW}px`;
+        box.style.height = `${newH}px`;
+
+        const contentEl = popupEl.querySelector('.leaflet-popup-content');
+        if (contentEl) {
+            contentEl.style.width = `${newW}px`;
+        }
+
+        if (e.cancelable) e.preventDefault();
+    };
+
+    const onPointerUp = () => {
+        window.removeEventListener('mousemove', onPointerMove);
+        window.removeEventListener('touchmove', onPointerMove);
+        if (iframe) iframe.style.pointerEvents = 'auto';
+    };
+
+    const onPointerDown = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        startX = e.touches ? e.touches[0].clientX : e.clientX;
+        startW = box.getBoundingClientRect().width;
+        if (iframe) iframe.style.pointerEvents = 'none';
+
+        window.addEventListener('mousemove', onPointerMove, { passive: false });
+        window.addEventListener('touchmove', onPointerMove, { passive: false });
+        window.addEventListener('mouseup', onPointerUp, { once: true });
+        window.addEventListener('touchend', onPointerUp, { once: true });
+    };
+
+    handle.addEventListener('mousedown', onPointerDown);
+    handle.addEventListener('touchstart', onPointerDown, { passive: false });
 }
 
 function initPegmanControl() {

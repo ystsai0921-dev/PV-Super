@@ -4715,14 +4715,14 @@ tr.tr-azimuth-row td {
     pointer-events: none;
     z-index: 999999;
     transform: translate(-50%, -50%);
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.8));
     animation: pegmanBounce 0.6s infinite alternate ease-in-out;
 }
 
 .pegman-drag-ghost img {
     width: 100%;
     height: 100%;
-    filter: invert(72%) sepia(85%) saturate(1200%) hue-rotate(355deg) brightness(102%) contrast(101%);
+    filter: brightness(0) invert(1);
 }
 
 @keyframes pegmanBounce {
@@ -4738,10 +4738,10 @@ tr.tr-azimuth-row td {
 .pegman-marker-icon {
     width: 36px;
     height: 36px;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
+    background: rgba(30, 41, 59, 0.95);
     border-radius: 50%;
     border: 2px solid #ffffff;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -4770,7 +4770,7 @@ tr.tr-azimuth-row td {
     margin-top: -24px;
     margin-left: -24px;
     border-radius: 50%;
-    background: rgba(245, 158, 11, 0.4);
+    background: rgba(255, 255, 255, 0.35);
     animation: markerPulse 2s infinite ease-out;
     z-index: 1;
     pointer-events: none;
@@ -4795,7 +4795,7 @@ tr.tr-azimuth-row td {
 
 .leaflet-popup.streetview-custom-popup .leaflet-popup-content {
     margin: 0;
-    width: 360px !important;
+    width: auto !important;
     line-height: 1.4;
 }
 
@@ -4807,7 +4807,12 @@ tr.tr-azimuth-row td {
 .streetview-popup-box {
     display: flex;
     flex-direction: column;
-    width: 100%;
+    width: 380px;
+    height: 290px;
+    min-width: 260px;
+    min-height: 200px;
+    position: relative;
+    box-sizing: border-box;
 }
 
 .streetview-popup-bar {
@@ -4817,6 +4822,7 @@ tr.tr-azimuth-row td {
     background: rgba(30, 41, 59, 0.85);
     padding: 8px 12px;
     border-bottom: 1px solid rgba(51, 65, 85, 0.8);
+    flex-shrink: 0;
 }
 
 .streetview-bar-title {
@@ -4831,7 +4837,7 @@ tr.tr-azimuth-row td {
 .streetview-bar-icon {
     width: 18px;
     height: 18px;
-    filter: invert(72%) sepia(85%) saturate(1200%) hue-rotate(355deg) brightness(102%) contrast(101%);
+    filter: brightness(0) invert(1);
 }
 
 .streetview-external-link {
@@ -4853,8 +4859,10 @@ tr.tr-azimuth-row td {
 }
 
 .streetview-iframe-container {
+    flex: 1;
     width: 100%;
-    height: 230px;
+    height: 100%;
+    min-height: 120px;
     background: #0f172a;
     position: relative;
 }
@@ -4863,17 +4871,25 @@ tr.tr-azimuth-row td {
     width: 100%;
     height: 100%;
     border: none;
+    display: block;
 }
 
 .streetview-popup-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
+    padding: 6px 10px 6px 12px;
     background: rgba(30, 41, 59, 0.7);
     border-top: 1px solid rgba(51, 65, 85, 0.5);
     font-size: 0.75rem;
     color: #94a3b8;
+    flex-shrink: 0;
+}
+
+.streetview-footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .streetview-remove-btn {
@@ -4890,4 +4906,21 @@ tr.tr-azimuth-row td {
 .streetview-remove-btn:hover {
     background: rgba(239, 68, 68, 0.3);
     color: #ffffff;
+}
+
+.streetview-resize-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    cursor: se-resize;
+    opacity: 0.6;
+    transition: opacity 0.2s ease, transform 0.1s ease;
+    user-select: none;
+}
+
+.streetview-resize-handle:hover {
+    opacity: 1;
+    transform: scale(1.15);
 }
