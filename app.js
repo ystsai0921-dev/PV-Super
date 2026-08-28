@@ -454,8 +454,9 @@ function updateStreetViewPopup(lat, lng) {
 
     const popupHtml = `
         <div class="streetview-popup-box" style="width: ${streetViewPopupW}px; height: ${streetViewPopupH}px;">
-            <div class="streetview-popup-bar">
+            <div class="streetview-popup-bar" title="按住可拖曳移動視窗位置">
                 <div class="streetview-bar-title">
+                    <span class="streetview-drag-handle-dots">⋮⋮</span>
                     <img src="images/man.svg" class="streetview-bar-icon" />
                     <span>360° 實景街景</span>
                 </div>
@@ -476,7 +477,7 @@ function updateStreetViewPopup(lat, lng) {
                     <button type="button" class="streetview-remove-btn" onclick="removePegmanMarker()">關閉街景</button>
                     <div class="streetview-resize-handle" title="按住拖曳等比例縮放視窗">
                         <svg viewBox="0 0 12 12" width="12" height="12">
-                            <path d="M10 2 L2 10 M11 6 L6 11 M11 10 L10 11" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round"/>
+                            <path d="M10 2 L2 10 M11 6 L6 11 M11 10 L10 11" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
                         </svg>
                     </div>
                 </div>
@@ -495,8 +496,77 @@ function updateStreetViewPopup(lat, lng) {
 
     setTimeout(() => {
         const popupEl = document.querySelector('.leaflet-popup.streetview-custom-popup');
-        if (popupEl) setupStreetViewResize(popupEl);
+        if (popupEl) {
+            setupStreetViewResize(popupEl);
+            setupStreetViewMove(popupEl);
+        }
     }, 50);
+}
+
+function setupStreetViewMove(popupEl) {
+    const titleBar = popupEl.querySelector('.streetview-popup-bar');
+    const iframe = popupEl.querySelector('.streetview-iframe-container iframe');
+    if (!titleBar) return;
+
+    let isMoving = false;
+    let startX = 0;
+    let startY = 0;
+    let initialLeft = 0;
+    let initialTop = 0;
+
+    const onPointerMove = (e) => {
+        if (!isMoving) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+
+        popupEl.style.left = `${initialLeft + dx}px`;
+        popupEl.style.top = `${initialTop + dy}px`;
+
+        if (e.cancelable) e.preventDefault();
+    };
+
+    const onPointerUp = () => {
+        if (!isMoving) return;
+        isMoving = false;
+        window.removeEventListener('mousemove', onPointerMove);
+        window.removeEventListener('touchmove', onPointerMove);
+        if (iframe) iframe.style.pointerEvents = 'auto';
+        if (map && map.dragging) map.dragging.enable();
+    };
+
+    const onPointerDown = (e) => {
+        if (e.target.closest('.streetview-external-link') || e.target.closest('.leaflet-popup-close-button')) {
+            return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+
+        isMoving = true;
+        startX = e.touches ? e.touches[0].clientX : e.clientX;
+        startY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        const rect = popupEl.getBoundingClientRect();
+        const parentRect = popupEl.offsetParent ? popupEl.offsetParent.getBoundingClientRect() : { left: 0, top: 0 };
+        initialLeft = rect.left - parentRect.left;
+        initialTop = rect.top - parentRect.top;
+
+        popupEl.style.transform = 'none';
+        popupEl.style.left = `${initialLeft}px`;
+        popupEl.style.top = `${initialTop}px`;
+
+        if (iframe) iframe.style.pointerEvents = 'none';
+        if (map && map.dragging) map.dragging.disable();
+
+        window.addEventListener('mousemove', onPointerMove, { passive: false });
+        window.addEventListener('touchmove', onPointerMove, { passive: false });
+        window.addEventListener('mouseup', onPointerUp, { once: true });
+        window.addEventListener('touchend', onPointerUp, { once: true });
+    };
+
+    titleBar.addEventListener('mousedown', onPointerDown);
+    titleBar.addEventListener('touchstart', onPointerDown, { passive: false });
 }
 
 function setupStreetViewResize(popupEl) {

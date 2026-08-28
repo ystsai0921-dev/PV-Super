@@ -4783,14 +4783,14 @@ tr.tr-azimuth-row td {
 
 /* Custom Street View Popup */
 .leaflet-popup.streetview-custom-popup .leaflet-popup-content-wrapper {
-    background: rgba(15, 23, 42, 0.95);
+    background: rgba(30, 30, 36, 0.96);
     backdrop-filter: blur(12px);
-    border: 1.5px solid rgba(56, 189, 248, 0.4);
-    border-radius: 12px;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
     padding: 0;
     overflow: hidden;
-    color: #f8fafc;
+    color: #ffffff;
 }
 
 .leaflet-popup.streetview-custom-popup .leaflet-popup-content {
@@ -4800,8 +4800,18 @@ tr.tr-azimuth-row td {
 }
 
 .leaflet-popup.streetview-custom-popup .leaflet-popup-tip {
-    background: rgba(15, 23, 42, 0.95);
-    border: 1.5px solid rgba(56, 189, 248, 0.4);
+    background: rgba(30, 30, 36, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.leaflet-popup.streetview-custom-popup .leaflet-popup-close-button {
+    color: #ffffff !important;
+    padding: 6px 8px 0 0 !important;
+    font-size: 18px !important;
+}
+
+.leaflet-popup.streetview-custom-popup .leaflet-popup-close-button:hover {
+    color: #a1a1aa !important;
 }
 
 .streetview-popup-box {
@@ -4819,10 +4829,16 @@ tr.tr-azimuth-row td {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(30, 41, 59, 0.85);
+    background: rgba(45, 45, 52, 0.95);
     padding: 8px 12px;
-    border-bottom: 1px solid rgba(51, 65, 85, 0.8);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
     flex-shrink: 0;
+    cursor: grab;
+    user-select: none;
+}
+
+.streetview-popup-bar:active {
+    cursor: grabbing;
 }
 
 .streetview-bar-title {
@@ -4830,8 +4846,15 @@ tr.tr-azimuth-row td {
     align-items: center;
     gap: 6px;
     font-size: 0.85rem;
-    font-weight: 700;
-    color: #38bdf8;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.streetview-drag-handle-dots {
+    color: #a1a1aa;
+    font-size: 0.9rem;
+    cursor: grab;
+    margin-right: 2px;
 }
 
 .streetview-bar-icon {
@@ -4842,19 +4865,19 @@ tr.tr-azimuth-row td {
 
 .streetview-external-link {
     font-size: 0.75rem;
-    color: #38bdf8;
-    background: rgba(56, 189, 248, 0.15);
-    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 4px;
     padding: 3px 8px;
     text-decoration: none;
     transition: all 0.2s ease;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .streetview-external-link:hover {
-    background: rgba(56, 189, 248, 0.3);
-    border-color: #38bdf8;
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
     color: #ffffff;
 }
 
@@ -4863,7 +4886,7 @@ tr.tr-azimuth-row td {
     width: 100%;
     height: 100%;
     min-height: 120px;
-    background: #0f172a;
+    background: #18181b;
     position: relative;
 }
 
@@ -4879,10 +4902,10 @@ tr.tr-azimuth-row td {
     justify-content: space-between;
     align-items: center;
     padding: 6px 10px 6px 12px;
-    background: rgba(30, 41, 59, 0.7);
-    border-top: 1px solid rgba(51, 65, 85, 0.5);
+    background: rgba(40, 40, 46, 0.95);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
     font-size: 0.75rem;
-    color: #94a3b8;
+    color: #d4d4d8;
     flex-shrink: 0;
 }
 
@@ -4893,18 +4916,19 @@ tr.tr-azimuth-row td {
 }
 
 .streetview-remove-btn {
-    background: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.4);
-    color: #f87171;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #ffffff;
     font-size: 0.72rem;
-    padding: 2px 8px;
+    padding: 3px 10px;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .streetview-remove-btn:hover {
-    background: rgba(239, 68, 68, 0.3);
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
     color: #ffffff;
 }
 
@@ -4915,9 +4939,13 @@ tr.tr-azimuth-row td {
     width: 18px;
     height: 18px;
     cursor: se-resize;
-    opacity: 0.6;
+    opacity: 0.7;
     transition: opacity 0.2s ease, transform 0.1s ease;
     user-select: none;
+}
+
+.streetview-resize-handle svg path {
+    stroke: #ffffff;
 }
 
 .streetview-resize-handle:hover {
