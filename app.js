@@ -1090,7 +1090,7 @@ async function capture3DImage() {
     camera.aspect = targetWidth / targetHeight;
     camera.updateProjectionMatrix();
     
-    // 4. 暫時調整 HUD 羅盤位置以符合高解析度長寬比
+    // 4. 暫時調整 HUD 羅盤位置以符合高解析度長寬比 (位於 3D 預覽標題標籤下方，避免重疊)
     if (compassGroup) {
         const aspect = targetWidth / targetHeight;
         const distance = 5.0;
@@ -1099,7 +1099,7 @@ async function capture3DImage() {
         const visibleWidth = visibleHeight * aspect;
         compassGroup.position.set(
             -visibleWidth / 2 + 0.55,
-            visibleHeight / 2 - 0.55,
+            visibleHeight / 2 - 1.10,
             -distance
         );
     }
@@ -1123,7 +1123,7 @@ async function capture3DImage() {
         const visibleWidth = visibleHeight * aspect;
         compassGroup.position.set(
             -visibleWidth / 2 + 0.55,
-            visibleHeight / 2 - 0.55,
+            visibleHeight / 2 - 1.10,
             -distance
         );
     }
@@ -6028,10 +6028,10 @@ function animate() {
             const visibleHeight = 2 * distance * Math.tan(fovRad / 2);
             const visibleWidth = visibleHeight * aspect;
             
-            // 固定在左上方
+            // 固定在左上方 (位於 3D 預覽標籤下方，避免遮擋重疊)
             compassGroup.position.set(
                 -visibleWidth / 2 + 0.55,
-                visibleHeight / 2 - 0.55,
+                visibleHeight / 2 - 1.10,
                 -distance
             );
             
