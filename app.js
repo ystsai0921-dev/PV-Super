@@ -2428,6 +2428,7 @@ function clearPolygonVertexHandles() {
         if (map) map.removeLayer(activePolygonCenterMarker);
         activePolygonCenterMarker = null;
     }
+}
 let lastMoveBadgeTapTime = 0;
 let isMoveBadgeDoubleTap = false;
 
@@ -2484,6 +2485,123 @@ function clonePolygon(poly, latlngs) {
 
     makePolygonSelectable(cloned);
     return cloned;
+}
+
+function snapPolygonMovement(poly, rawLatLngs, startCenterPos, curMouseLatLng) {
+    if (!map || !rawLatLngs || rawLatLngs.length < 3) {
+        return { latlngs: rawLatLngs, snapped: false };
+    }
+
+    // 1. Gather all potential snap target vertices & midpoints from scene (except poly itself)
+    const snapTargets = [];
+    const collectTargets = (targetPoly) => {
+        if (!targetPoly || targetPoly === poly) return;
+        const outer = getOuterRingLatLngs(targetPoly);
+        if (!outer || outer.length < 2) return;
+        for (let i = 0; i < outer.length; i++) {
+            snapTargets.push({ latlng: outer[i], type: 'endpoint' });
+            const next = outer[(i + 1) % outer.length];
+            snapTargets.push({
+                latlng: L.latLng((outer[i].lat + next.lat) / 2, (outer[i].lng + next.lng) / 2),
+                type: 'midpoint'
+            });
+        }
+    };
+
+    if (customSiteBoundary) collectTargets(customSiteBoundary);
+    else if (coveragePolygon) collectTargets(coveragePolygon);
+    exclusionPolygons.forEach(collectTargets);
+    obstaclePolygons.forEach(collectTargets);
+
+    // Check corner snapping (角點鎖點)
+    let bestSnap = null;
+    let minPix = 16;
+
+    for (let i = 0; i < rawLatLngs.length; i++) {
+        const v = rawLatLngs[i];
+        const vPt = map.latLngToContainerPoint(v);
+        for (const target of snapTargets) {
+            const tPt = map.latLngToContainerPoint(target.latlng);
+            const dist = vPt.distanceTo(tPt);
+            if (dist < minPix) {
+                minPix = dist;
+                bestSnap = {
+                    vertexIndex: i,
+                    vertexLatLng: v,
+                    targetLatLng: target.latlng,
+                    type: target.type
+                };
+            }
+        }
+    }
+
+    if (bestSnap) {
+        const snapDLat = bestSnap.targetLatLng.lat - bestSnap.vertexLatLng.lat;
+        const snapDLng = bestSnap.targetLatLng.lng - bestSnap.vertexLatLng.lng;
+        const snappedLatLngs = rawLatLngs.map(pt => L.latLng(pt.lat + snapDLat, pt.lng + snapDLng));
+        updateSnapMarkerVisual({ latlng: bestSnap.targetLatLng, type: bestSnap.type });
+        clearRightAngleIndicator();
+        return { latlngs: snappedLatLngs, snapped: true };
+    }
+
+    // 2. Check parallel line alignment / axial snapping (平行線吸附)
+    const azimuthRad = ((state.azimuth || 180) * Math.PI) / 180;
+    const dirX = Math.sin(azimuthRad);
+    const dirY = Math.cos(azimuthRad);
+
+    const metersPerLatDegree = 111320;
+    const latRad = (startCenterPos.lat * Math.PI) / 180;
+    const metersPerLngDegree = metersPerLatDegree * Math.cos(latRad);
+
+    const dLatMeters = (curMouseLatLng.lat - startCenterPos.lat) * metersPerLatDegree;
+    const dLngMeters = (curMouseLatLng.lng - startCenterPos.lng) * metersPerLngDegree;
+    const totalDistMeters = Math.sqrt(dLatMeters * dLatMeters + dLngMeters * dLngMeters);
+
+    if (totalDistMeters > 0.8) {
+        const axes = [
+            { ux: dirX, uy: dirY },
+            { ux: dirY, uy: -dirX },
+            { ux: -dirX, uy: -dirY },
+            { ux: -dirY, uy: dirX }
+        ];
+
+        for (const axis of axes) {
+            const dot = dLngMeters * axis.ux + dLatMeters * axis.uy;
+            if (dot > 0.5) {
+                const perpDist = Math.abs(dLngMeters * (-axis.uy) + dLatMeters * axis.ux);
+                if (perpDist < 0.6 || (perpDist / dot) < 0.08) {
+                    const snapLngM = dot * axis.ux;
+                    const snapLatM = dot * axis.uy;
+                    const snappedCenter = L.latLng(
+                        startCenterPos.lat + snapLatM / metersPerLatDegree,
+                        startCenterPos.lng + snapLngM / metersPerLngDegree
+                    );
+                    const snapDLat = snappedCenter.lat - curMouseLatLng.lat;
+                    const snapDLng = snappedCenter.lng - curMouseLatLng.lng;
+                    const snappedLatLngs = rawLatLngs.map(pt => L.latLng(pt.lat + snapDLat, pt.lng + snapDLng));
+
+                    updateSnapMarkerVisual(null);
+                    if (parallelGuidePolyline) {
+                        parallelGuidePolyline.setLatLngs([startCenterPos, snappedCenter]);
+                        parallelGuidePolyline.setStyle({ color: '#ec4899', weight: 2.5, dashArray: '5, 5', opacity: 0.95 });
+                    } else {
+                        parallelGuidePolyline = L.polyline([startCenterPos, snappedCenter], {
+                            color: '#ec4899',
+                            weight: 2.5,
+                            dashArray: '5, 5',
+                            opacity: 0.95,
+                            interactive: false
+                        }).addTo(map);
+                    }
+                    return { latlngs: snappedLatLngs, snapped: true };
+                }
+            }
+        }
+    }
+
+    updateSnapMarkerVisual(null);
+    clearRightAngleIndicator();
+    return { latlngs: rawLatLngs, snapped: false };
 }
 
 function updatePolygonVertexHandles(poly) {
@@ -2615,7 +2733,12 @@ function updatePolygonVertexHandles(poly) {
         const dLat = curPos.lat - startCenterPos.lat;
         const dLng = curPos.lng - startCenterPos.lng;
         
-        const newLatLngs = startCenterLatLngs.map(pt => L.latLng(pt.lat + dLat, pt.lng + dLng));
+        const rawLatLngs = startCenterLatLngs.map(pt => L.latLng(pt.lat + dLat, pt.lng + dLng));
+        
+        // 執行角點鎖點與平行線吸附
+        const snapRes = snapPolygonMovement(poly, rawLatLngs, startCenterPos, curPos);
+        const newLatLngs = snapRes.latlngs;
+        
         if (poly instanceof L.Polygon) {
             poly.setLatLngs([newLatLngs]);
         } else {
@@ -2635,7 +2758,9 @@ function updatePolygonVertexHandles(poly) {
         }
         
         if (poly.isSubstation) {
-            poly.substationCenter = L.latLng(startSubstationCenter.lat + dLat, startSubstationCenter.lng + dLng);
+            const finalDLat = newLatLngs[0].lat - startCenterLatLngs[0].lat;
+            const finalDLng = newLatLngs[0].lng - startCenterLatLngs[0].lng;
+            poly.substationCenter = L.latLng(startSubstationCenter.lat + finalDLat, startSubstationCenter.lng + finalDLng);
         }
         
         if (isSite) {
@@ -2645,6 +2770,8 @@ function updatePolygonVertexHandles(poly) {
 
     activePolygonCenterMarker.on('dragend', () => {
         map.dragging.enable();
+        updateSnapMarkerVisual(null);
+        clearRightAngleIndicator();
         const badge = activePolygonCenterMarker.getElement() ? activePolygonCenterMarker.getElement().querySelector('.poly-move-badge') : null;
         if (badge) {
             badge.classList.remove('dragging', 'copy-mode');
@@ -2824,7 +2951,6 @@ function setPlanningModeState(mode, stateVal) {
             if (exTrigger) exTrigger.style.display = 'none';
             
             // Rebuild calculations when locked
-            unionExclusionPolygons();
             calculateOutputs();
             updateAllVisuals(true);
         }
@@ -3326,6 +3452,7 @@ function inferParametersFromSiteBoundary(polygon, keepCurrentAzimuth = false) {
         elements.arrM.value = inferredM;
         if (elements.arrMSlider) elements.arrMSlider.value = inferredM;
         state.arrM = inferredM;
+        handleSiteTypeChangeUI();
     }
     if (elements.azimuth && !lockedParams['azimuth']) {
         elements.azimuth.value = inferredAzimuth;
@@ -3850,8 +3977,11 @@ function findClosestEdge(polygon, clickLatLng) {
         }
     }
     
-    // Always select the closest edge on or near the polygon
-    return closestIndex >= 0 ? closestIndex : 0;
+    // 距離邊線 <= 12px 判定為選取特定邊線；點擊在多邊形面內 (> 12px) 則判定為選取整個多邊形面 (-1)
+    if (minDistance <= 12) {
+        return closestIndex;
+    }
+    return -1;
 }
 
 function distToSegment(p, v, w) {
@@ -4218,33 +4348,47 @@ function showPolygonToolboxPanel(poly) {
     }
     
     if (btnHeightDown) {
-        btnHeightDown.addEventListener('click', () => {
+        btnHeightDown.addEventListener('click', (e) => {
+            if (e) e.stopPropagation();
             poly.obstacleHeight = Math.max(0.5, (poly.obstacleHeight || 5.0) - 0.5);
+            const onRoofLabel = (poly.isOnRoof !== false && state.siteType !== 'ground') ? ' [建物上]' : '';
             const handle = panel.querySelector('.toolbox-drag-handle');
             if (handle) {
-                handle.innerHTML = `障礙物 (${poly.obstacleHeight.toFixed(1)}m)`;
+                handle.innerHTML = `障礙物 (${poly.obstacleHeight.toFixed(1)}m)${onRoofLabel}`;
             }
             const hInput = document.getElementById('val-obs-h');
             const hSlider = document.getElementById('val-obs-h-slider');
             if (hInput) hInput.value = poly.obstacleHeight.toFixed(1);
             if (hSlider && poly.obstacleHeight >= 1 && poly.obstacleHeight <= 20) hSlider.value = poly.obstacleHeight;
-            calculateOutputs();
-            updateAllVisuals(true);
+            
+            if (obstacleHeightDebounceTimer) clearTimeout(obstacleHeightDebounceTimer);
+            obstacleHeightDebounceTimer = setTimeout(() => {
+                calculateOutputs();
+                updateAllVisuals(true);
+                obstacleHeightDebounceTimer = null;
+            }, 80);
         });
     }
     if (btnHeightUp) {
-        btnHeightUp.addEventListener('click', () => {
+        btnHeightUp.addEventListener('click', (e) => {
+            if (e) e.stopPropagation();
             poly.obstacleHeight = (poly.obstacleHeight || 5.0) + 0.5;
+            const onRoofLabel = (poly.isOnRoof !== false && state.siteType !== 'ground') ? ' [建物上]' : '';
             const handle = panel.querySelector('.toolbox-drag-handle');
             if (handle) {
-                handle.innerHTML = `障礙物 (${poly.obstacleHeight.toFixed(1)}m)`;
+                handle.innerHTML = `障礙物 (${poly.obstacleHeight.toFixed(1)}m)${onRoofLabel}`;
             }
             const hInput = document.getElementById('val-obs-h');
             const hSlider = document.getElementById('val-obs-h-slider');
             if (hInput) hInput.value = poly.obstacleHeight.toFixed(1);
             if (hSlider && poly.obstacleHeight >= 1 && poly.obstacleHeight <= 20) hSlider.value = poly.obstacleHeight;
-            calculateOutputs();
-            updateAllVisuals(true);
+            
+            if (obstacleHeightDebounceTimer) clearTimeout(obstacleHeightDebounceTimer);
+            obstacleHeightDebounceTimer = setTimeout(() => {
+                calculateOutputs();
+                updateAllVisuals(true);
+                obstacleHeightDebounceTimer = null;
+            }, 80);
         });
     }
 
@@ -7754,10 +7898,12 @@ function handleSiteTypeChangeUI() {
     
     // Group m and p controls (only for ground and flat roof)
     const isMEnabled = !isSlopeRoof;
-    const isPEnabled = isMEnabled && (state.arrM > 1);
+    const currentM = parseInt(elements.arrM ? elements.arrM.value : state.arrM, 10) || state.arrM || 1;
+    state.arrM = currentM;
+    const isPEnabled = isMEnabled && (currentM > 1);
     
-    elements.arrM.disabled = !isMEnabled;
-    elements.arrP.disabled = !isPEnabled;
+    if (elements.arrM) elements.arrM.disabled = !isMEnabled;
+    if (elements.arrP) elements.arrP.disabled = !isPEnabled;
     if (elements.arrMSlider) elements.arrMSlider.disabled = !isMEnabled;
     if (elements.arrPSlider) elements.arrPSlider.disabled = !isPEnabled;
     
@@ -7770,21 +7916,25 @@ function handleSiteTypeChangeUI() {
     if (btnPMinus) btnPMinus.disabled = !isPEnabled;
     if (btnPPlus) btnPPlus.disabled = !isPEnabled;
     
-    const tdM = elements.arrM.closest('td');
-    const tdP = elements.arrP.closest('td');
-    if (!isMEnabled) {
-        tdM.classList.add('readonly');
-        elements.arrM.value = 1;
-        state.arrM = 1;
-        if (elements.arrMSlider) elements.arrMSlider.value = 1;
-    } else {
-        tdM.classList.remove('readonly');
+    const tdM = elements.arrM ? elements.arrM.closest('td') : null;
+    const tdP = elements.arrP ? elements.arrP.closest('td') : null;
+    if (tdM) {
+        if (!isMEnabled) {
+            tdM.classList.add('readonly');
+            elements.arrM.value = 1;
+            state.arrM = 1;
+            if (elements.arrMSlider) elements.arrMSlider.value = 1;
+        } else {
+            tdM.classList.remove('readonly');
+        }
     }
     
-    if (!isPEnabled) {
-        tdP.classList.add('readonly');
-    } else {
-        tdP.classList.remove('readonly');
+    if (tdP) {
+        if (!isPEnabled) {
+            tdP.classList.add('readonly');
+        } else {
+            tdP.classList.remove('readonly');
+        }
     }
 
     document.querySelectorAll('.slider-nodes-container[data-target="roofH"] .slider-node-btn').forEach(btn => {
@@ -8451,6 +8601,7 @@ function updateAzimuthNodesHighlight(val) {
 }
 
 function calculateOutputs() {
+    handleSiteTypeChangeUI();
     updateArrPSliderRange();
     updateAllSliderNodesHighlight();
     
@@ -10369,14 +10520,14 @@ function updateSnapMarkerVisual(snapCheck) {
     const isEndpoint = snapCheck.type === 'endpoint';
     
     const iconHtml = isEndpoint 
-        ? '<div class="snap-icon-endpoint" style="width: 14px; height: 14px; margin: -7px 0 0 -7px;"></div>'
-        : '<div class="snap-icon-midpoint" style="width: 12px; height: 12px; margin: -6px 0 0 -6px;"></div>';
+        ? '<div class="snap-icon-endpoint" style="width: 14px; height: 14px;"></div>'
+        : '<div class="snap-icon-midpoint" style="width: 12px; height: 12px;"></div>';
         
     const snapIcon = L.divIcon({
         className: 'custom-snap-marker',
         html: iconHtml,
-        iconSize: [14, 14],
-        iconAnchor: [7, 7]
+        iconSize: isEndpoint ? [14, 14] : [12, 12],
+        iconAnchor: isEndpoint ? [7, 7] : [6, 6]
     });
     
     if (!mapSnapMarker) {

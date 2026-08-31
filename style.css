@@ -3093,7 +3093,7 @@ tr.tr-azimuth-row td {
     padding: 6px 8px;
     border-radius: 8px;
     box-shadow: var(--shadow-main);
-    width: 108px;
+    width: 124px;
     pointer-events: auto;
 }
 .tool-panel-obstacle {
@@ -3109,7 +3109,7 @@ tr.tr-azimuth-row td {
     padding: 6px 8px;
     border-radius: 8px;
     box-shadow: var(--shadow-main);
-    width: 112px;
+    width: 124px;
     pointer-events: auto;
 }
 .tool-panel-header {
@@ -3151,6 +3151,7 @@ tr.tr-azimuth-row td {
     align-items: center;
     gap: 6px;
     box-sizing: border-box;
+    white-space: nowrap;
 }
 .toolbox-btn-item:hover {
     background: rgba(255, 255, 255, 0.18) !important;
