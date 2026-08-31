@@ -309,7 +309,7 @@
         <!-- 頂部標題區 -->
         <div class="header-container">
             <div>
-                <h1>PV Super 案場規劃工具使用說明書 <span class="version-badge">v2.7</span></h1>
+                <h1>PV Super 案場規劃工具使用說明書 <span class="version-badge">v2.8</span></h1>
             </div>
             <div class="logo-box">
                 <img src="images/pv_super_logo_light.png" alt="PV Super" style="height: 48px; width: auto; object-fit: contain; filter: invert(1);">
@@ -460,18 +460,23 @@
         </table>
 
         <!-- 多邊形快速複製、吸附與極限縮放 -->
-        <h3>多邊形快速複製、邊線吸附與極限微調縮放 (Advanced Map Editing)</h3>
+        <h3>多邊形中心移動把手、快速複製、角點鎖點與平行吸附 (Advanced Map Editing)</h3>
         <ul>
             <li><b>超高解析度極限縮放（Zoom 24）</b>：地圖支援更深層的放大極限（最高 24 級放大），即便是 20kWp 以下之微型住宅屋頂，亦可清晰辨識並進行公分級精準微調。</li>
-            <li><b>多邊形快速複製 (Duplicate Polygon)</b>：
+            <li><b>中心移動把手與快速複製 (Move & Duplicate Polygon)</b>：
                 <ul>
-                    <li><b>Windows 系統</b>：按住鍵盤 <kbd>Ctrl</kbd> 鍵不放並拖曳既存之「排除」或「障礙」多邊形，即可直接拖曳複製出新多邊形。</li>
-                    <li><b>Mac OS 系統</b>：按住鍵盤 <kbd>Cmd (⌘)</kbd> 鍵不放並拖曳多邊形進行複製。</li>
-                    <li><b>觸控／行動裝置</b>：在排除或障礙多邊形上方<b>「連續點觸兩次 (Double Tap)」</b>，系統即自動原地複製並選取新多邊形。</li>
-                    <li><b>光影輪動提示動效</b>：觸發複製時，多邊形邊界具備高亮流光光影輪動動效，並於螢幕下方浮現複製成功提示標籤。</li>
+                    <li>選取多邊形時，中心呈現四向移動圓形標記。<b>直接拖曳</b>該標記即可平移整座多邊形。</li>
+                    <li><b>鍵盤修飾鍵複製</b>：按住鍵盤 <kbd>Ctrl</kbd>（Windows）或 <kbd>Cmd (⌘)</kbd> / <kbd>Alt</kbd>（Mac）不放拖曳中心符號，原位置將完整保留副本，並拉出全新獨立多邊形。</li>
+                    <li><b>觸控／滑鼠快速雙擊複製</b>：在中心移動圖示上<b>「連續點擊兩次並按住拖曳 (Double Tap Drag)」</b>，亦可直接拉出新多邊形（圖標右上角呈現綠色 <b>+</b> 號提示）。</li>
                 </ul>
             </li>
-            <li><b>自動吸附案場範圍邊線 (Edge Snapping)</b>：拖曳或平移任何排除/障礙多邊形時，系統會自動搜尋案場範圍（Site Boundary）各頂點、中點及邊線投影，當游標接近時自動精準吸附對齊，確保留白或走道邊緣完全貼齊。</li>
+            <li><b>角點鎖點與平行線吸附 (Corner Snapping & Parallel Alignment)</b>：
+                <ul>
+                    <li><b>角點精準鎖點</b>：平移多邊形或拖曳頂點時，當頂點靠近場內其他多邊形頂點或邊線中點（&lt; 16px），系統自動鎖點吸附並顯示洋紅亮圈標記。</li>
+                    <li><b>案場軸向平行吸附</b>：沿案場方位角（長向或短向平行軸）拖曳時，系統自動吸附平行軌跡並顯示洋紅虛線對齊引導線。</li>
+                </ul>
+            </li>
+            <li><b>選邊線 vs 選面內智慧判定</b>：點擊邊線 12px 範圍內精準鎖定該邊線（啟用內縮／外推微調）；點擊面內則選取整個多邊形面。</li>
         </ul>
 
         <!-- 四、 試算表參數配置與運算規則 -->
