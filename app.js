@@ -3414,15 +3414,14 @@ function inferParametersFromSiteBoundary(polygon, keepCurrentAzimuth = false) {
     const arrP_m = parseFloat(state.arrP) || 1.0;
 
     // 5. 自動推算 arrI, arrJ, arrM
-    // arrI: 陣列行數（滿版覆蓋，由 isModuleExcluded 自動剔除）
-    let inferredI = Math.max(1, Math.ceil((widthX + spX_m) / (pvW_m + spX_m)));
+    let inferredI = getMaxPossibleArrI();
     let inferredJ = 4;
     let inferredM = 1;
 
     if (state.siteType === 'roof-slope') {
         // 斜屋頂模式 arrM 固定為 1，由 arrJ 填滿長度 Y
         inferredM = 1;
-        inferredJ = Math.max(1, Math.ceil((lengthY + spY_m) / (pvL_m + spY_m)));
+        inferredJ = getMaxPossibleArrJ();
     } else {
         // 地面與平屋頂 arrJ 固定為 4，以 arrM 增加總列數
         inferredJ = 4;
@@ -7724,6 +7723,67 @@ const lockedParams = {};
 const SVG_LOCK = `<svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>`;
 const SVG_UNLOCK = `<svg viewBox="0 0 24 24"><path d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z"/></svg>`;
 
+function applyAllLockedParamsUI() {
+    const isSlopeRoof = state.siteType === 'roof-slope';
+    const isGround = state.siteType === 'ground';
+    const currentM = parseInt(elements.arrM ? elements.arrM.value : state.arrM, 10) || state.arrM || 1;
+    const isFlatLaid = isSlopeRoof && (Math.abs(state.tilt - state.roofTilt) < 0.01);
+
+    const lockableKeys = [
+        { param: 'azimuth', input: elements.azimuth, slider: elements.azimuthSlider, minusId: 'btn-azimuth-minus', plusId: 'btn-azimuth-plus', largeMinusId: 'btn-azimuth-large-minus', largePlusId: 'btn-azimuth-large-plus', nodeTarget: 'azimuth', systemAllowed: true },
+        { param: 'arrI', input: elements.arrI, slider: elements.arrISlider, minusId: 'btn-arr-i-minus', plusId: 'btn-arr-i-plus', nodeTarget: 'arrI', systemAllowed: true },
+        { param: 'arrJ', input: elements.arrJ, slider: elements.arrJSlider, minusId: 'btn-arr-j-minus', plusId: 'btn-arr-j-plus', nodeTarget: 'arrJ', systemAllowed: true },
+        { param: 'arrM', input: elements.arrM, slider: elements.arrMSlider, minusId: 'btn-arr-m-minus', plusId: 'btn-arr-m-plus', nodeTarget: 'arrM', systemAllowed: !isSlopeRoof },
+        { param: 'arrP', input: elements.arrP, slider: elements.arrPSlider, minusId: 'btn-arr-p-minus', plusId: 'btn-arr-p-plus', nodeTarget: 'arrP', systemAllowed: !isSlopeRoof && (currentM > 1) },
+        { param: 'spX', input: elements.spX, slider: elements.spXSlider, minusId: 'btn-sp-x-minus', plusId: 'btn-sp-x-plus', nodeTarget: 'spX', systemAllowed: true },
+        { param: 'spY', input: elements.spY, slider: elements.spYSlider, minusId: 'btn-sp-y-minus', plusId: 'btn-sp-y-plus', nodeTarget: 'spY', systemAllowed: true },
+        { param: 'tilt', input: elements.tilt, slider: elements.tiltSlider, minusId: 'btn-tilt-minus', plusId: 'btn-tilt-plus', nodeTarget: 'tilt', systemAllowed: true },
+        { param: 'roofTilt', input: elements.roofTilt, slider: elements.roofTiltSlider, minusId: 'btn-roof-minus', plusId: 'btn-roof-plus', nodeTarget: 'roofTilt', systemAllowed: isSlopeRoof },
+        { param: 'roofH', input: elements.roofH, slider: elements.roofHSlider, minusId: 'btn-roof-h-minus', plusId: 'btn-roof-h-plus', nodeTarget: 'roofH', systemAllowed: !isGround },
+        { param: 'supportH', input: elements.supportH, slider: elements.supportHSlider, minusId: 'btn-support-minus', plusId: 'btn-support-plus', nodeTarget: 'supportH', systemAllowed: !isFlatLaid }
+    ];
+
+    lockableKeys.forEach(item => {
+        const isUserLocked = !!lockedParams[item.param];
+        const btn = document.querySelector(`.lock-toggle-btn[data-param="${item.param}"]`);
+        if (btn) {
+            btn.classList.toggle('is-locked', isUserLocked);
+            btn.innerHTML = isUserLocked ? SVG_LOCK : SVG_UNLOCK;
+            btn.title = isUserLocked ? '已鎖定此參數 (不隨案場變更)' : '鎖定此參數';
+            btn.disabled = false;
+        }
+        
+        const shouldDisable = isUserLocked || !item.systemAllowed;
+        
+        if (item.input) item.input.disabled = shouldDisable;
+        if (item.slider) item.slider.disabled = shouldDisable;
+        const minusBtn = document.getElementById(item.minusId);
+        const plusBtn = document.getElementById(item.plusId);
+        if (minusBtn) minusBtn.disabled = shouldDisable;
+        if (plusBtn) plusBtn.disabled = shouldDisable;
+        if (item.largeMinusId) {
+            const lm = document.getElementById(item.largeMinusId);
+            if (lm) lm.disabled = shouldDisable;
+        }
+        if (item.largePlusId) {
+            const lp = document.getElementById(item.largePlusId);
+            if (lp) lp.disabled = shouldDisable;
+        }
+        if (item.nodeTarget) {
+            document.querySelectorAll(`.slider-nodes-container[data-target="${item.nodeTarget}"] .slider-node-btn, .azimuth-nodes-container .azimuth-node-btn`).forEach(nBtn => {
+                nBtn.disabled = shouldDisable;
+            });
+        }
+        if (item.input) {
+            const td = item.input.closest('td');
+            if (td) {
+                if (shouldDisable) td.classList.add('readonly');
+                else td.classList.remove('readonly');
+            }
+        }
+    });
+}
+
 function initLockButtons() {
     // Dynamically wrap all .slider-cell contents in a flexbox inner container for perfect alignment
     document.querySelectorAll('.slider-cell').forEach(td => {
@@ -7746,22 +7806,14 @@ function initLockButtons() {
             if (!param) return;
             
             lockedParams[param] = !lockedParams[param];
-            const isLocked = lockedParams[param];
             
-            btn.classList.toggle('is-locked', isLocked);
-            btn.innerHTML = isLocked ? SVG_LOCK : SVG_UNLOCK;
-            btn.title = isLocked ? '已鎖定此參數 (不隨案場變更)' : '鎖定此參數';
-            
-            const row = btn.closest('tr');
-            if (row) {
-                row.querySelectorAll('input, button.slider-btn, button.slider-node-btn').forEach(elem => {
-                    if (elem !== btn) {
-                        elem.disabled = isLocked;
-                    }
-                });
-            }
+            handleSiteTypeChangeUI();
+            updateSupportHLockState();
+            applyAllLockedParamsUI();
         });
     });
+    
+    applyAllLockedParamsUI();
 }
 
 function updatePlanningControlsSlot() {
@@ -7848,14 +7900,15 @@ function handleSiteTypeChangeUI() {
     const isSlopeRoof = state.siteType === 'roof-slope';
     const isGround = state.siteType === 'ground';
     
-    // Roof tilt controls (only for slope roof)
-    elements.roofTilt.disabled = !isSlopeRoof;
-    elements.roofTiltSlider.disabled = !isSlopeRoof;
+    // Roof tilt controls (only for slope roof and not locked)
+    const isRoofTiltEnabled = isSlopeRoof && !lockedParams['roofTilt'];
+    elements.roofTilt.disabled = !isRoofTiltEnabled;
+    elements.roofTiltSlider.disabled = !isRoofTiltEnabled;
     
     const minusBtn = document.getElementById('btn-roof-minus');
     const plusBtn = document.getElementById('btn-roof-plus');
-    if (minusBtn) minusBtn.disabled = !isSlopeRoof;
-    if (plusBtn) plusBtn.disabled = !isSlopeRoof;
+    if (minusBtn) minusBtn.disabled = !isRoofTiltEnabled;
+    if (plusBtn) plusBtn.disabled = !isRoofTiltEnabled;
     
     const tdTilt = elements.roofTilt.closest('td');
     if (!isSlopeRoof) {
@@ -7863,44 +7916,39 @@ function handleSiteTypeChangeUI() {
         elements.roofTilt.value = 0;
         elements.roofTiltSlider.value = 0;
         state.roofTilt = 0;
+    } else if (lockedParams['roofTilt']) {
+        tdTilt.classList.add('readonly');
     } else {
         tdTilt.classList.remove('readonly');
-        if (parseFloat(elements.roofTilt.value) === 0) {
-            elements.roofTilt.value = 8;
-            elements.roofTiltSlider.value = 8;
-            state.roofTilt = 8;
-        }
     }
     
-    // Roof height controls (for flat roof and slope roof)
-    elements.roofH.disabled = isGround;
-    elements.roofHSlider.disabled = isGround;
+    // Roof height controls (for flat roof and slope roof and not locked)
+    const isRoofHEnabled = !isGround && !lockedParams['roofH'];
+    elements.roofH.disabled = !isRoofHEnabled;
+    elements.roofHSlider.disabled = !isRoofHEnabled;
     
     const minusHBtn = document.getElementById('btn-roof-h-minus');
     const plusHBtn = document.getElementById('btn-roof-h-plus');
-    if (minusHBtn) minusHBtn.disabled = isGround;
-    if (plusHBtn) plusHBtn.disabled = isGround;
+    if (minusHBtn) minusHBtn.disabled = !isRoofHEnabled;
+    if (plusHBtn) plusHBtn.disabled = !isRoofHEnabled;
     
     const tdH = elements.roofH.closest('td');
-    if (isGround) {
+    if (isGround || lockedParams['roofH']) {
         tdH.classList.add('readonly');
-        elements.roofH.value = 0;
-        elements.roofHSlider.value = 0;
-        state.roofH = 0;
+        if (isGround) {
+            elements.roofH.value = 0;
+            elements.roofHSlider.value = 0;
+            state.roofH = 0;
+        }
     } else {
         tdH.classList.remove('readonly');
-        if (parseFloat(elements.roofH.value) === 0) {
-            elements.roofH.value = 10;
-            elements.roofHSlider.value = 10;
-            state.roofH = 10;
-        }
     }
     
-    // Group m and p controls (only for ground and flat roof)
-    const isMEnabled = !isSlopeRoof;
+    // Group m and p controls (only for ground and flat roof and not locked)
+    const isMEnabled = !isSlopeRoof && !lockedParams['arrM'];
     const currentM = parseInt(elements.arrM ? elements.arrM.value : state.arrM, 10) || state.arrM || 1;
     state.arrM = currentM;
-    const isPEnabled = isMEnabled && (currentM > 1);
+    const isPEnabled = !isSlopeRoof && (currentM > 1) && !lockedParams['arrP'];
     
     if (elements.arrM) elements.arrM.disabled = !isMEnabled;
     if (elements.arrP) elements.arrP.disabled = !isPEnabled;
@@ -7921,9 +7969,11 @@ function handleSiteTypeChangeUI() {
     if (tdM) {
         if (!isMEnabled) {
             tdM.classList.add('readonly');
-            elements.arrM.value = 1;
-            state.arrM = 1;
-            if (elements.arrMSlider) elements.arrMSlider.value = 1;
+            if (isSlopeRoof) {
+                elements.arrM.value = 1;
+                state.arrM = 1;
+                if (elements.arrMSlider) elements.arrMSlider.value = 1;
+            }
         } else {
             tdM.classList.remove('readonly');
         }
@@ -7938,10 +7988,10 @@ function handleSiteTypeChangeUI() {
     }
 
     document.querySelectorAll('.slider-nodes-container[data-target="roofH"] .slider-node-btn').forEach(btn => {
-        btn.disabled = isGround;
+        btn.disabled = !isRoofHEnabled;
     });
     document.querySelectorAll('.slider-nodes-container[data-target="roofTilt"] .slider-node-btn').forEach(btn => {
-        btn.disabled = isGround || state.siteType === 'roof-flat';
+        btn.disabled = !isRoofTiltEnabled;
     });
     document.querySelectorAll('.slider-nodes-container[data-target="arrM"] .slider-node-btn').forEach(btn => {
         btn.disabled = !isMEnabled;
@@ -7968,6 +8018,7 @@ function handleSiteTypeChangeUI() {
     }
     
     updateSupportHLockState();
+    applyAllLockedParamsUI();
 }
 
 function updateSupportHLockState() {
@@ -7975,23 +8026,29 @@ function updateSupportHLockState() {
     // 平鋪時角度鎖定邏輯處理
     const isFlatLaid = Math.abs(state.tilt - state.roofTilt) < 0.01;
     
-    // Locked ONLY if Slope Roof AND flat-laid
-    const shouldDisable = isSlopeRoof && isFlatLaid;
+    // Locked if Slope Roof AND flat-laid, OR if locked by user (lockedParams['supportH'])
+    const shouldDisable = (isSlopeRoof && isFlatLaid) || !!(lockedParams && lockedParams['supportH']);
     
-    elements.supportH.disabled = shouldDisable;
-    elements.supportHSlider.disabled = shouldDisable;
+    if (elements.supportH) elements.supportH.disabled = shouldDisable;
+    if (elements.supportHSlider) elements.supportHSlider.disabled = shouldDisable;
     
     const minusBtn = document.getElementById('btn-support-minus');
     const plusBtn = document.getElementById('btn-support-plus');
     if (minusBtn) minusBtn.disabled = shouldDisable;
     if (plusBtn) plusBtn.disabled = shouldDisable;
     
-    const td = elements.supportH.closest('td');
-    if (shouldDisable) {
-        td.classList.add('readonly');
-    } else {
-        td.classList.remove('readonly');
+    const td = elements.supportH ? elements.supportH.closest('td') : null;
+    if (td) {
+        if (shouldDisable) {
+            td.classList.add('readonly');
+        } else {
+            td.classList.remove('readonly');
+        }
     }
+    document.querySelectorAll('.slider-nodes-container[data-target="supportH"] .slider-node-btn').forEach(btn => {
+        btn.disabled = shouldDisable;
+    });
+    applyAllLockedParamsUI();
 }
 
 function getBaseArrP() {
@@ -8515,9 +8572,62 @@ function getMaxPossibleArrI() {
             }
             const widthX = Math.max(0.1, maxX - minX);
             const isPortrait = state.pvOrient === 'portrait';
-            const pvW_m = (isPortrait ? state.pvW : state.pvL) / 1000;
+            const pvL_term = isPortrait ? state.pvW : state.pvL;
             const spX_m = (parseFloat(state.spX) || 20) / 1000;
-            return Math.max(1, Math.min(1000, Math.ceil((widthX + spX_m) / (pvW_m + spX_m))));
+            const pvW_m = pvL_term / 1000;
+            
+            const maxI = Math.max(1, Math.min(250, Math.ceil((widthX + spX_m) / (pvW_m + spX_m)) + 2));
+            const testJ = state.arrJ || 4;
+            const testM = state.siteType === 'roof-slope' ? 1 : (state.arrM || 1);
+            
+            let bestI = 1;
+            for (let testI = maxI; testI >= 1; testI--) {
+                const testState = Object.assign({}, state, { arrI: testI, arrJ: testJ, arrM: testM });
+                const layoutCoords = getShiftedLayoutCoords(testState);
+                
+                let activeColumns = new Set();
+                const isDoublePitch = (testState.pitchStyle === 'double' || testState.pitchStyle === 'double-v');
+                const numNeg = isDoublePitch ? Math.ceil(testJ / 2) : 0;
+                const numPos = isDoublePitch ? Math.floor(testJ / 2) : 0;
+                
+                for (let g = 0; g < testM; g++) {
+                    if (isDoublePitch) {
+                        for (let r = 0; r < numNeg; r++) {
+                            for (let c = 0; c < testI; c++) {
+                                const coord = layoutCoords[g]?.['neg']?.[r]?.[c];
+                                if (coord && !isModuleExcluded(coord.localX, coord.rowZ, testState)) {
+                                    activeColumns.add(c);
+                                }
+                            }
+                        }
+                        for (let r = 0; r < numPos; r++) {
+                            for (let c = 0; c < testI; c++) {
+                                const coord = layoutCoords[g]?.['pos']?.[r]?.[c];
+                                if (coord && !isModuleExcluded(coord.localX, coord.rowZ, testState)) {
+                                    activeColumns.add(c);
+                                }
+                            }
+                        }
+                    } else {
+                        for (let r = 0; r < testJ; r++) {
+                            for (let c = 0; c < testI; c++) {
+                                const coord = layoutCoords[g]?.['single']?.[r]?.[c];
+                                if (coord && !isModuleExcluded(coord.localX, coord.rowZ, testState)) {
+                                    activeColumns.add(c);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                if (activeColumns.size === testI) {
+                    bestI = testI;
+                    break;
+                } else if (activeColumns.size > 0 && activeColumns.size > bestI) {
+                    bestI = activeColumns.size;
+                }
+            }
+            return Math.max(1, bestI);
         }
     }
     return 80;
@@ -8538,9 +8648,62 @@ function getMaxPossibleArrJ() {
             }
             const lengthY = Math.max(0.1, maxZ - minZ);
             const isPortrait = state.pvOrient === 'portrait';
-            const pvL_m = (isPortrait ? state.pvL : state.pvW) / 1000;
+            const pvW_term = isPortrait ? state.pvL : state.pvW;
             const spY_m = (parseFloat(state.spY) || 20) / 1000;
-            return Math.max(1, Math.min(1000, Math.ceil((lengthY + spY_m) / (pvL_m + spY_m))));
+            const pvL_m = pvW_term / 1000;
+            
+            const maxJ = Math.max(1, Math.min(250, Math.ceil((lengthY + spY_m) / (pvL_m + spY_m)) + 2));
+            const testI = state.arrI || 10;
+            const testM = state.siteType === 'roof-slope' ? 1 : (state.arrM || 1);
+            
+            let bestJ = 1;
+            for (let testJ = maxJ; testJ >= 1; testJ--) {
+                const testState = Object.assign({}, state, { arrI: testI, arrJ: testJ, arrM: testM });
+                const layoutCoords = getShiftedLayoutCoords(testState);
+                
+                let activeRows = new Set();
+                const isDoublePitch = (testState.pitchStyle === 'double' || testState.pitchStyle === 'double-v');
+                const numNeg = isDoublePitch ? Math.ceil(testJ / 2) : 0;
+                const numPos = isDoublePitch ? Math.floor(testJ / 2) : 0;
+                
+                for (let g = 0; g < testM; g++) {
+                    if (isDoublePitch) {
+                        for (let r = 0; r < numNeg; r++) {
+                            for (let c = 0; c < testI; c++) {
+                                const coord = layoutCoords[g]?.['neg']?.[r]?.[c];
+                                if (coord && !isModuleExcluded(coord.localX, coord.rowZ, testState)) {
+                                    activeRows.add(r);
+                                }
+                            }
+                        }
+                        for (let r = 0; r < numPos; r++) {
+                            for (let c = 0; c < testI; c++) {
+                                const coord = layoutCoords[g]?.['pos']?.[r]?.[c];
+                                if (coord && !isModuleExcluded(coord.localX, coord.rowZ, testState)) {
+                                    activeRows.add(numNeg + r);
+                                }
+                            }
+                        }
+                    } else {
+                        for (let r = 0; r < testJ; r++) {
+                            for (let c = 0; c < testI; c++) {
+                                const coord = layoutCoords[g]?.['single']?.[r]?.[c];
+                                if (coord && !isModuleExcluded(coord.localX, coord.rowZ, testState)) {
+                                    activeRows.add(r);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                if (activeRows.size === testJ) {
+                    bestJ = testJ;
+                    break;
+                } else if (activeRows.size > 0 && activeRows.size > bestJ) {
+                    bestJ = activeRows.size;
+                }
+            }
+            return Math.max(1, bestJ);
         }
     }
     return (state.siteType === 'roof-slope') ? 24 : 12;
@@ -8887,6 +9050,7 @@ function setupEventListeners() {
     
     inputs.forEach(item => {
         item.el.addEventListener('input', () => {
+            if (item.el.disabled || (lockedParams && lockedParams[item.key])) return;
             let val = item.el.value;
             if (item.type === 'float') {
                 val = parseFloat(val) || 0;
@@ -8899,7 +9063,7 @@ function setupEventListeners() {
             // Sync sliders if values changed from text input
             if (item.key === 'tilt') {
                 elements.tiltSlider.value = val;
-                if (state.siteType === 'roof-slope') {
+                if (state.siteType === 'roof-slope' && (!lockedParams || !lockedParams['roofTilt'])) {
                     elements.roofTilt.value = val;
                     if (elements.roofTiltSlider) elements.roofTiltSlider.value = val;
                     state.roofTilt = val;
@@ -8907,7 +9071,7 @@ function setupEventListeners() {
                 updateSupportHLockState();
             } else if (item.key === 'roofTilt') {
                 elements.roofTiltSlider.value = val;
-                if (state.siteType === 'roof-slope') {
+                if (state.siteType === 'roof-slope' && (!lockedParams || !lockedParams['tilt'])) {
                     elements.tilt.value = val;
                     if (elements.tiltSlider) elements.tiltSlider.value = val;
                     state.tilt = val;
@@ -8962,12 +9126,11 @@ function setupEventListeners() {
     
     ['chkPitchSingle', 'chkPitchDouble', 'chkPitchDoubleV'].forEach(key => {
         if (elements[key]) {
-            const getVal = () => key === 'chkPitchSingle' ? 'single' : (key === 'chkPitchDouble' ? 'double' : 'double-v');
-            elements[key].addEventListener('change', () => {
-                if (elements[key].checked) updatePitchStyleUI(getVal());
-            });
-            elements[key].addEventListener('click', () => {
-                updatePitchStyleUI(getVal());
+            elements[key].addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    const val = e.target.id === 'chk-pitch-double-v' ? 'double-v' : (e.target.id === 'chk-pitch-double' ? 'double' : 'single');
+                    updatePitchStyleUI(val);
+                }
             });
         }
     });
@@ -8988,74 +9151,61 @@ function setupEventListeners() {
         }
     });
     
-    elements.siteType.addEventListener('change', (e) => {
-        state.siteType = e.target.value;
-        
+    elements.siteType.addEventListener('change', () => {
+        state.siteType = elements.siteType.value;
         if (state.siteType === 'roof-slope') {
-            // Slope Roof (Pitched):
-            // Default to Landscape, x=20mm, y=26mm, install tilt = 8, roof tilt = 8, roof height = 10m
-            state.pvOrient = 'landscape';
-            state.spX = 20;
-            state.spY = 26;
-            state.tilt = 8;
-            state.roofTilt = 8;
-            state.roofH = 10;
-            state.arrM = 1;
-            
-            elements.pvOrient.value = 'landscape';
-            elements.spX.value = 20;
-            if (elements.spXSlider) elements.spXSlider.value = 20;
-            elements.spY.value = 26;
-            if (elements.spYSlider) elements.spYSlider.value = 26;
-            elements.tilt.value = 8;
-            elements.tiltSlider.value = 8;
-            elements.roofTilt.value = 8;
-            elements.roofTiltSlider.value = 8;
-            elements.roofH.value = 10;
-            elements.roofHSlider.value = 10;
-            elements.arrM.value = 1;
-            if (elements.arrMSlider) elements.arrMSlider.value = 1;
-        } else {
-            // Ground mount or Flat roof:
-            // Default to Portrait, x=20mm, y=20mm, install tilt = 6, roof tilt = 0
-            state.pvOrient = 'portrait';
-            state.spX = 20;
-            state.spY = 20;
-            state.tilt = 6;
-            state.roofTilt = 0;
-            
-            elements.pvOrient.value = 'portrait';
-            elements.spX.value = 20;
-            if (elements.spXSlider) elements.spXSlider.value = 20;
-            elements.spY.value = 20;
-            if (elements.spYSlider) elements.spYSlider.value = 20;
-            elements.tilt.value = 6;
-            elements.tiltSlider.value = 6;
-            elements.roofTilt.value = 0;
-            elements.roofTiltSlider.value = 0;
-            
-            if (state.siteType === 'roof-flat') {
+            if (!lockedParams || !lockedParams['pvOrient']) {
+                state.pvOrient = 'landscape';
+                elements.pvOrient.value = 'landscape';
+            }
+            if (!lockedParams || !lockedParams['spX']) {
+                state.spX = 20;
+                elements.spX.value = 20;
+                if (elements.spXSlider) elements.spXSlider.value = 20;
+            }
+            if (!lockedParams || !lockedParams['spY']) {
+                state.spY = 26;
+                elements.spY.value = 26;
+                if (elements.spYSlider) elements.spYSlider.value = 26;
+            }
+            if (!lockedParams || !lockedParams['tilt']) {
+                state.tilt = 6;
+                elements.tilt.value = 6;
+                if (elements.tiltSlider) elements.tiltSlider.value = 6;
+            }
+            if (!lockedParams || !lockedParams['roofTilt']) {
+                state.roofTilt = 6;
+                elements.roofTilt.value = 6;
+                if (elements.roofTiltSlider) elements.roofTiltSlider.value = 6;
+            }
+            if ((!lockedParams || !lockedParams['roofH']) && (state.roofH === 0 || !state.roofH)) {
                 state.roofH = 10;
                 elements.roofH.value = 10;
                 if (elements.roofHSlider) elements.roofHSlider.value = 10;
-            } else {
-                state.roofH = 0;
-                elements.roofH.value = 0;
-                if (elements.roofHSlider) elements.roofHSlider.value = 0;
             }
-
-            if (!customSiteBoundary) {
-                state.arrJ = 4;
-                elements.arrJ.value = 4;
-                if (elements.arrJSlider) elements.arrJSlider.value = 4;
-                state.azimuth = 180;
-                elements.azimuth.value = 180;
-                if (elements.azimuthSlider) elements.azimuthSlider.value = 180;
+            if (!lockedParams || !lockedParams['arrM']) {
+                state.arrM = 1;
+                elements.arrM.value = 1;
+                if (elements.arrMSlider) elements.arrMSlider.value = 1;
             }
+        } else if (state.siteType === 'ground') {
+            state.roofH = 0;
+            elements.roofH.value = 0;
+            if (elements.roofHSlider) elements.roofHSlider.value = 0;
+            state.roofTilt = 0;
+            elements.roofTilt.value = 0;
+            if (elements.roofTiltSlider) elements.roofTiltSlider.value = 0;
+        } else if (state.siteType === 'roof-flat') {
+            if ((!lockedParams || !lockedParams['roofH']) && (state.roofH === 0 || !state.roofH)) {
+                state.roofH = 10;
+                elements.roofH.value = 10;
+                if (elements.roofHSlider) elements.roofHSlider.value = 10;
+            }
+            state.roofTilt = 0;
+            elements.roofTilt.value = 0;
+            if (elements.roofTiltSlider) elements.roofTiltSlider.value = 0;
         }
-        
         handleSiteTypeChangeUI();
-        updateSupportHLockState(); // Lock or unlock support height based on tilt and siteType
         if (customSiteBoundary) {
             inferParametersFromSiteBoundary(customSiteBoundary);
         } else {
@@ -9064,8 +9214,8 @@ function setupEventListeners() {
         }
     });
     
-    elements.pvOrient.addEventListener('change', (e) => {
-        state.pvOrient = e.target.value;
+    elements.pvOrient.addEventListener('change', () => {
+        state.pvOrient = elements.pvOrient.value;
         if (customSiteBoundary) {
             inferParametersFromSiteBoundary(customSiteBoundary);
         } else {
@@ -9074,12 +9224,19 @@ function setupEventListeners() {
         }
     });
     
-    // Slider inputs linked to number inputs
+    elements.pvSelect.addEventListener('change', () => {
+        state.pvPreset = elements.pvSelect.value;
+        handlePvPresetChangeUI();
+        calculateOutputs();
+        updateAllVisuals();
+    });
+    
     elements.tiltSlider.addEventListener('input', (e) => {
+        if (elements.tiltSlider.disabled || (lockedParams && lockedParams['tilt'])) return;
         const val = parseFloat(e.target.value) || 0;
         elements.tilt.value = val;
         state.tilt = val;
-        if (state.siteType === 'roof-slope') {
+        if (state.siteType === 'roof-slope' && (!lockedParams || !lockedParams['roofTilt'])) {
             elements.roofTilt.value = val;
             if (elements.roofTiltSlider) elements.roofTiltSlider.value = val;
             state.roofTilt = val;
@@ -9090,10 +9247,11 @@ function setupEventListeners() {
     });
     
     elements.roofTiltSlider.addEventListener('input', (e) => {
+        if (elements.roofTiltSlider.disabled || (lockedParams && lockedParams['roofTilt'])) return;
         const val = parseFloat(e.target.value) || 0;
         elements.roofTilt.value = val;
         state.roofTilt = val;
-        if (state.siteType === 'roof-slope') {
+        if (state.siteType === 'roof-slope' && (!lockedParams || !lockedParams['tilt'])) {
             elements.tilt.value = val;
             if (elements.tiltSlider) elements.tiltSlider.value = val;
             state.tilt = val;
@@ -9104,6 +9262,7 @@ function setupEventListeners() {
     });
     
     elements.roofHSlider.addEventListener('input', (e) => {
+        if (elements.roofHSlider.disabled || (lockedParams && lockedParams['roofH'])) return;
         const val = parseFloat(e.target.value) || 0;
         elements.roofH.value = val;
         state.roofH = val;
@@ -9112,6 +9271,7 @@ function setupEventListeners() {
     });
     
     elements.supportHSlider.addEventListener('input', (e) => {
+        if (elements.supportHSlider.disabled || (lockedParams && lockedParams['supportH'])) return;
         const val = parseFloat(e.target.value) || 0;
         elements.supportH.value = val;
         state.supportH = val;
@@ -9120,6 +9280,7 @@ function setupEventListeners() {
     });
     
     elements.azimuthSlider.addEventListener('input', (e) => {
+        if (elements.azimuthSlider.disabled || (lockedParams && lockedParams['azimuth'])) return;
         const val = parseFloat(e.target.value) || 0;
         elements.azimuth.value = val;
         state.azimuth = val;
@@ -9133,6 +9294,7 @@ function setupEventListeners() {
     });
     
     elements.arrISlider.addEventListener('input', (e) => {
+        if (elements.arrISlider.disabled || (lockedParams && lockedParams['arrI'])) return;
         const val = parseInt(e.target.value) || 1;
         elements.arrI.value = val;
         state.arrI = val;
@@ -9141,6 +9303,7 @@ function setupEventListeners() {
     });
     
     elements.arrJSlider.addEventListener('input', (e) => {
+        if (elements.arrJSlider.disabled || (lockedParams && lockedParams['arrJ'])) return;
         const val = parseInt(e.target.value) || 1;
         elements.arrJ.value = val;
         state.arrJ = val;
@@ -9149,6 +9312,7 @@ function setupEventListeners() {
     });
     
     elements.arrMSlider.addEventListener('input', (e) => {
+        if (elements.arrMSlider.disabled || (lockedParams && lockedParams['arrM'])) return;
         const val = parseInt(e.target.value) || 1;
         elements.arrM.value = val;
         state.arrM = val;
@@ -9158,6 +9322,7 @@ function setupEventListeners() {
     });
     
     elements.arrPSlider.addEventListener('input', (e) => {
+        if (elements.arrPSlider.disabled || (lockedParams && lockedParams['arrP'])) return;
         const val = parseFloat(e.target.value) || 1.0;
         const roundedVal = Number(val.toFixed(1));
         elements.arrP.value = roundedVal;
@@ -9168,6 +9333,7 @@ function setupEventListeners() {
     
     if (elements.spXSlider) {
         elements.spXSlider.addEventListener('input', (e) => {
+            if (elements.spXSlider.disabled || (lockedParams && lockedParams['spX'])) return;
             const val = parseFloat(e.target.value) || 0;
             elements.spX.value = val;
             state.spX = val;
@@ -9178,6 +9344,7 @@ function setupEventListeners() {
     
     if (elements.spYSlider) {
         elements.spYSlider.addEventListener('input', (e) => {
+            if (elements.spYSlider.disabled || (lockedParams && lockedParams['spY'])) return;
             const val = parseFloat(e.target.value) || 0;
             elements.spY.value = val;
             state.spY = val;
@@ -9219,7 +9386,9 @@ function setupEventListeners() {
         const sliderInput = document.getElementById(sliderInputId);
         if (!minusBtn || !plusBtn) return;
         
-        minusBtn.addEventListener('click', () => {
+        minusBtn.addEventListener('click', (e) => {
+            if (e) e.preventDefault();
+            if (minusBtn.disabled || (numInput && numInput.disabled) || (lockedParams && lockedParams[stateKey])) return;
             if (navigator.vibrate) { try { navigator.vibrate(10); } catch(e){} }
             const minVal = parseFloat(numInput.getAttribute('min')) !== null && !isNaN(parseFloat(numInput.getAttribute('min'))) ? parseFloat(numInput.getAttribute('min')) : min;
             let val = (parseFloat(numInput.value) || 0) - step;
@@ -9230,11 +9399,11 @@ function setupEventListeners() {
             state[stateKey] = val;
             if (stateKey === 'tilt' || stateKey === 'roofTilt') {
                 if (state.siteType === 'roof-slope') {
-                    if (stateKey === 'tilt') {
+                    if (stateKey === 'tilt' && (!lockedParams || !lockedParams['roofTilt'])) {
                         elements.roofTilt.value = val;
                         if (elements.roofTiltSlider) elements.roofTiltSlider.value = val;
                         state.roofTilt = val;
-                    } else {
+                    } else if (stateKey === 'roofTilt' && (!lockedParams || !lockedParams['tilt'])) {
                         elements.tilt.value = val;
                         if (elements.tiltSlider) elements.tiltSlider.value = val;
                         state.tilt = val;
@@ -9252,7 +9421,9 @@ function setupEventListeners() {
             }
         });
         
-        plusBtn.addEventListener('click', () => {
+        plusBtn.addEventListener('click', (e) => {
+            if (e) e.preventDefault();
+            if (plusBtn.disabled || (numInput && numInput.disabled) || (lockedParams && lockedParams[stateKey])) return;
             if (navigator.vibrate) { try { navigator.vibrate(10); } catch(e){} }
             const maxVal = parseFloat(numInput.getAttribute('max')) !== null && !isNaN(parseFloat(numInput.getAttribute('max'))) ? parseFloat(numInput.getAttribute('max')) : max;
             let val = (parseFloat(numInput.value) || 0) + step;
@@ -9263,11 +9434,11 @@ function setupEventListeners() {
             state[stateKey] = val;
             if (stateKey === 'tilt' || stateKey === 'roofTilt') {
                 if (state.siteType === 'roof-slope') {
-                    if (stateKey === 'tilt') {
+                    if (stateKey === 'tilt' && (!lockedParams || !lockedParams['roofTilt'])) {
                         elements.roofTilt.value = val;
                         if (elements.roofTiltSlider) elements.roofTiltSlider.value = val;
                         state.roofTilt = val;
-                    } else {
+                    } else if (stateKey === 'roofTilt' && (!lockedParams || !lockedParams['tilt'])) {
                         elements.tilt.value = val;
                         if (elements.tiltSlider) elements.tiltSlider.value = val;
                         state.tilt = val;
@@ -9305,7 +9476,7 @@ function setupEventListeners() {
         container.querySelectorAll('.slider-node-btn, .azimuth-node-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                if (btn.disabled) return;
+                if (btn.disabled || (lockedParams && lockedParams[targetKey])) return;
                 if (navigator.vibrate) { try { navigator.vibrate(10); } catch(e){} }
                 const rawVal = btn.getAttribute('data-val');
                 let targetVal = parseFloat(rawVal);
@@ -9346,7 +9517,7 @@ function setupEventListeners() {
                         elements.tilt.value = targetVal;
                         elements.tiltSlider.value = targetVal;
                         state.tilt = targetVal;
-                        if (state.siteType === 'roof-slope') {
+                        if (state.siteType === 'roof-slope' && (!lockedParams || !lockedParams['roofTilt'])) {
                             elements.roofTilt.value = targetVal;
                             if (elements.roofTiltSlider) elements.roofTiltSlider.value = targetVal;
                             state.roofTilt = targetVal;
@@ -9355,7 +9526,7 @@ function setupEventListeners() {
                         elements.roofTilt.value = targetVal;
                         elements.roofTiltSlider.value = targetVal;
                         state.roofTilt = targetVal;
-                        if (state.siteType === 'roof-slope') {
+                        if (state.siteType === 'roof-slope' && (!lockedParams || !lockedParams['tilt'])) {
                             elements.tilt.value = targetVal;
                             if (elements.tiltSlider) elements.tiltSlider.value = targetVal;
                             state.tilt = targetVal;

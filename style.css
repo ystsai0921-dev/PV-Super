@@ -307,10 +307,16 @@ main {
 }
 
 .excel-table td.readonly input[type="range"],
-.excel-table td.readonly button {
+.excel-table td.readonly button:not(.lock-toggle-btn) {
     opacity: 0.4;
     cursor: not-allowed;
     pointer-events: none;
+}
+
+.excel-table td.readonly .lock-toggle-btn {
+    opacity: 1 !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
 }
 
 .excel-table td.output-cell {

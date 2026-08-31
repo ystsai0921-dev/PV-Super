@@ -294,6 +294,131 @@
             border: 1px solid #cbd5e1;
             border-radius: 3px;
             box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+        /* UI Preview Mockups for Manual */
+        .toolbox-preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin: 16px 0 24px 0;
+            justify-content: flex-start;
+        }
+
+        .toolbox-preview-card {
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 10px;
+            padding: 12px;
+            width: 228px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            color: #ffffff;
+            font-size: 11px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            box-sizing: border-box;
+            flex: 1 1 220px;
+            max-width: 260px;
+        }
+
+        .tb-header {
+            font-weight: 700;
+            font-size: 11.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .tb-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            width: 100%;
+            padding: 5px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            font-size: 11px;
+            margin-bottom: 6px;
+            text-align: center;
+            box-sizing: border-box;
+            white-space: nowrap;
+        }
+
+        .tb-btn-active-blue {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.35), rgba(56, 189, 248, 0.2));
+            border: 1.5px solid #38bdf8;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            font-weight: 700;
+        }
+
+        .tb-btn-active-orange {
+            background: linear-gradient(135deg, rgba(234, 88, 12, 0.35), rgba(249, 115, 22, 0.2));
+            border: 1.5px solid #f97316;
+            box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+            font-weight: 700;
+        }
+
+        .tb-btn-active-red {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.35), rgba(248, 113, 113, 0.2));
+            border: 1.5px solid #ef4444;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+            font-weight: 700;
+        }
+
+        .tb-sub-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 6px;
+            padding: 6px;
+            margin-bottom: 6px;
+        }
+
+        .tb-sub-title {
+            font-size: 10px;
+            text-align: center;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #94a3b8;
+        }
+
+        .tb-btn-row {
+            display: flex;
+            gap: 4px;
+        }
+
+        .tb-btn-row .tb-btn {
+            flex: 1;
+            margin-bottom: 0;
+            padding: 4px 6px;
+            font-size: 10.5px;
+        }
+
+        .mobile-guide-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin: 18px 0;
+        }
+
+        .mobile-guide-card {
+            background: var(--slate-50);
+            border: 1px solid var(--slate-200);
+            border-top: 4px solid var(--primary-light);
+            border-radius: 8px;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+
+        .mobile-guide-card h4 {
+            margin: 0 0 8px 0;
+            font-size: 13px;
+            color: var(--slate-800);
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         @media print {
@@ -309,7 +434,7 @@
         <!-- 頂部標題區 -->
         <div class="header-container">
             <div>
-                <h1>PV Super 案場規劃工具使用說明書 <span class="version-badge">v2.8</span></h1>
+                <h1>PV Super 案場規劃工具使用說明書 <span class="version-badge">v2.8.1</span></h1>
             </div>
             <div class="logo-box">
                 <img src="images/pv_super_logo_light.png" alt="PV Super" style="height: 48px; width: auto; object-fit: contain; filter: invert(1);">
@@ -429,55 +554,162 @@
             </ul>
         </div>
 
-        <!-- 物件調整工具箱 -->
-        <h3>物件調整工具箱 (Object Transform Toolbox)</h3>
-        <p>在鎖定狀態下點選地圖上的任一多邊形，物件上方將浮現微型黑色調整面板：</p>
+        <!-- 物件調整工具箱與多邊形進階編輯 -->
+        <h3>物件調整工具箱與多邊形進階編輯 (Object Transform Toolbox & Advanced Editing)</h3>
+        <p>在鎖定狀態下，點選地圖上任何已繪製的多邊形物件（案場邊界、排除區、障礙區），系統將啟動<b>智慧選取機制</b>並於物件上方彈出微型深色調整工具箱：</p>
+
+        <!-- 點選面內 vs 點選邊線之操作差異 -->
+        <div class="step-box step-blue" style="margin-top: 14px;">
+            <div class="step-title blue-title">
+                <span>🎯 「點選面內」與「點選邊線」之智慧感應判定機制</span>
+            </div>
+            <ul>
+                <li><b>點選面內（Face Selection，距離各邊線 &gt; 12px）</b>：
+                    <ul>
+                        <li><b>全物件鎖定</b>：多邊形整體全框高亮顯示，所有角點頂點把手展開，並在多邊形<b>幾何中心浮現「四向移動符號」</b>。</li>
+                        <li><b>平移移動與複製</b>：直接拖曳中心移動符號可整體平移多邊形，或按住快捷鍵／雙擊拖曳複製另一份。</li>
+                        <li><b>工具箱狀態</b>：工具箱標題顯示物件名稱與屬性（如 <code>障礙物 (5.0m) [建物上]</code>），邊線欄位顯示「點擊邊線微調偏移」，此時「內縮」與「外推」處於安全未指定狀態。</li>
+                    </ul>
+                </li>
+                <li><b>點選邊線（Edge Selection，距離邊線 &le; 12px）</b>：
+                    <ul>
+                        <li><b>單邊高亮發光</b>：精準鎖定使用者點擊之目標邊線，該邊線單獨呈現純白色高亮光條。</li>
+                        <li><b>解鎖微調功能</b>：工具箱即時切換顯示 <code>已選取邊線 #N</code>，並解鎖 <b>「內縮」</b> 與 <b>「外推」</b> 按鈕。</li>
+                        <li><b>精準平行推移</b>：點擊「內縮」將選取邊線朝多邊形內部垂直平移 0.5m；點擊「外推」則向外垂直平移 0.5m，自動重新計算相鄰邊之交點。</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 三大工具箱面板實體圖解與功能差異 -->
+        <h4 style="font-size: 13px; color: var(--slate-800); margin: 20px 0 8px 0;">三大繪圖工具箱與物件調整面板圖解</h4>
+        <p>三大工具（範圍、排除、障礙）在繪製階段與選取調整階段各自具備專屬的直覺式控制介面：</p>
+
+        <div class="toolbox-preview-container">
+            <!-- 1. 範圍工具箱 -->
+            <div class="toolbox-preview-card">
+                <div class="tb-header">
+                    <span><img src="images/area.svg" alt="" style="width: 13px; vertical-align: middle; filter: invert(1);"> 1. 範圍工具</span>
+                    <span style="color: #64748b; font-size: 9px;">⋮⋮ 拖曳</span>
+                </div>
+                <div class="tb-btn tb-btn-active-blue">
+                    <img src="images/draw_pencil.svg" alt="" style="width: 12px; filter: invert(1);"> 手繪多邊形
+                </div>
+                <div class="tb-sub-box">
+                    <div class="tb-sub-title">【選取邊線調整彈窗】</div>
+                    <div style="font-size: 9.5px; text-align: center; color: #38bdf8; font-weight: 700; margin-bottom: 3px;">案場邊界</div>
+                    <div style="font-size: 8.5px; text-align: center; color: #94a3b8; margin-bottom: 5px;">已選取邊線 #1</div>
+                    <div class="tb-btn-row">
+                        <div class="tb-btn">內縮 0.5m</div>
+                        <div class="tb-btn">外推 0.5m</div>
+                    </div>
+                </div>
+                <div class="tb-btn-row" style="margin-top: 4px;">
+                    <div class="tb-btn" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4);">刪除</div>
+                    <div class="tb-btn">返回</div>
+                </div>
+            </div>
+
+            <!-- 2. 排除工具箱 -->
+            <div class="toolbox-preview-card">
+                <div class="tb-header">
+                    <span><img src="images/exclude.svg" alt="" style="width: 13px; vertical-align: middle; filter: invert(1);"> 2. 排除工具</span>
+                    <span style="color: #64748b; font-size: 9px;">⋮⋮ 拖曳</span>
+                </div>
+                <div class="tb-btn tb-btn-active-orange">
+                    <img src="images/draw_pencil.svg" alt="" style="width: 12px; filter: invert(1);"> 手繪多邊形
+                </div>
+                <div class="tb-sub-box">
+                    <div class="tb-sub-title">【選取邊線調整彈窗】</div>
+                    <div style="font-size: 9.5px; text-align: center; color: #f97316; font-weight: 700; margin-bottom: 3px;">排除多邊形</div>
+                    <div style="font-size: 8.5px; text-align: center; color: #94a3b8; margin-bottom: 5px;">已選取邊線 #2</div>
+                    <div class="tb-btn-row">
+                        <div class="tb-btn">內縮 0.5m</div>
+                        <div class="tb-btn">外推 0.5m</div>
+                    </div>
+                </div>
+                <div class="tb-btn-row" style="margin-top: 4px;">
+                    <div class="tb-btn" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4);">刪除</div>
+                    <div class="tb-btn">返回</div>
+                </div>
+            </div>
+
+            <!-- 3. 障礙工具箱 -->
+            <div class="toolbox-preview-card">
+                <div class="tb-header">
+                    <span><img src="images/obstacle.svg" alt="" style="width: 13px; vertical-align: middle; filter: invert(1);"> 3. 障礙工具</span>
+                    <span style="color: #64748b; font-size: 9px;">⋮⋮ 拖曳</span>
+                </div>
+                <div class="tb-btn tb-btn-active-red">
+                    <img src="images/draw_pencil.svg" alt="" style="width: 12px; filter: invert(1);"> 手繪多邊形
+                </div>
+                <div style="background: rgba(255,255,255,0.04); border-radius: 5px; padding: 4px 6px; margin-bottom: 5px; font-size: 9.5px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>障礙物高度：</span>
+                        <b style="color: #ef4444;">5.0 m</b>
+                    </div>
+                    <div style="color: #94a3b8; font-size: 8.5px; margin-top: 2px;">☑ 在建物上（自動由屋頂起算）</div>
+                </div>
+                <div class="tb-sub-box">
+                    <div class="tb-sub-title">【選取調整彈窗】</div>
+                    <div style="font-size: 9.5px; text-align: center; color: #ef4444; font-weight: 700; margin-bottom: 3px;">障礙物 (5.0m) [建物上]</div>
+                    <div class="tb-btn-row" style="margin-bottom: 4px;">
+                        <div class="tb-btn">內縮</div>
+                        <div class="tb-btn">外推</div>
+                    </div>
+                    <div class="tb-btn-row">
+                        <div class="tb-btn" style="background: rgba(239, 68, 68, 0.25);">降低 -0.5m</div>
+                        <div class="tb-btn" style="background: rgba(16, 185, 129, 0.25);">升高 +0.5m</div>
+                    </div>
+                </div>
+                <div class="tb-btn-row" style="margin-top: 4px;">
+                    <div class="tb-btn" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4);">刪除</div>
+                    <div class="tb-btn">返回</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 多邊形複製跨平台操作指南 -->
+        <h4 style="font-size: 13px; color: var(--slate-800); margin: 24px 0 8px 0;">多邊形快速複製跨平台操作指南 (Windows / macOS / 行動裝置)</h4>
+        <p>系統提供強大的多邊形拖曳複製機制，支援將既存的排除區或障礙物快速複製出新多邊形，並依據使用者當前裝置提供最流暢的操作手勢：</p>
+
         <table>
             <thead>
                 <tr>
-                    <th>選取物件</th>
-                    <th>可用按鈕</th>
-                    <th>操作說明</th>
+                    <th>作業系統／設備類型</th>
+                    <th>複製操作方式</th>
+                    <th>視覺回饋與系統行為</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td><span class="btn-badge btn-blue"><img src="images/area.svg" alt="範圍"> 案場範圍</span></td>
-                    <td><span class="btn-badge btn-red">刪除</span> / <span class="btn-badge">返回</span></td>
-                    <td>點擊「刪除」清空案場邊界；點擊「返回」關閉面板。</td>
+                    <td><b>🖥️ Windows 系統</b></td>
+                    <td>
+                        • <b>方式 A</b>：按住鍵盤 <kbd>Ctrl</kbd> 或 <kbd>Alt</kbd> 鍵不放，使用滑鼠拖曳多邊形中央的四向移動圖示。<br>
+                        • <b>方式 B</b>：滑鼠在中央移動符號上<b>快速連點兩下（雙擊不放）直接拖曳</b>。
+                    </td>
+                    <td rowspan="3">
+                        • <b>複製發光提示</b>：進入複製模式時，中央移動圖標右上角呈現綠色 <b>+</b> 號發光徽章。<br>
+                        • <b>原件完整保留</b>：原多邊形於起始位置原地保留，拖曳出的新多邊形具備獨立選取、邊線推移與刪除能力。<br>
+                        • <b>角點精準鎖點</b>：新多邊形頂點靠近其他頂點或中點時（&lt; 16px），自動吸附並顯示洋紅鎖點圓圈。<br>
+                        • <b>平行軌跡吸附</b>：沿案場方位角（長向或短向）拖曳時，自動維持平行軌跡並顯示洋紅虛線對齊引導線。
+                    </td>
                 </tr>
                 <tr>
-                    <td><span class="btn-badge btn-orange"><img src="images/exclude.svg" alt="排除"> 排除區域</span></td>
-                    <td><span class="btn-badge">內縮</span> / <span class="btn-badge">外擴</span> / <span class="btn-badge btn-red">刪除</span></td>
-                    <td>點選多邊形之某一邊線後，點擊「內縮」或「外擴」可將該邊線平行平移 0.5m；點擊「刪除」移除該排除區。</td>
+                    <td><b>🍏 macOS / Mac 電腦</b></td>
+                    <td>
+                        • <b>方式 A</b>：按住鍵盤 <kbd>Command (⌘)</kbd> 或 <kbd>Option / Alt</kbd> 鍵不放，拖曳中央移動圖示。<br>
+                        • <b>方式 B</b>：觸控板或滑鼠在中央移動符號上<b>快速雙擊不放直接拖曳</b>。
+                    </td>
                 </tr>
                 <tr>
-                    <td><span class="btn-badge btn-red"><img src="images/obstacle.svg" alt="障礙"> 障礙區域</span></td>
-                    <td><span class="btn-badge">加高</span> / <span class="btn-badge">降低</span> / <span class="btn-badge btn-red">刪除</span></td>
-                    <td>點擊「加高」或「降低」可增減障礙物高度 0.5m，並即時重新計算立體干涉；點擊「刪除」移除該障礙物。</td>
+                    <td><b>📱 手機與平板 (觸控裝置)</b></td>
+                    <td>
+                        • 在無實體鍵盤環境下，直接在多邊形中央移動符號上以手指<b>「快速雙擊兩下不放並拖曳 (Double-Tap & Drag)」</b>，即可立即拉出新的一份多邊形！
+                    </td>
                 </tr>
             </tbody>
         </table>
-
-        <!-- 多邊形快速複製、吸附與極限縮放 -->
-        <h3>多邊形中心移動把手、快速複製、角點鎖點與平行吸附 (Advanced Map Editing)</h3>
-        <ul>
-            <li><b>超高解析度極限縮放（Zoom 24）</b>：地圖支援更深層的放大極限（最高 24 級放大），即便是 20kWp 以下之微型住宅屋頂，亦可清晰辨識並進行公分級精準微調。</li>
-            <li><b>中心移動把手與快速複製 (Move & Duplicate Polygon)</b>：
-                <ul>
-                    <li>選取多邊形時，中心呈現四向移動圓形標記。<b>直接拖曳</b>該標記即可平移整座多邊形。</li>
-                    <li><b>鍵盤修飾鍵複製</b>：按住鍵盤 <kbd>Ctrl</kbd>（Windows）或 <kbd>Cmd (⌘)</kbd> / <kbd>Alt</kbd>（Mac）不放拖曳中心符號，原位置將完整保留副本，並拉出全新獨立多邊形。</li>
-                    <li><b>觸控／滑鼠快速雙擊複製</b>：在中心移動圖示上<b>「連續點擊兩次並按住拖曳 (Double Tap Drag)」</b>，亦可直接拉出新多邊形（圖標右上角呈現綠色 <b>+</b> 號提示）。</li>
-                </ul>
-            </li>
-            <li><b>角點鎖點與平行線吸附 (Corner Snapping & Parallel Alignment)</b>：
-                <ul>
-                    <li><b>角點精準鎖點</b>：平移多邊形或拖曳頂點時，當頂點靠近場內其他多邊形頂點或邊線中點（&lt; 16px），系統自動鎖點吸附並顯示洋紅亮圈標記。</li>
-                    <li><b>案場軸向平行吸附</b>：沿案場方位角（長向或短向平行軸）拖曳時，系統自動吸附平行軌跡並顯示洋紅虛線對齊引導線。</li>
-                </ul>
-            </li>
-            <li><b>選邊線 vs 選面內智慧判定</b>：點擊邊線 12px 範圍內精準鎖定該邊線（啟用內縮／外推微調）；點擊面內則選取整個多邊形面。</li>
-        </ul>
 
         <!-- 四、 試算表參數配置與運算規則 -->
         <h2>四、 試算表參數配置與運算規則</h2>
@@ -645,9 +877,49 @@
             <li><span class="highlight">目錄智慧記憶</span>：系統透過 File System Access API 自動記錄上次匯出的資料夾路徑，連續輸出簡報與檔案時無需重複選擇目標路徑。</li>
         </ul>
 
+        <!-- 七、 行動裝置與手機直式排版操作指南 -->
+        <h2>七、 行動裝置與手機直式排版操作指南 (Mobile Responsive Guide)</h2>
+        <p>PV Super 具備高度自適應之行動裝置直式（Portrait）與橫式（Landscape）介面架構，讓工程師與業務人員能在手機、iPad 或平板電腦上進行現場勘查、即時排板與簡報展示：</p>
+
+        <div class="mobile-guide-grid">
+            <div class="mobile-guide-card">
+                <h4>📱 直式上下分割視窗佈局</h4>
+                <ul>
+                    <li><b>上半部（互動可視化視窗）</b>：呈現 3D 立體模型視圖或衛星地圖，並提供雙模即時切換開關，隨時切換 3D 透視與空拍平面。</li>
+                    <li><b>下半部（Excel 參數滾動編輯區）</b>：完整呈現 23 項案場規格與排板試算表，支援平滑觸控滾動編輯與即時容量計算。</li>
+                </ul>
+            </div>
+
+            <div class="mobile-guide-card">
+                <h4>👆 觸控手勢與防誤觸機制</h4>
+                <ul>
+                    <li><b>3D 視場手勢</b>：單指滑動旋轉 3D 視角、雙指捏合縮放視距、雙指拖曳平移視野。</li>
+                    <li><b>地圖手勢</b>：單指拖曳平移地圖、雙指捏合縮放衛星圖層。</li>
+                    <li><b>觸控保護條 (Touch Scroll Bar)</b>：手機端操作地圖或 3D 視圖時，側邊具備專用捲動手把，避免在地圖拖曳頂點時意外觸發整頁上下滾動。</li>
+                </ul>
+            </div>
+
+            <div class="mobile-guide-card">
+                <h4>🚶‍♂️ 街景小人觸控與全螢幕模式</h4>
+                <ul>
+                    <li><b>觸控拖曳進入街景</b>：以手指拖曳地圖右上方白色街景小人（Pegman）至道路上，放開即可於懸浮視窗內即時檢視現場 360° 街景。</li>
+                    <li><b>等比例縮放把手</b>：按住彈窗右下角把手拖曳，固定左上角等比例縮放視窗大小；點擊右上角「另開全螢幕 ↗」可展開為滿版沉浸式街景。</li>
+                </ul>
+            </div>
+
+            <div class="mobile-guide-card">
+                <h4>⚡ 浮動繪圖工具箱自動適配</h4>
+                <ul>
+                    <li><b>自適應抽屜與吸附</b>：手機直式模式下，「範圍」、「排除」與「障礙」工具箱自動緊湊貼合螢幕邊界，不阻擋中央視圖。</li>
+                    <li><b>防折行與按鈕放大</b>：工具按鈕文字（如「手繪多邊形」）自動保持單行，點擊熱區優化加大，手指觸控點選精準不卡手。</li>
+                </ul>
+            </div>
+        </div>
+
         <div class="tip">
             <div class="tip-title">💡 鍵盤快速鍵與操作提示</div>
             • 距離量測中：按 <kbd>Esc</kbd> 鍵可退出量測模式並清除標記線。<br>
+            • 多邊形複製：Windows 按住 <kbd>Ctrl</kbd> / Mac 按住 <kbd>Cmd</kbd> 拖曳中心移動符號；手機/平板請「快速雙擊不放並拖曳」。<br>
             • 頂點調整：在地圖多邊形編輯模式下，滑鼠拖曳頂點圓形把手即可即時調整幾何外框。<br>
             • 3D 視角旋轉：滑鼠左鍵拖曳旋轉視角、滑鼠右鍵拖曳平移視野、滾輪縮放視距。
         </div>
