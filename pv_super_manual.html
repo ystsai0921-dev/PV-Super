@@ -434,10 +434,10 @@
         <!-- 頂部標題區 -->
         <div class="header-container">
             <div>
-                <h1>PV Super 案場規劃工具使用說明書 <span class="version-badge">v2.8.1</span></h1>
+                <h1>PV Super 案場規劃工具使用說明書 <span class="version-badge">v2.8.2</span></h1>
             </div>
             <div class="logo-box">
-                <img src="images/pv_super_logo_light.png" alt="PV Super" style="height: 48px; width: auto; object-fit: contain; filter: invert(1);">
+                <img src="images/pv_super_logo_light.png" alt="PV Super" style="height: 48px; width: auto; object-fit: contain;">
             </div>
         </div>
         <div class="subtitle">曜昇綠能股份有限公司 &copy; 2026 ‧ 太陽光電 3D 快速排板與評估系統操作指南</div>
@@ -867,11 +867,10 @@
                     <li>全份簡報頁首頁尾均搭載新版 <code>pv_super_logo_light.png</code> 品牌識別標誌。</li>
                 </ul>
             </li>
-            <li><span class="highlight">匯出案場資料 (JSON)</span>：點擊 <span class="btn-badge btn-blue"><img src="images/export_text.svg" alt="匯出資料"> 匯出案場資料</span>，將邊界座標、排除區、障礙物高度與所有試算表參數儲存為 JSON 檔案，便於日後重新載入或備份。</li>
-            <li><span class="highlight">預設值管理</span>：
+            <li><span class="highlight">專案檔案存取 (*.pvs / *.json)</span>：
                 <ul>
-                    <li><b>儲存為預設</b>：將當前試算表參數直接儲存至 <code>defaults.json</code> 與瀏覽器 LocalStorage。</li>
-                    <li><b>返回預設</b>：放棄目前修改，將參數重置回 <code>defaults.json</code> 預設數值。</li>
+                    <li><b>儲存檔案</b>：點擊 <span class="btn-badge btn-blue"><img src="images/save.svg" alt="儲存檔案"> 儲存檔案</span>，將完整的案場範圍多邊形、排除區、障礙物多邊形與高度、參數鎖定狀態及試算表 23 項次完整數值打包儲存為專案檔（<code>*.pvs</code>）。</li>
+                    <li><b>讀入檔案</b>：點擊 <span class="btn-badge btn-gray"><img src="images/back.svg" alt="讀入檔案"> 讀入檔案</span>，選擇先前儲存的 <code>*.pvs</code> 或 <code>*.json</code> 檔案，即可 100% 完整還原案場邊界、所有多邊形幾何、障礙高度與試算表參數，立即重現設計與 3D 場景。</li>
                 </ul>
             </li>
             <li><span class="highlight">目錄智慧記憶</span>：系統透過 File System Access API 自動記錄上次匯出的資料夾路徑，連續輸出簡報與檔案時無需重複選擇目標路徑。</li>

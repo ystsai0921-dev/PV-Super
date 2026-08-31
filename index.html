@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style.css?t=20260831_1138">
+    <link rel="stylesheet" href="style.css?t=20260831_1645">
 </head>
 
 <body>
@@ -71,7 +71,7 @@
                 <!-- PV Super 工具標誌 (點擊開啟線上使用說明書) -->
                 <a href="pv_super_manual.html" target="_blank" title="使用說明書" class="pv-super-logo-link">
                     <img id="pv-super-logo" src="images/pv_super_logo_light.png" alt="PV Super" class="pv-super-logo-img">
-                    <span class="pv-super-version">v2.8.1</span>
+                    <span class="pv-super-version">v2.8.2</span>
                 </a>
             </div>
 
@@ -562,14 +562,15 @@
                         匯出案場資料</button>
                 </div>
 
-                <!-- 參數預設值存取按鈕列 (儲存 / 還原) -->
+                <!-- 專案檔案存取按鈕列 (儲存檔案 / 讀入檔案) -->
                 <div class="sidebar-action-row sidebar-default-actions-row">
-                    <button class="btn btn-primary btn-default-action" id="btn-save-default">
+                    <button class="btn btn-primary btn-default-action" id="btn-save-project">
                         <img src="images/save.svg" class="btn-icon" />
-                        儲存為預設</button>
-                    <button class="btn btn-primary btn-default-action btn-reset-style" id="btn-reset">
+                        儲存檔案</button>
+                    <button class="btn btn-primary btn-default-action btn-reset-style" id="btn-load-project">
                         <img src="images/back.svg" class="btn-icon" />
-                        返回預設</button>
+                        讀入檔案</button>
+                    <input type="file" id="file-input-project" accept=".pvs,.json" style="display: none;">
                 </div>
             </div>
         </aside>
@@ -851,7 +852,7 @@
 
     <!-- PV Super 應用程式主要與資材邏輯腳本 -->
     <script src="assets.js" defer></script>
-    <script src="app.js?t=20260831_1141" defer></script>
+    <script src="app.js?t=20260831_1645" defer></script>
 </body>
 
 </html>

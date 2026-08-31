@@ -2353,8 +2353,10 @@ tr.tr-azimuth-row td {
         display: none !important;
     }
 
-    /* Hide bottom JSON export, save default, and reset default buttons on mobile */
+    /* Hide bottom JSON export, save project, and load project buttons on mobile */
     #btn-export-json,
+    #btn-save-project,
+    #btn-load-project,
     #btn-save-default,
     #btn-reset,
     .sidebar-default-actions-row {

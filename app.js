@@ -1461,10 +1461,10 @@ async function saveFileWithPicker(content, defaultFilename, mimeType) {
                 types: []
             };
             
-            if (mimeType === 'application/json') {
+            if (mimeType === 'application/json' || defaultFilename.endsWith('.pvs') || defaultFilename.endsWith('.json')) {
                 pickerOptions.types.push({
-                    description: 'JSON 專案資料檔 (*.json)',
-                    accept: { 'application/json': ['.json'] }
+                    description: 'PV Super 專案檔案 (*.pvs, *.json)',
+                    accept: { 'application/json': ['.pvs', '.json'] }
                 });
             } else if (mimeType === 'application/pdf') {
                 pickerOptions.types.push({
@@ -1488,7 +1488,7 @@ async function saveFileWithPicker(content, defaultFilename, mimeType) {
                 });
             }
             
-            // 從 IndexedDB 讀取上次選擇的目錄
+            const handle = await window.showSaveFilePicker(pickerOptions);
             await setStoredExportDir(handle);
             
             const writable = await handle.createWritable();
@@ -6917,8 +6917,9 @@ const elements = {
     siteArea: document.getElementById('val-site-area'),
     
     btnExportJson: document.getElementById('btn-export-json'),
-    btnReset: document.getElementById('btn-reset'),
-    btnSaveDefault: document.getElementById('btn-save-default'),
+    btnSaveProject: document.getElementById('btn-save-project') || document.getElementById('btn-save-default'),
+    btnLoadProject: document.getElementById('btn-load-project') || document.getElementById('btn-reset'),
+    fileInputProject: document.getElementById('file-input-project'),
     btnSiteBoundary: document.getElementById('btn-site-boundary'),
     sliderSite: document.getElementById('slider-site'),
     btnRedrawSiteTrigger: document.getElementById('btn-redraw-site-trigger'),
@@ -9743,138 +9744,287 @@ function showToast(message, type) {
     }, 3200);
 }
 
-    if (elements.btnSaveDefault) {
-        elements.btnSaveDefault.addEventListener("click", async () => {
-            if (navigator.vibrate) { try { navigator.vibrate(15); } catch(e){} }
-            const defaults = {
-                siteName: (elements.siteName ? elements.siteName.value : state.siteName) || "\u66dc\u6607\u7da0\u80fd No.1",
-                siteType: elements.siteType.value,
-                pitchStyle: elements.pitchStyle.value,
-                pvOrient: elements.pvOrient.value,
-                pvPreset: elements.pvSelect.value,
-                pvL: parseInt(elements.pvL.value) || 1722,
-                pvW: parseInt(elements.pvW.value) || 1134,
-                pvP: parseInt(elements.pvP.value) || 450,
-                arrI: parseInt(elements.arrI.value) || 20,
-                arrJ: parseInt(elements.arrJ.value) || 4,
-                arrM: parseInt(elements.arrM.value) || 1,
-                arrP: parseFloat(elements.arrP.value) || 1.0,
-                spX: parseInt(elements.spX.value) || 20,
-                spY: parseInt(elements.spY.value) || 20,
-                tilt: parseFloat(elements.tilt.value) || 6,
-                roofTilt: parseFloat(elements.roofTilt.value) || 0,
-                roofH: parseFloat(elements.roofH.value) || 0,
-                supportH: parseFloat(elements.supportH.value) || 2000,
-                azimuth: parseFloat(elements.azimuth.value) || 180,
-                coords: elements.coords.value,
-                lat: state.lat,
-                lng: state.lng,
-                sunMonth: parseInt(elements.sunMonthSlider.value) || 12,
-                sunHour: parseFloat(elements.sunHourSlider.value) || 9.0
-            };
-            
-            localStorage.setItem("solar_layout_custom_defaults", JSON.stringify(defaults));
-            
-            try {
-                const res = await fetch("/api/save-defaults", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(defaults, null, 4)
-                });
-                
-                if (res.ok) {
-                    showToast("\u5df2\u6210\u529f\u5beb\u5165\u6848\u5834 defaults.json\uff0c\u4e0b\u6b21\u958b\u555f\u5c07\u76f4\u63a5\u4ee5\u6b64\u7d44\u8a2d\u5b9a\u503c\u70ba\u9810\u8a2d\uff01", "success");
-                    return;
+    async function saveProjectFile() {
+        if (navigator.vibrate) { try { navigator.vibrate(15); } catch(e){} }
+        
+        // 1. Gather all polygon geometries
+        const polygonsData = {
+            customSiteBoundary: customSiteBoundary ? getOuterRingLatLngs(customSiteBoundary).map(p => ({ lat: p.lat, lng: p.lng })) : null,
+            exclusionPolygons: exclusionPolygons.map(poly => ({
+                latlngs: getOuterRingLatLngs(poly).map(p => ({ lat: p.lat, lng: p.lng })),
+                isWalkway: !!poly.isWalkway,
+                isPathway: !!poly.isPathway,
+                pathwayWidth: poly.pathwayWidth,
+                isSubstation: !!poly.isSubstation,
+                substationWidth: poly.substationWidth,
+                substationLength: poly.substationLength,
+                substationCenter: poly.substationCenter ? { lat: poly.substationCenter.lat, lng: poly.substationCenter.lng } : null
+            })),
+            obstaclePolygons: obstaclePolygons.map(poly => ({
+                latlngs: getOuterRingLatLngs(poly).map(p => ({ lat: p.lat, lng: p.lng })),
+                obstacleHeight: poly.obstacleHeight !== undefined ? poly.obstacleHeight : 5.0,
+                isOnRoof: poly.isOnRoof !== false
+            }))
+        };
+
+        // 2. Gather all spreadsheet & site parameters
+        const parametersData = {
+            siteName: (elements.siteName ? elements.siteName.value : state.siteName) || "曜昇綠能 No.1",
+            siteType: elements.siteType ? elements.siteType.value : state.siteType,
+            pitchStyle: state.pitchStyle || 'single',
+            pvOrient: elements.pvOrient ? elements.pvOrient.value : state.pvOrient,
+            pvPreset: elements.pvSelect ? elements.pvSelect.value : state.pvPreset,
+            pvL: parseInt(elements.pvL ? elements.pvL.value : state.pvL) || 1722,
+            pvW: parseInt(elements.pvW ? elements.pvW.value : state.pvW) || 1134,
+            pvP: parseInt(elements.pvP ? elements.pvP.value : state.pvP) || 450,
+            arrI: parseInt(elements.arrI ? elements.arrI.value : state.arrI) || 20,
+            arrJ: parseInt(elements.arrJ ? elements.arrJ.value : state.arrJ) || 4,
+            arrM: parseInt(elements.arrM ? elements.arrM.value : state.arrM) || 1,
+            arrP: parseFloat(elements.arrP ? elements.arrP.value : state.arrP) || 1.0,
+            spX: parseInt(elements.spX ? elements.spX.value : state.spX) || 20,
+            spY: parseInt(elements.spY ? elements.spY.value : state.spY) || 20,
+            tilt: parseFloat(elements.tilt ? elements.tilt.value : state.tilt) || 6,
+            roofTilt: parseFloat(elements.roofTilt ? elements.roofTilt.value : state.roofTilt) || 0,
+            roofH: parseFloat(elements.roofH ? elements.roofH.value : state.roofH) || 10,
+            supportH: parseFloat(elements.supportH ? elements.supportH.value : state.supportH) || 2000,
+            azimuth: parseFloat(elements.azimuth ? elements.azimuth.value : state.azimuth) || 180,
+            coords: elements.coords ? elements.coords.value : state.coords,
+            lat: state.lat,
+            lng: state.lng,
+            sunMonth: parseInt(elements.sunMonthSlider ? elements.sunMonthSlider.value : state.sunMonth) || 12,
+            sunHour: parseFloat(elements.sunHourSlider ? elements.sunHourSlider.value : state.sunHour) || 15.0
+        };
+
+        const projectData = {
+            app: "PV-Super",
+            version: "2.8.2",
+            savedAt: new Date().toISOString(),
+            parameters: parametersData,
+            lockedParams: Object.assign({}, lockedParams),
+            polygons: polygonsData
+        };
+
+        const siteNameStr = parametersData.siteName.trim().replace(/[\/\\:*?"<>|]/g, '_') || 'PV_Super_專案';
+        const now = new Date();
+        const yyyymmdd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+        const hhmmss = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+        const fileName = `${siteNameStr}_${yyyymmdd}_${hhmmss}.pvs`;
+
+        const jsonContent = JSON.stringify(projectData, null, 2);
+        const result = await saveFileWithPicker(jsonContent, fileName, 'application/json');
+        if (result !== 'aborted') {
+            showToast("已成功儲存案場專案檔案！", "success");
+        }
+    }
+
+    function restoreProjectData(projectData) {
+        if (!projectData || typeof projectData !== 'object') {
+            showToast("檔案格式錯誤，無法讀取專案資料！", "error");
+            return;
+        }
+
+        const params = projectData.parameters || projectData;
+        const polygons = projectData.polygons || {};
+        const restoredLocks = projectData.lockedParams || {};
+
+        // 1. Clear all existing map polygons & selections
+        if (activeSelectedPolygon) {
+            clearAllPolygonSelections();
+        }
+        if (customSiteBoundary) {
+            map.removeLayer(customSiteBoundary);
+            customSiteBoundary = null;
+        }
+        clearSiteBoundaryDrawingState();
+
+        exclusionPolygons.forEach(p => map.removeLayer(p));
+        exclusionPolygons = [];
+        clearExclusionDrawingState();
+        exitExclusionDrawMode();
+
+        obstaclePolygons.forEach(p => map.removeLayer(p));
+        obstaclePolygons = [];
+        clearObstacleDrawingState();
+        exitObstacleDrawMode();
+
+        // 2. Restore customSiteBoundary
+        if (polygons.customSiteBoundary && Array.isArray(polygons.customSiteBoundary) && polygons.customSiteBoundary.length >= 3) {
+            const pts = polygons.customSiteBoundary.map(pt => L.latLng(pt.lat, pt.lng));
+            customSiteBoundary = L.polygon(pts, {
+                color: 'rgba(56, 189, 248, 1)',
+                fill: false,
+                fillOpacity: 0,
+                weight: 2.5,
+                interactive: true
+            }).addTo(map);
+            makePolygonDraggable(customSiteBoundary);
+            makePolygonSelectable(customSiteBoundary);
+        }
+
+        // 3. Restore exclusionPolygons
+        if (polygons.exclusionPolygons && Array.isArray(polygons.exclusionPolygons)) {
+            polygons.exclusionPolygons.forEach(exData => {
+                const rawPts = exData.latlngs || exData;
+                if (Array.isArray(rawPts) && rawPts.length >= 3) {
+                    const pts = rawPts.map(pt => L.latLng(pt.lat, pt.lng));
+                    const isWalk = !!exData.isWalkway;
+                    const color = isWalk ? 'rgba(16, 185, 129, 1)' : 'rgba(234, 88, 12, 1)';
+                    const poly = L.polygon(pts, {
+                        color: color,
+                        weight: 2.5,
+                        fillColor: color,
+                        fillOpacity: isWalk ? 0.35 : 0.25,
+                        dashArray: (exData.isCustomExclusion || !isWalk) ? '6, 6' : undefined,
+                        interactive: true
+                    }).addTo(map);
+                    poly.isWalkway = isWalk;
+                    poly.isPathway = !!exData.isPathway;
+                    poly.pathwayWidth = exData.pathwayWidth;
+                    poly.isSubstation = !!exData.isSubstation;
+                    poly.substationWidth = exData.substationWidth;
+                    poly.substationLength = exData.substationLength;
+                    if (exData.isSubstation && exData.substationCenter) {
+                        poly.substationCenter = L.latLng(exData.substationCenter.lat, exData.substationCenter.lng);
+                    }
+                    makePolygonDraggable(poly);
+                    makePolygonSelectable(poly);
+                    exclusionPolygons.push(poly);
                 }
-            } catch (err) {
-                console.warn("POST /api/save-defaults \u5931\u6557\uff0c\u4f7f\u7528 LocalStorage:", err);
+            });
+        }
+
+        // 4. Restore obstaclePolygons
+        if (polygons.obstaclePolygons && Array.isArray(polygons.obstaclePolygons)) {
+            polygons.obstaclePolygons.forEach(obData => {
+                const rawPts = obData.latlngs || obData;
+                if (Array.isArray(rawPts) && rawPts.length >= 3) {
+                    const pts = rawPts.map(pt => L.latLng(pt.lat, pt.lng));
+                    const poly = L.polygon(pts, {
+                        color: 'rgba(239, 68, 68, 1)',
+                        weight: 2.5,
+                        fillColor: 'rgba(239, 68, 68, 1)',
+                        fillOpacity: 0.35,
+                        interactive: true
+                    }).addTo(map);
+                    poly.isObstacle = true;
+                    poly.obstacleHeight = obData.obstacleHeight !== undefined ? parseFloat(obData.obstacleHeight) : 5.0;
+                    poly.isOnRoof = obData.isOnRoof !== false;
+                    makePolygonDraggable(poly);
+                    makePolygonSelectable(poly);
+                    obstaclePolygons.push(poly);
+                }
+            });
+        }
+
+        // 5. Restore state and input elements
+        if (params.siteName !== undefined) {
+            state.siteName = params.siteName;
+            if (elements.siteName) elements.siteName.value = params.siteName;
+        }
+        if (params.siteType !== undefined) {
+            state.siteType = params.siteType;
+            if (elements.siteType) elements.siteType.value = params.siteType;
+        }
+        if (params.pitchStyle !== undefined) {
+            state.pitchStyle = params.pitchStyle;
+            updatePitchStyleUI(params.pitchStyle);
+        }
+        if (params.pvOrient !== undefined) {
+            state.pvOrient = params.pvOrient;
+            if (elements.pvOrient) elements.pvOrient.value = params.pvOrient;
+        }
+        if (params.pvPreset !== undefined) {
+            state.pvPreset = params.pvPreset;
+            if (elements.pvSelect) elements.pvSelect.value = params.pvPreset;
+        }
+        ['pvL', 'pvW', 'pvP', 'arrI', 'arrJ', 'arrM', 'arrP', 'spX', 'spY', 'tilt', 'roofTilt', 'roofH', 'supportH', 'azimuth'].forEach(key => {
+            if (params[key] !== undefined) {
+                state[key] = params[key];
+                if (elements[key]) elements[key].value = params[key];
+                const slider = elements[key + 'Slider'];
+                if (slider) slider.value = params[key];
             }
-            
-            showToast("\u5df2\u5132\u5b58\u76ee\u524d\u53c3\u6578\u8a2d\u5b9a\u81f3\u700f\u89bd\u5668\u9810\u8a2d\uff01", "success");
         });
+
+        if (params.lat !== undefined && params.lng !== undefined) {
+            state.lat = parseFloat(params.lat);
+            state.lng = parseFloat(params.lng);
+            state.coords = params.coords || `${state.lat}, ${state.lng}`;
+            if (elements.coords) elements.coords.value = state.coords;
+            updateMarker(state.lat, state.lng);
+            if (map) {
+                map.setView([state.lat, state.lng], map.getZoom() || 19);
+            }
+        }
+
+        if (params.sunMonth !== undefined) {
+            state.sunMonth = parseInt(params.sunMonth);
+            if (elements.sunMonthSlider) {
+                elements.sunMonthSlider.value = state.sunMonth;
+                elements.sunMonthSlider.dispatchEvent(new Event('input'));
+            }
+        }
+        if (params.sunHour !== undefined) {
+            state.sunHour = parseFloat(params.sunHour);
+            if (elements.sunHourSlider) {
+                elements.sunHourSlider.value = state.sunHour;
+                elements.sunHourSlider.dispatchEvent(new Event('input'));
+            }
+        }
+
+        // Restore locked parameters
+        for (let k in lockedParams) {
+            delete lockedParams[k];
+        }
+        Object.assign(lockedParams, restoredLocks);
+
+        // Reset planning mode states
+        setPlanningModeState('site', 'locked');
+        setPlanningModeState('exclusion', 'locked');
+        setPlanningModeState('obstacle', 'locked');
+
+        handlePvPresetChangeUI();
+        handleSiteTypeChangeUI();
+        updateSupportHLockState();
+        applyAllLockedParamsUI();
+        calculateOutputs();
+        updateAllVisuals(true);
+        updateSiteBoundaryDrawState();
+
+        showToast("已成功讀入案場專案檔案！", "success");
+    }
+
+    if (elements.btnSaveProject) {
+        elements.btnSaveProject.addEventListener("click", saveProjectFile);
     }
     
-    elements.btnReset.addEventListener("click", () => {
-        if (confirm("\u78ba\u5b9a\u8981\u9084\u539f\u6240\u6709\u8a2d\u8a08\u53c3\u6578\u70ba\u9810\u8a2d\u503c\u55ce\uff1f")) {
-            let defaults = {
-                siteName: "??蝬 1?",
-                siteType: "ground",
-                pitchStyle: "single",
-                pvOrient: "portrait",
-                pvPreset: "preset-vsun450",
-                pvL: 1722,
-                pvW: 1134,
-                pvP: 450,
-                arrI: 20,
-                arrJ: 4,
-                arrM: 1,
-                arrP: 1.0,
-                spX: 20,
-                spY: 20,
-                tilt: 6,
-                roofTilt: 0,
-                roofH: 10.0,
-                supportH: 2000,
-                azimuth: 180.0,
-                coords: "23簞52'12.7\"N 120簞31'22.8\"E",
-                lat: 23.870194444444444,
-                lng: 120.523,
-                sunMonth: 12,
-                sunHour: 15.0
-            };
-            
-            const saved = localStorage.getItem('solar_layout_custom_defaults');
-            if (saved) {
+    if (elements.btnLoadProject) {
+        elements.btnLoadProject.addEventListener("click", () => {
+            if (navigator.vibrate) { try { navigator.vibrate(15); } catch(e){} }
+            if (elements.fileInputProject) {
+                elements.fileInputProject.click();
+            }
+        });
+    }
+
+    if (elements.fileInputProject) {
+        elements.fileInputProject.addEventListener("change", (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
                 try {
-                    const parsed = JSON.parse(saved);
-                    if (parsed.sunMonth === 6) parsed.sunMonth = 12;
-                    defaults = { ...defaults, ...parsed };
-                } catch (e) {
-                    console.error("Error parsing custom defaults: ", e);
+                    const data = JSON.parse(event.target.result);
+                    restoreProjectData(data);
+                } catch (err) {
+                    console.error("讀入專案檔失敗:", err);
+                    showToast("檔案讀取失敗，請確認檔案格式是否正確！", "error");
                 }
-            }
-            
-            applyDefaultsIntoDOM(defaults);
-            
-            if (elements.sunMonthSlider) elements.sunMonthSlider.dispatchEvent(new Event('input'));
-            if (elements.sunHourSlider) elements.sunHourSlider.dispatchEvent(new Event('input'));
-            
-            // Clear active selection first to avoid style/popup issues on removed layers
-            clearActivePolygonSelection();
-            
-            // Clear site boundary
-            if (customSiteBoundary) {
-                map.removeLayer(customSiteBoundary);
-                customSiteBoundary = null;
-            }
-            clearSiteBoundaryDrawingState();
-            
-            // Clear exclusion polygons
-            exclusionPolygons.forEach(p => map.removeLayer(p));
-            exclusionPolygons = [];
-            clearExclusionDrawingState();
-            exitExclusionDrawMode();
-            
-            // Clear obstacle polygons
-            obstaclePolygons.forEach(p => map.removeLayer(p));
-            obstaclePolygons = [];
-            clearObstacleDrawingState();
-            exitObstacleDrawMode();
-            
-            // Reset planning mode states
-            setPlanningModeState('site', 'locked');
-            setPlanningModeState('exclusion', 'locked');
-            setPlanningModeState('obstacle', 'locked');
-            
-            syncStateFromDOM();
-            handleSiteTypeChangeUI();
-            updateSupportHLockState();
-            calculateOutputs();
-            updateMarker(state.lat, state.lng);
-            centerMap(state.lat, state.lng);
-            updateAllVisuals();
-        }
-    });
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        });
+    }
     
     elements.btnExportJson.addEventListener('click', async () => {
         const siteName = (state && state.siteName) ? state.siteName.trim() : '??蝬獢';
