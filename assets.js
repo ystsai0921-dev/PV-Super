@@ -1,6 +1,6 @@
 /**
  * PV Super - 太陽光電 3D 快速排板與評估系統 內嵌資材與圖素庫
- * Copyright (c) 2026 曜昇綠能股份有限公司 (Rising Sun Green Energy Co., Ltd.)
+ * Copyright (c) 2026 曜昇綠能股份有限公司 (Eco Glisten Co., Ltd.)
  * All Rights Reserved. 版權所有 ‧ 保留一切權利
  */
 
