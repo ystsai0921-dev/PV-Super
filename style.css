@@ -81,6 +81,24 @@ header {
     opacity: 0.85;
 }
 
+/* Header Right Copyright Label */
+.header-copyright {
+    display: flex;
+    align-items: center;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.72rem;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    user-select: none;
+    transition: color 0.2s ease;
+    margin-left: auto;
+    padding-left: 16px;
+}
+
+.header-copyright:hover {
+    color: rgba(255, 255, 255, 0.9);
+}
 
 /* Main Container Layout */
 main {
