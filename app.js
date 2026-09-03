@@ -1,4 +1,13 @@
 /**
+ * PV Super - 太陽光電 3D 快速排板與評估系統
+ * Copyright (c) 2026 曜昇綠能股份有限公司 (Rising Sun Green Energy Co., Ltd.)
+ * All Rights Reserved. 版權所有 ‧ 保留一切權利
+ *
+ * PROPRIETARY AND CONFIDENTIAL.
+ * Unauthorized copying, distribution, or modification is strictly prohibited.
+ */
+
+/**
  * 繪製多邊形完成後之 (確定保留 / 刪除) 浮動確認對話框
  * @param {string} typeName - 物件類型名稱 (如 '案場邊界', '排除區域', '障礙物')
  * @param {Function} onKeep - 確定保留點擊回呼

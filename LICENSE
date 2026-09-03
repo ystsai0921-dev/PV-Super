@@ -1,0 +1,45 @@
+﻿PROPRIETARY LICENSE AND TERMS OF USE
+版權所有與使用授權條款
+
+Copyright (c) 2026 曜昇綠能股份有限公司 (Rising Sun Green Energy Co., Ltd.)
+All Rights Reserved. 版權所有 ‧ 保留一切權利
+
+================================================================================
+【繁體中文版】
+
+本軟體「PV Super - 太陽光電 3D 快速排板與評估系統」（包含但不限於原始程式碼、使用者介面、演算法、3D幾何模型、資材計算邏輯、圖示、樣式表及相關使用說明文件）之全部智慧財產權（包含著作權、專利申請權、商標權及營業秘密），均專屬於「曜昇綠能股份有限公司」（以下簡稱「本公司」）所有。
+
+本軟體受中華民國著作權法、商標法、專利法、營業秘密法及國際著作權公約（包含《伯恩公約》）之完整保護。
+
+1. 授權限制：
+   本儲存庫公開僅供瀏覽與技術評估之用。未經本公司事前明確之正式書面授權，任何個人、法人或組織均不得：
+   (a) 將本軟體之全部或部分用於任何商業目的、營利行為、收費服務或業務專案。
+   (b) 複製、散布、轉授權、出租、出借、銷售、公開傳輸或發行本軟體或其衍生版本。
+   (c) 對本軟體進行反向工程、反編譯、反彙編、改作或建立衍生作品。
+   (d) 移除、遮蔽或竄改本軟體中標示之任何著作權聲明、商標、專利標記或權利宣告。
+
+2. 免責聲明：
+   本軟體按「現狀」（AS-IS）提供，本公司不作任何明示或暗示之保證（包括但不限於適銷性、特定用途適用性及未侵權之保證）。在任何情況下，本公司對因使用或無法使用本軟體所產生之任何直接、間接、附隨、特別、懲罰性或衍生性損害，均不負任何法律賠償責任。
+
+3. 商業授權與合作諮詢：
+   如需商業使用授權、技術授權或業務合作，請逕洽版權所有者「曜昇綠能股份有限公司」。
+
+================================================================================
+【ENGLISH VERSION】
+
+All intellectual property rights (including copyrights, patent rights, trademarks, and trade secrets) in and to this software "PV Super - Solar PV 3D Layout & Assessment System" (including but not limited to source code, UI designs, algorithms, 3D geometry models, BOM calculation logic, icons, stylesheets, and documentation) are the exclusive property of Rising Sun Green Energy Co., Ltd. (hereinafter referred to as the "Company").
+
+This software is fully protected by the Copyright Act, Trademark Act, Patent Act, Trade Secrets Act of the Republic of China (Taiwan), and international copyright treaties (including the Berne Convention).
+
+1. RESTRICTIONS:
+   Public hosting of this repository is strictly for demonstration and evaluation purposes. Without the prior written permission of the Company, no person or entity shall:
+   (a) Use the software, in whole or in part, for any commercial purposes, revenue generation, or business operations.
+   (b) Copy, distribute, sublicense, rent, lease, sell, publicly transmit, or publish the software or any derivative works.
+   (c) Reverse engineer, decompile, disassemble, modify, or create derivative works based on this software.
+   (d) Remove, obscure, or alter any copyright notices, trademarks, or proprietary legends on or in the software.
+
+2. DISCLAIMER OF WARRANTY:
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE.
+
+3. COMMERCIAL LICENSING:
+   For commercial licensing, enterprise deployment, or collaboration inquiries, please contact Rising Sun Green Energy Co., Ltd.
