@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style.css?t=20260831_1645">
+    <link rel="stylesheet" href="style.css?t=20260901_0907">
 </head>
 
 <body>
@@ -71,7 +71,7 @@
                 <!-- PV Super 工具標誌 (點擊開啟線上使用說明書) -->
                 <a href="pv_super_manual.html" target="_blank" title="使用說明書" class="pv-super-logo-link">
                     <img id="pv-super-logo" src="images/pv_super_logo_light.png" alt="PV Super" class="pv-super-logo-img">
-                    <span class="pv-super-version">v2.8.2</span>
+                    <span class="pv-super-version">v2.9</span>
                 </a>
             </div>
 
@@ -300,8 +300,8 @@
                                     <input id="val-arr-p-slider" type="range" min="1" max="30" step="0.1" value="1.0">
                                     <div class="slider-nodes-container" data-target="arrP">
                                         <button type="button" class="slider-node-btn active" data-mult="1.0" data-val="1x" title="預設值的 1.0倍">1x</button>
-                                        <button type="button" class="slider-node-btn" data-mult="1.3" data-val="1.3x" title="預設值的 1.3倍">1.3x</button>
-                                        <button type="button" class="slider-node-btn" data-mult="1.6" data-val="1.6x" title="預設值的 1.6倍">1.6x</button>
+                                        <button type="button" class="slider-node-btn" data-mult="1.2" data-val="1.2x" title="預設值的 1.2倍">1.2x</button>
+                                        <button type="button" class="slider-node-btn" data-mult="1.4" data-val="1.4x" title="預設值的 1.4倍">1.4x</button>
                                     </div>
                                 </div>
                                 <button class="slider-btn" id="btn-arr-p-plus" title="增加0.1m">+</button>
@@ -612,6 +612,9 @@
                         <button class="control-btn" id="btn-measure" title="距離量測(按 Esc 退出清空)">
                             <img src="images/ruler.svg" alt="俯視視角圖示" class="btn-icon" />
                         </button>
+                        <button class="control-btn" id="btn-popout-3d" title="另開視窗">
+                            <img src="images/new_window.svg" alt="另開視窗圖示" class="btn-icon" />
+                        </button>
                     </div>
                 </div>
 
@@ -625,21 +628,26 @@
                     <!-- 3D 距離量測工具之標籤懸浮層 -->
                     <div id="measure-labels-overlay" class="measure-overlay"></div>
 
-                    <!-- 3D 量測軸向鎖定控制浮動面板 -->
-                    <div class="measure-axis-panel" id="measure-axis-panel">
-                        <span class="axis-panel-title">軸向鎖定:</span>
-                        <label class="axis-checkbox-label">
-                            <input type="checkbox" id="chk-lock-x" class="axis-checkbox"> <span
-                                class="axis-name axis-x">X 軸 (紅)</span>
-                        </label>
-                        <label class="axis-checkbox-label">
-                            <input type="checkbox" id="chk-lock-y" class="axis-checkbox"> <span
-                                class="axis-name axis-y">Y 軸 (縱向)</span>
-                        </label>
-                        <label class="axis-checkbox-label">
-                            <input type="checkbox" id="chk-lock-z" class="axis-checkbox"> <span
-                                class="axis-name axis-z">Z 軸 (高度)</span>
-                        </label>
+                    <!-- 3D 量測模式切換浮動面板 (點到點 / 面到面 / 點到面 / 方向鍵鎖軸) -->
+                    <div class="measure-mode-panel" id="measure-mode-panel">
+                        <div class="measure-mode-row">
+                            <span class="measure-panel-title">模式:</span>
+                            <button type="button" class="measure-mode-btn active" id="btn-measure-p2p" title="點到點：兩點直線距離">
+                                <span class="mode-icon">📍</span> 點到點
+                            </button>
+                            <button type="button" class="measure-mode-btn" id="btn-measure-f2f" title="面到面：兩平行面最短距離">
+                                <span class="mode-icon">▱</span> 面到面
+                            </button>
+                            <button type="button" class="measure-mode-btn" id="btn-measure-p2f" title="點到面：點至無限延伸面之垂直最短距離">
+                                <span class="mode-icon">📍▱</span> 點到面
+                            </button>
+                        </div>
+                        <div class="measure-axis-row">
+                            <span class="axis-hint-title">鎖軸(方向鍵):</span>
+                            <span class="axis-pill axis-pill-x" id="pill-axis-x" title="按 → 或 X 鍵鎖定紅軸 (X/東西向)">→ 紅(X)</span>
+                            <span class="axis-pill axis-pill-y" id="pill-axis-y" title="按 ← 或 Y 鍵鎖定綠軸 (Y/北南縱向)">← 綠(Y)</span>
+                            <span class="axis-pill axis-pill-z" id="pill-axis-z" title="按 ↑/↓ 或 Z 鍵鎖定藍軸 (Z/高度)">↑ 藍(Z)</span>
+                        </div>
                     </div>
 
                     <!-- 太陽日照光影模擬浮動面板 -->
@@ -744,6 +752,9 @@
                         <button class="control-btn" id="btn-map-measure" title="距離量測">
                             <img src="images/ruler.svg" class="btn-icon" />
                         </button>
+                        <button class="control-btn" id="btn-popout-map" title="另開視窗">
+                            <img src="images/new_window.svg" alt="另開視窗圖示" class="btn-icon" />
+                        </button>
                     </div>
                 </div>
 
@@ -837,8 +848,9 @@
     <!-- Three.js (r120 UMD) 3D 繪圖引擎 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r120/three.min.js"></script>
 
-    <!-- OrbitControls for Three.js 3D 視角軌道控制器 -->
+    <!-- OrbitControls & GLTFExporter for Three.js 3D 視角軌道控制器與 3D 模型匯出器 -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.120.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.120.0/examples/js/exporters/GLTFExporter.js"></script>
 
     <!-- Turf.js 地理空間運算庫 (Union / Intersect) -->
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
@@ -852,7 +864,7 @@
 
     <!-- PV Super 應用程式主要與資材邏輯腳本 -->
     <script src="assets.js" defer></script>
-    <script src="app.js?t=20260831_1645" defer></script>
+    <script src="app.js?t=20260903_0840" defer></script>
 </body>
 
 </html>
