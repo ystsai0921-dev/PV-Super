@@ -8711,7 +8711,7 @@ function updateViewer(params) {
                             const rowY = supportH - s_actual * Math.sin(totalTiltRad);
                             panelY = rowY + 0.015 + panelOffset;
                         }
-                        panelsToDraw.push({ x: localX, y: panelY, z: rowZ, rotX });
+                        panelsToDraw.push({ x: localX, y: panelY, z: rowZ, rotX, g, pitchSide: 'neg', r, c });
                     }
                 }
             }
@@ -8748,7 +8748,7 @@ function updateViewer(params) {
                             const rowY = supportH - s_actual * Math.sin(totalTiltRad);
                             panelY = rowY + 0.015 + panelOffset;
                         }
-                        panelsToDraw.push({ x: localX, y: panelY, z: rowZ, rotX });
+                        panelsToDraw.push({ x: localX, y: panelY, z: rowZ, rotX, g, pitchSide: 'pos', r, c });
                     }
                 }
             }
@@ -8784,7 +8784,7 @@ function updateViewer(params) {
                             const rowY = highY_neg - (s_max_neg - s_actual) * Math.sin(totalTiltRad);
                             panelY = rowY + 0.015 + panelOffset;
                         }
-                        panelsToDraw.push({ x: localX, y: panelY, z: rowZ, rotX });
+                        panelsToDraw.push({ x: localX, y: panelY, z: rowZ, rotX, g, pitchSide: 'neg', r, c });
                     }
                 }
             }
@@ -8814,7 +8814,7 @@ function updateViewer(params) {
                             const rowY = highY_pos - (s_max_pos - s_actual) * Math.sin(totalTiltRad);
                             panelY = rowY + 0.015 + panelOffset;
                         }
-                        panelsToDraw.push({ x: localX, y: panelY, z: rowZ, rotX });
+                        panelsToDraw.push({ x: localX, y: panelY, z: rowZ, rotX, g, pitchSide: 'pos', r, c });
                     }
                 }
             }
@@ -8838,7 +8838,7 @@ function updateViewer(params) {
                             const rowY = supportH - (halfLen - localZ_actual) * Math.sin(totalTiltRad);
                             panelY = rowY + 0.015 + panelOffset;
                         }
-                        panelsToDraw.push({ x: localX, y: panelY, z: rowZ, rotX });
+                        panelsToDraw.push({ x: localX, y: panelY, z: rowZ, rotX, g, pitchSide: 'single', r, c });
                     }
                 }
             }
@@ -8920,6 +8920,176 @@ function updateViewer(params) {
     const concreteBoxes = [];
     const aluminumBoxes = [];
     const aluminumFeet = [];
+    
+    // ------------------------------------------
+    // Purlin Generation (檁條 / 導軌 / C型鋼)
+    // ------------------------------------------
+    const shouldGenPurlins = (siteType === 'ground' || siteType === 'roof-flat' || (siteType === 'roof-slope' && !isFlatLaid));
+    if (shouldGenPurlins && panelsToDraw.length > 0) {
+        const isSlopeRoof = (siteType === 'roof-slope');
+        // Purlin section dimensions:
+        // Slope roof elevated: Aluminum rail 54mm x 28mm (W=0.054 along slope, H=0.028 normal to module)
+        // Ground / Flat roof: C-steel 125mm x 50mm (W=0.050 along slope, H=0.125 normal to module)
+        const pW = isSlopeRoof ? 0.054 : 0.050; // width along slope
+        const pH = isSlopeRoof ? 0.028 : 0.125; // height normal to module
+        const targetPurlinBoxes = isSlopeRoof ? aluminumBoxes : rackBoxes;
+        const dy_center = -0.015 - pH / 2; // top face touches bottom face of PV module (y = -0.015)
+
+        // Group panels by group index g and pitchSide
+        const groupsMap = new Map();
+        for (let i = 0; i < panelsToDraw.length; i++) {
+            const p = panelsToDraw[i];
+            const key = `${p.g || 0}_${p.pitchSide || 'single'}`;
+            if (!groupsMap.has(key)) {
+                groupsMap.set(key, []);
+            }
+            groupsMap.get(key).push(p);
+        }
+
+        groupsMap.forEach((groupPanels) => {
+            if (groupPanels.length === 0) return;
+
+            // Find all unique row indices
+            const rowMap = new Map();
+            groupPanels.forEach(p => {
+                const rKey = p.r !== undefined ? p.r : 0;
+                if (!rowMap.has(rKey)) {
+                    rowMap.set(rKey, []);
+                }
+                rowMap.get(rKey).push(p);
+            });
+
+            const sortedRowKeys = Array.from(rowMap.keys()).sort((a, b) => a - b);
+            if (sortedRowKeys.length === 0) return;
+
+            if (isPortrait) {
+                // 長向傾斜 (直放): Purlin 與模組長向垂直 (沿 X 軸)，每排放兩支，位於兩側短邊往內 1/5 長度 (dz = ±0.3 * pvW)
+                sortedRowKeys.forEach(rKey => {
+                    const rowPanels = rowMap.get(rKey);
+                    if (!rowPanels || rowPanels.length === 0) return;
+
+                    let minX = Infinity, maxX = -Infinity;
+                    rowPanels.forEach(p => {
+                        if (p.x < minX) minX = p.x;
+                        if (p.x > maxX) maxX = p.x;
+                    });
+                    const spanX = (maxX - minX) + pvL;
+                    const midX = (minX + maxX) / 2;
+                    const refPanel = rowPanels[0];
+                    const rotX = refPanel.rotX;
+
+                    const dzOffsets = [-0.3 * pvW, 0.3 * pvW];
+                    dzOffsets.forEach(dz => {
+                        const pY = refPanel.y + dy_center * Math.cos(rotX) - dz * Math.sin(rotX);
+                        const pZ = refPanel.z + dy_center * Math.sin(rotX) + dz * Math.cos(rotX);
+                        targetPurlinBoxes.push({
+                            pos: [midX, pY, pZ],
+                            rot: [rotX, 0, 0],
+                            scale: [spanX, pH, pW]
+                        });
+                    });
+                });
+            } else {
+                // 短向傾斜 (橫放): Purlin 與模組長向平行 (沿 X 軸)，放於兩側長邊正下方 (dz = ±0.5 * pvW)，相鄰模組共用一根 purlin
+                // 1. First row top edge
+                const firstRow = rowMap.get(sortedRowKeys[0]);
+                let minX0 = Infinity, maxX0 = -Infinity;
+                firstRow.forEach(p => {
+                    if (p.x < minX0) minX0 = p.x;
+                    if (p.x > maxX0) maxX0 = p.x;
+                });
+                const ref0 = firstRow[0];
+                const rotX0 = ref0.rotX;
+                const topDz = -0.5 * pvW;
+                const topY0 = ref0.y + dy_center * Math.cos(rotX0) - topDz * Math.sin(rotX0);
+                const topZ0 = ref0.z + dy_center * Math.sin(rotX0) + topDz * Math.cos(rotX0);
+                targetPurlinBoxes.push({
+                    pos: [(minX0 + maxX0) / 2, topY0, topZ0],
+                    rot: [rotX0, 0, 0],
+                    scale: [(maxX0 - minX0) + pvL, pH, pW]
+                });
+
+                // 2. Intermediate edges between consecutive rows
+                for (let i = 0; i < sortedRowKeys.length - 1; i++) {
+                    const rCurr = sortedRowKeys[i];
+                    const rNext = sortedRowKeys[i + 1];
+                    const rowA = rowMap.get(rCurr);
+                    const rowB = rowMap.get(rNext);
+                    const refA = rowA[0];
+                    const refB = rowB[0];
+                    const rotXA = refA.rotX;
+
+                    const bottomDzA = +0.5 * pvW;
+                    const yBottomA = refA.y + dy_center * Math.cos(rotXA) - bottomDzA * Math.sin(rotXA);
+                    const zBottomA = refA.z + dy_center * Math.sin(rotXA) + bottomDzA * Math.cos(rotXA);
+
+                    const topDzB = -0.5 * pvW;
+                    const yTopB = refB.y + dy_center * Math.cos(rotXA) - topDzB * Math.sin(rotXA);
+                    const zTopB = refB.z + dy_center * Math.sin(rotXA) + topDzB * Math.cos(rotXA);
+
+                    const dist = Math.sqrt((yTopB - yBottomA) ** 2 + (zTopB - zBottomA) ** 2);
+                    const isAdjacent = (rNext === rCurr + 1) && (dist <= 0.25);
+
+                    if (isAdjacent) {
+                        // Shared purlin at midpoint
+                        let minX = Infinity, maxX = -Infinity;
+                        rowA.concat(rowB).forEach(p => {
+                            if (p.x < minX) minX = p.x;
+                            if (p.x > maxX) maxX = p.x;
+                        });
+                        const midY = (yBottomA + yTopB) / 2;
+                        const midZ = (zBottomA + zTopB) / 2;
+                        targetPurlinBoxes.push({
+                            pos: [(minX + maxX) / 2, midY, midZ],
+                            rot: [rotXA, 0, 0],
+                            scale: [(maxX - minX) + pvL, pH, pW]
+                        });
+                    } else {
+                        // Separate purlins
+                        let minXA = Infinity, maxXA = -Infinity;
+                        rowA.forEach(p => {
+                            if (p.x < minXA) minXA = p.x;
+                            if (p.x > maxXA) maxXA = p.x;
+                        });
+                        targetPurlinBoxes.push({
+                            pos: [(minXA + maxXA) / 2, yBottomA, zBottomA],
+                            rot: [rotXA, 0, 0],
+                            scale: [(maxXA - minXA) + pvL, pH, pW]
+                        });
+
+                        let minXB = Infinity, maxXB = -Infinity;
+                        rowB.forEach(p => {
+                            if (p.x < minXB) minXB = p.x;
+                            if (p.x > maxXB) maxXB = p.x;
+                        });
+                        targetPurlinBoxes.push({
+                            pos: [(minXB + maxXB) / 2, yTopB, zTopB],
+                            rot: [rotXA, 0, 0],
+                            scale: [(maxXB - minXB) + pvL, pH, pW]
+                        });
+                    }
+                }
+
+                // 3. Last row bottom edge
+                const lastRow = rowMap.get(sortedRowKeys[sortedRowKeys.length - 1]);
+                let minXLast = Infinity, maxXLast = -Infinity;
+                lastRow.forEach(p => {
+                    if (p.x < minXLast) minXLast = p.x;
+                    if (p.x > maxXLast) maxXLast = p.x;
+                });
+                const refLast = lastRow[0];
+                const rotXLast = refLast.rotX;
+                const bottomDz = +0.5 * pvW;
+                const bottomYLast = refLast.y + dy_center * Math.cos(rotXLast) - bottomDz * Math.sin(rotXLast);
+                const bottomZLast = refLast.z + dy_center * Math.sin(rotXLast) + bottomDz * Math.cos(rotXLast);
+                targetPurlinBoxes.push({
+                    pos: [(minXLast + maxXLast) / 2, bottomYLast, bottomZLast],
+                    rot: [rotXLast, 0, 0],
+                    scale: [(maxXLast - minXLast) + pvL, pH, pW]
+                });
+            }
+        });
+    }
     
     // Support pruning filter helpers (prune supports with no active panels above them)
     const hasPanelNear = (x, z, radX = 2.2, radZ = 2.0) => {
@@ -9060,35 +9230,39 @@ function updateViewer(params) {
                     for (let g = 0; g < arrM; g++) {
                         const blockZ = (g - (arrM - 1) / 2) * arrP;
                         
-                        // Z-negative rail
+                        // Z-negative rail (Top face tightly touches purlin bottom face at -0.028m normal offset)
                         const len_neg = Math.abs(local_s_outer_neg);
                         if (len_neg > 0.05) {
                             const s_center = local_s_outer_neg / 2;
-                            const railY = isDoubleV
-                                ? (highY_neg - (s_max_neg - Math.abs(s_center)) * Math.sin(totalTiltRad) - 0.025)
-                                : (ridgeY - Math.abs(s_center) * Math.sin(totalTiltRad) - 0.025);
-                            const railZ = s_center * Math.cos(totalTiltRad) - zOffset + blockZ;
+                            const rotX_neg = isDoubleV ? +totalTiltRad : -totalTiltRad;
+                            const nominalY = isDoubleV
+                                ? (highY_neg - (s_max_neg - Math.abs(s_center)) * Math.sin(totalTiltRad))
+                                : (ridgeY - Math.abs(s_center) * Math.sin(totalTiltRad));
+                            const railY = nominalY - 0.053 * Math.cos(totalTiltRad);
+                            const railZ = s_center * Math.cos(totalTiltRad) - zOffset + blockZ + 0.053 * Math.sin(rotX_neg);
                             if (hasPanelInSpan(xRack, railZ, len_neg / 2, xBayRad)) {
                                 aluminumBoxes.push({
                                     pos: [xRack, railY, railZ],
-                                    rot: [isDoubleV ? +totalTiltRad : -totalTiltRad, 0, 0],
+                                    rot: [rotX_neg, 0, 0],
                                     scale: [0.05, 0.05, len_neg]
                                 });
                             }
                         }
                         
-                        // Z-positive rail
+                        // Z-positive rail (Top face tightly touches purlin bottom face at -0.028m normal offset)
                         const len_pos = local_s_outer_pos;
                         if (len_pos > 0.05) {
                             const s_center = local_s_outer_pos / 2;
-                            const railY = isDoubleV
-                                ? (highY_pos - (s_max_pos - s_center) * Math.sin(totalTiltRad) - 0.025)
-                                : (ridgeY - s_center * Math.sin(totalTiltRad) - 0.025);
-                            const railZ = s_center * Math.cos(totalTiltRad) - zOffset + blockZ;
+                            const rotX_pos = isDoubleV ? -totalTiltRad : +totalTiltRad;
+                            const nominalY = isDoubleV
+                                ? (highY_pos - (s_max_pos - s_center) * Math.sin(totalTiltRad))
+                                : (ridgeY - s_center * Math.sin(totalTiltRad));
+                            const railY = nominalY - 0.053 * Math.cos(totalTiltRad);
+                            const railZ = s_center * Math.cos(totalTiltRad) - zOffset + blockZ + 0.053 * Math.sin(rotX_pos);
                             if (hasPanelInSpan(xRack, railZ, len_pos / 2, xBayRad)) {
                                 aluminumBoxes.push({
                                     pos: [xRack, railY, railZ],
-                                    rot: [isDoubleV ? -totalTiltRad : +totalTiltRad, 0, 0],
+                                    rot: [rotX_pos, 0, 0],
                                     scale: [0.05, 0.05, len_pos]
                                 });
                             }
@@ -9097,8 +9271,11 @@ function updateViewer(params) {
                         const s_leg_neg = (numNeg > 0) ? s_outer_neg * 0.8 : -ridgeSp / 2;
                         const s_leg_pos = (numPos > 0) ? s_outer_pos * 0.8 : ridgeSp / 2;
                         
-                        const legZ_neg = s_leg_neg * Math.cos(totalTiltRad) - zOffset + blockZ;
-                        const legZ_pos = s_leg_pos * Math.cos(totalTiltRad) - zOffset + blockZ;
+                        const rotX_neg = isDoubleV ? +totalTiltRad : -totalTiltRad;
+                        const rotX_pos = isDoubleV ? -totalTiltRad : +totalTiltRad;
+
+                        const legZ_neg = s_leg_neg * Math.cos(totalTiltRad) - zOffset + blockZ + 0.078 * Math.sin(rotX_neg);
+                        const legZ_pos = s_leg_pos * Math.cos(totalTiltRad) - zOffset + blockZ + 0.078 * Math.sin(rotX_pos);
                         const legZ_center = -zOffset + blockZ;
                         
                         const y_roof_neg = getRoofY(legZ_neg);
@@ -9107,13 +9284,13 @@ function updateViewer(params) {
                         
                         let hFoot_neg = 0, hFoot_center = 0, hFoot_pos = 0;
                         if (isDoubleV) {
-                            hFoot_neg = (highY_neg - (s_max_neg - Math.abs(s_leg_neg)) * Math.sin(totalTiltRad) - 0.05) - y_roof_neg;
-                            hFoot_center = (highY_neg - s_max_neg * Math.sin(totalTiltRad) - 0.05) - y_roof_center;
-                            hFoot_pos = (highY_pos - (s_max_pos - s_leg_pos) * Math.sin(totalTiltRad) - 0.05) - y_roof_pos;
+                            hFoot_neg = (highY_neg - (s_max_neg - Math.abs(s_leg_neg)) * Math.sin(totalTiltRad) - 0.078 * Math.cos(totalTiltRad)) - y_roof_neg;
+                            hFoot_center = (highY_neg - s_max_neg * Math.sin(totalTiltRad) - 0.078 * Math.cos(totalTiltRad)) - y_roof_center;
+                            hFoot_pos = (highY_pos - (s_max_pos - s_leg_pos) * Math.sin(totalTiltRad) - 0.078 * Math.cos(totalTiltRad)) - y_roof_pos;
                         } else {
-                            hFoot_neg = (ridgeY - Math.abs(s_leg_neg) * Math.sin(totalTiltRad) - 0.05) - y_roof_neg;
-                            hFoot_center = (ridgeY - 0.05) - y_roof_center;
-                            hFoot_pos = (ridgeY - Math.abs(s_leg_pos) * Math.sin(totalTiltRad) - 0.05) - y_roof_pos;
+                            hFoot_neg = (ridgeY - Math.abs(s_leg_neg) * Math.sin(totalTiltRad) - 0.078 * Math.cos(totalTiltRad)) - y_roof_neg;
+                            hFoot_center = (ridgeY - 0.078 * Math.cos(totalTiltRad)) - y_roof_center;
+                            hFoot_pos = (ridgeY - Math.abs(s_leg_pos) * Math.sin(totalTiltRad) - 0.078 * Math.cos(totalTiltRad)) - y_roof_pos;
                         }
                         
                         const feet = [
@@ -9134,13 +9311,13 @@ function updateViewer(params) {
                     }
                 }
             } else {
-                // Single-pitch elevated racking
+                // Single-pitch elevated racking (Top face tightly touches purlin bottom face at -0.028m normal offset)
                 for (let k = 0; k < xPositions.length; k++) {
                     const xRack = xPositions[k];
                     for (let g = 0; g < arrM; g++) {
                         const blockZ = (g - (arrM - 1) / 2) * arrP;
-                        const railCenterY = singleHighY - halfLen * Math.sin(totalTiltRad) - 0.025;
-                        const railCenterZ = zCenterOffset + blockZ;
+                        const railCenterY = (singleHighY - halfLen * Math.sin(totalTiltRad)) - 0.053 * Math.cos(totalTiltRad);
+                        const railCenterZ = zCenterOffset + blockZ + 0.053 * Math.sin(totalTiltRad);
                         
                         if (hasPanelInSpan(xRack, railCenterZ, arrayLength / 2, xBayRad)) {
                             aluminumBoxes.push({
@@ -9156,13 +9333,13 @@ function updateViewer(params) {
                         const legBackZ_local = halfLen - shiftDist;
                         const legMiddleZ_local = 0.0;
                         
-                        const legFrontZ = zCenterOffset + legFrontZ_local * Math.cos(totalTiltRad) + blockZ;
-                        const legBackZ = zCenterOffset + legBackZ_local * Math.cos(totalTiltRad) + blockZ;
-                        const legMiddleZ = zCenterOffset + legMiddleZ_local * Math.cos(totalTiltRad) + blockZ;
+                        const legFrontZ = zCenterOffset + legFrontZ_local * Math.cos(totalTiltRad) + blockZ + 0.078 * Math.sin(totalTiltRad);
+                        const legBackZ = zCenterOffset + legBackZ_local * Math.cos(totalTiltRad) + blockZ + 0.078 * Math.sin(totalTiltRad);
+                        const legMiddleZ = zCenterOffset + legMiddleZ_local * Math.cos(totalTiltRad) + blockZ + 0.078 * Math.sin(totalTiltRad);
                         
-                        const legY_front = singleHighY - (halfLen - legFrontZ_local) * Math.sin(totalTiltRad) - 0.05;
-                        const legY_back = singleHighY - (halfLen - legBackZ_local) * Math.sin(totalTiltRad) - 0.05;
-                        const legY_middle = singleHighY - (halfLen - legMiddleZ_local) * Math.sin(totalTiltRad) - 0.05;
+                        const legY_front = (singleHighY - (halfLen - legFrontZ_local) * Math.sin(totalTiltRad)) - 0.078 * Math.cos(totalTiltRad);
+                        const legY_back = (singleHighY - (halfLen - legBackZ_local) * Math.sin(totalTiltRad)) - 0.078 * Math.cos(totalTiltRad);
+                        const legY_middle = (singleHighY - (halfLen - legMiddleZ_local) * Math.sin(totalTiltRad)) - 0.078 * Math.cos(totalTiltRad);
                         
                         const feet = [
                             { z: legFrontZ, y: legY_front },
@@ -9205,38 +9382,42 @@ function updateViewer(params) {
                     const maxHalfSpanZ = Math.max(s_max_neg, s_max_pos) * Math.cos(totalTiltRad) + 0.6;
                     const bayStats = getBayPanelStats(xRack, ridgeZ, true, maxHalfSpanZ);
 
-                    // Z-negative racking beam (North)
+                    // Z-negative racking beam (North, Top face tightly touches C-purlin bottom at +0.025m normal offset)
                     if (bayStats.countNeg > 0) {
                         const actualLenNeg = Math.min(s_max_neg, bayStats.maxDistNeg + pvW / 2 + 0.15);
-                        const beamZ_neg = ridgeZ - (actualLenNeg / 2) * Math.cos(totalTiltRad);
-                        const beamY_neg = isGableMountain
+                        const rotX_neg = isGableMountain ? -totalTiltRad : +totalTiltRad;
+                        const nominalY = isGableMountain
                             ? (supportH - (actualLenNeg / 2) * Math.sin(totalTiltRad))
                             : (supportH - (s_max_neg - (actualLenNeg / 2)) * Math.sin(totalTiltRad));
+                        const beamY_neg = nominalY - 0.050 * Math.cos(totalTiltRad);
+                        const beamZ_neg = (ridgeZ - (actualLenNeg / 2) * Math.cos(totalTiltRad)) + 0.050 * Math.sin(rotX_neg);
                         rackBoxes.push({
                             pos: [xRack, beamY_neg, beamZ_neg],
-                            rot: [isGableMountain ? -totalTiltRad : +totalTiltRad, 0, 0],
+                            rot: [rotX_neg, 0, 0],
                             scale: [0.15, 0.15, actualLenNeg]
                         });
                     }
 
-                    // Z-positive racking beam (South)
+                    // Z-positive racking beam (South, Top face tightly touches C-purlin bottom at +0.025m normal offset)
                     if (bayStats.countPos > 0) {
                         const actualLenPos = Math.min(s_max_pos, bayStats.maxDistPos + pvW / 2 + 0.15);
-                        const beamZ_pos = ridgeZ + (actualLenPos / 2) * Math.cos(totalTiltRad);
-                        const beamY_pos = isGableMountain
+                        const rotX_pos = isGableMountain ? +totalTiltRad : -totalTiltRad;
+                        const nominalY = isGableMountain
                             ? (supportH - (actualLenPos / 2) * Math.sin(totalTiltRad))
                             : (supportH - (s_max_pos - (actualLenPos / 2)) * Math.sin(totalTiltRad));
+                        const beamY_pos = nominalY - 0.050 * Math.cos(totalTiltRad);
+                        const beamZ_pos = (ridgeZ + (actualLenPos / 2) * Math.cos(totalTiltRad)) + 0.050 * Math.sin(rotX_pos);
                         rackBoxes.push({
                             pos: [xRack, beamY_pos, beamZ_pos],
-                            rot: [isGableMountain ? +totalTiltRad : -totalTiltRad, 0, 0],
+                            rot: [rotX_pos, 0, 0],
                             scale: [0.15, 0.15, actualLenPos]
                         });
                     }
 
                     // Legs (strictly within actual panel span, no posts outside)
                     if (bayStats.countNeg > 0 || bayStats.countPos > 0) {
-                        // Center Post (at ridgeZ)
-                        const hCenter = (isGableMountain ? supportH : (supportH - s_max_neg * Math.sin(totalTiltRad))) - 0.075;
+                        // Center Post (at ridgeZ, attaches to beam bottom at -0.125m normal offset)
+                        const hCenter = (isGableMountain ? supportH : (supportH - s_max_neg * Math.sin(totalTiltRad))) - 0.125 * Math.cos(totalTiltRad);
                         if (siteType === 'ground') {
                             concreteBoxes.push({ pos: [xRack, 0.2, ridgeZ], rot: [0, 0, 0], scale: [0.35, 0.4, 0.35] });
                             const colH = hCenter - 0.4;
@@ -9248,8 +9429,9 @@ function updateViewer(params) {
                         // North Outer Post
                         if (bayStats.countNeg > 0) {
                             const actualLenNeg = Math.min(s_max_neg, bayStats.maxDistNeg + pvW / 2 + 0.15);
-                            const legZ_neg = ridgeZ - (actualLenNeg * 0.8) * Math.cos(totalTiltRad);
-                            const hNeg = (isGableMountain ? (supportH - (actualLenNeg * 0.8) * Math.sin(totalTiltRad)) : (supportH - (s_max_neg - actualLenNeg * 0.8) * Math.sin(totalTiltRad))) - 0.075;
+                            const rotX_neg = isGableMountain ? -totalTiltRad : +totalTiltRad;
+                            const legZ_neg = (ridgeZ - (actualLenNeg * 0.8) * Math.cos(totalTiltRad)) + 0.125 * Math.sin(rotX_neg);
+                            const hNeg = (isGableMountain ? (supportH - (actualLenNeg * 0.8) * Math.sin(totalTiltRad)) : (supportH - (s_max_neg - actualLenNeg * 0.8) * Math.sin(totalTiltRad))) - 0.125 * Math.cos(totalTiltRad);
                             if (siteType === 'ground') {
                                 concreteBoxes.push({ pos: [xRack, 0.2, legZ_neg], rot: [0, 0, 0], scale: [0.35, 0.4, 0.35] });
                                 const colH = hNeg - 0.4;
@@ -9262,8 +9444,9 @@ function updateViewer(params) {
                         // South Outer Post
                         if (bayStats.countPos > 0) {
                             const actualLenPos = Math.min(s_max_pos, bayStats.maxDistPos + pvW / 2 + 0.15);
-                            const legZ_pos = ridgeZ + (actualLenPos * 0.8) * Math.cos(totalTiltRad);
-                            const hPos = (isGableMountain ? (supportH - (actualLenPos * 0.8) * Math.sin(totalTiltRad)) : (supportH - (s_max_pos - actualLenPos * 0.8) * Math.sin(totalTiltRad))) - 0.075;
+                            const rotX_pos = isGableMountain ? +totalTiltRad : -totalTiltRad;
+                            const legZ_pos = (ridgeZ + (actualLenPos * 0.8) * Math.cos(totalTiltRad)) + 0.125 * Math.sin(rotX_pos);
+                            const hPos = (isGableMountain ? (supportH - (actualLenPos * 0.8) * Math.sin(totalTiltRad)) : (supportH - (s_max_pos - actualLenPos * 0.8) * Math.sin(totalTiltRad))) - 0.125 * Math.cos(totalTiltRad);
                             if (siteType === 'ground') {
                                 concreteBoxes.push({ pos: [xRack, 0.2, legZ_pos], rot: [0, 0, 0], scale: [0.35, 0.4, 0.35] });
                                 const colH = hPos - 0.4;
@@ -9274,7 +9457,7 @@ function updateViewer(params) {
                         }
                     }
                 } else {
-                    // Single-pitch racking beam
+                    // Single-pitch racking beam (Top face tightly touches C-purlin bottom at +0.025m normal offset)
                     const curCenterZ = zCenterOffset + blockZ;
                     const maxHalfSpanZ = (arrayLength / 2) * Math.cos(totalTiltRad) + 0.6;
                     const bayStats = getBayPanelStats(xRack, curCenterZ, false, maxHalfSpanZ);
@@ -9285,10 +9468,12 @@ function updateViewer(params) {
                         const actualZMax = bayStats.maxZ + pvW_z / 2 + 0.15;
                         const curSpan = Math.min(arrayLength, Math.max(1.0, (actualZMax - actualZMin) / Math.cos(totalTiltRad)));
                         const curHalfLen = curSpan / 2;
-                        const beamZ = (actualZMin + actualZMax) / 2;
+                        const nominalBeamZ = (actualZMin + actualZMax) / 2;
                         
                         const nominalBackZ = curCenterZ + (arrayLength / 2) * Math.cos(totalTiltRad);
-                        const beamY = supportH - ((nominalBackZ - beamZ) / (Math.cos(totalTiltRad) || 1)) * Math.sin(totalTiltRad);
+                        const nominalBeamY = supportH - ((nominalBackZ - nominalBeamZ) / (Math.cos(totalTiltRad) || 1)) * Math.sin(totalTiltRad);
+                        const beamY = nominalBeamY - 0.050 * Math.cos(totalTiltRad);
+                        const beamZ = nominalBeamZ + 0.050 * Math.sin(totalTiltRad);
                         
                         rackBoxes.push({
                             pos: [xRack, beamY, beamZ],
@@ -9297,13 +9482,17 @@ function updateViewer(params) {
                         });
                         
                         const hasMiddleLeg = curSpan > 8.0;
-                        const legFrontZ = actualZMin + 0.5 * Math.cos(totalTiltRad);
-                        const legBackZ = actualZMax - 0.5 * Math.cos(totalTiltRad);
-                        const legMiddleZ = (legFrontZ + legBackZ) / 2;
+                        const legFrontZ_center = actualZMin + 0.5 * Math.cos(totalTiltRad);
+                        const legBackZ_center = actualZMax - 0.5 * Math.cos(totalTiltRad);
+                        const legMiddleZ_center = (legFrontZ_center + legBackZ_center) / 2;
+
+                        const legFrontZ = legFrontZ_center + 0.125 * Math.sin(totalTiltRad);
+                        const legBackZ = legBackZ_center + 0.125 * Math.sin(totalTiltRad);
+                        const legMiddleZ = legMiddleZ_center + 0.125 * Math.sin(totalTiltRad);
                         
-                        const frontBeamBottomY = supportH - ((nominalBackZ - legFrontZ) / (Math.cos(totalTiltRad) || 1)) * Math.sin(totalTiltRad) - 0.075;
-                        const backBeamBottomY = supportH - ((nominalBackZ - legBackZ) / (Math.cos(totalTiltRad) || 1)) * Math.sin(totalTiltRad) - 0.075;
-                        const middleBeamBottomY = supportH - ((nominalBackZ - legMiddleZ) / (Math.cos(totalTiltRad) || 1)) * Math.sin(totalTiltRad) - 0.075;
+                        const frontBeamBottomY = (supportH - ((nominalBackZ - legFrontZ_center) / (Math.cos(totalTiltRad) || 1)) * Math.sin(totalTiltRad)) - 0.125 * Math.cos(totalTiltRad);
+                        const backBeamBottomY = (supportH - ((nominalBackZ - legBackZ_center) / (Math.cos(totalTiltRad) || 1)) * Math.sin(totalTiltRad)) - 0.125 * Math.cos(totalTiltRad);
+                        const middleBeamBottomY = (supportH - ((nominalBackZ - legMiddleZ_center) / (Math.cos(totalTiltRad) || 1)) * Math.sin(totalTiltRad)) - 0.125 * Math.cos(totalTiltRad);
 
                         if (siteType === 'ground') {
                             // Front Concrete Pier & Leg
@@ -12848,7 +13037,7 @@ function hideLoadingOverlay() {
 
         const projectData = {
             app: "PV-Super",
-            version: "2.8.2",
+            version: "2.9.1",
             savedAt: new Date().toISOString(),
             parameters: parametersData,
             lockedParams: Object.assign({}, lockedParams),
