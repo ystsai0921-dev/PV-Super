@@ -22,5 +22,6 @@
     "lat": 23.870194444444444,
     "lng": 120.523,
     "sunMonth": 12,
-    "sunHour": 15.0
+    "sunHour": 15.0,
+    "liveUpdate3D": true
 }

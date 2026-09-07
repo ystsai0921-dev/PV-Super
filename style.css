@@ -2391,12 +2391,14 @@ tr.tr-azimuth-row td {
 }
 
 /* 導引線與吸附圖層面板置頂樣式 (防止滑鼠移過線條或標籤時吞噬事件導致引導線隱形) */
-.leaflet-guidePane-pane,
-.leaflet-snapPane-pane,
-.leaflet-guidePane-pane svg,
-.leaflet-snapPane-pane svg,
-.leaflet-guidePane-pane path,
-.leaflet-snapPane-pane path,
+.leaflet-guidePane-pane {
+    z-index: 650 !important;
+    pointer-events: none !important;
+}
+.leaflet-snapPane-pane {
+    z-index: 660 !important;
+    pointer-events: none !important;
+}
 .leaflet-guidePane-pane *,
 .leaflet-snapPane-pane *,
 .map-measure-live-container,
@@ -2411,12 +2413,6 @@ tr.tr-azimuth-row td {
 .map-measure-summary-badge-container *,
 .map-measure-tick-label-container,
 .map-measure-tick-label-container * {
-    z-index: 650 !important;
-    pointer-events: none !important;
-}
-.leaflet-snapPane-pane,
-.leaflet-snapPane-pane * {
-    z-index: 660 !important;
     pointer-events: none !important;
 }
 
@@ -4401,7 +4397,12 @@ tr.tr-azimuth-row td {
     box-shadow: 0 0 8px rgba(14, 165, 233, 0.6) !important;
 }
 
-/* 觸控手繪多邊形中心十字 + 1.5cm 空心外圓提示點 (Requirement 2) */
+/* 觸控手繪多邊形節點提示點 (純視覺標記，防止阻擋滑鼠軌跡與引導線事件) */
+.touch-vertex-marker-container,
+.touch-vertex-marker-container * {
+    pointer-events: none !important;
+}
+
 .touch-vertex-outer {
     width: 1.5cm !important;
     height: 1.5cm !important;
@@ -4412,10 +4413,10 @@ tr.tr-azimuth-row td {
     background: rgba(0, 0, 0, 0.25) !important;
     position: relative !important;
     box-sizing: border-box !important;
-    cursor: move !important;
+    cursor: default !important;
     touch-action: none !important;
     box-shadow: 0 0 14px rgba(56, 189, 248, 0.8), inset 0 0 8px rgba(0, 0, 0, 0.5) !important;
-    pointer-events: auto !important;
+    pointer-events: none !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;

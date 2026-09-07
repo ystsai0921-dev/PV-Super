@@ -141,8 +141,28 @@ let exclusionTempLine = null;
 let exclusionRubberband = null;
 let exclusionPolygons = [];
 let exclusionSnappers = [];
-let mapSnapMarker = null;
 let guideSvgRenderer = null;
+let mapSnapMarker = null;
+function ensureGuidePanes(targetMap) {
+    if (!targetMap) return;
+    if (!targetMap.getPane('guidePane')) {
+        targetMap.createPane('guidePane');
+        targetMap.getPane('guidePane').style.zIndex = '650';
+        targetMap.getPane('guidePane').style.pointerEvents = 'none';
+    }
+    if (!targetMap.getPane('snapPane')) {
+        targetMap.createPane('snapPane');
+        targetMap.getPane('snapPane').style.zIndex = '660';
+        targetMap.getPane('snapPane').style.pointerEvents = 'none';
+    }
+    if (!guideSvgRenderer || guideSvgRenderer._map !== targetMap) {
+        try {
+            guideSvgRenderer = L.svg({ pane: 'guidePane' }).addTo(targetMap);
+        } catch (e) {}
+    }
+    return guideSvgRenderer;
+}
+
 let throttled3DTimeout = null;
 let last3DUpdateTime = 0;
 
@@ -343,19 +363,7 @@ function initMap(lat, lng, onMarkerDrag) {
     }).setView([lat, lng], 18);
 
     // Dedicated top-level panes to guarantee guide lines & snap indicators stay visible above all polygons and module fills
-    if (!map.getPane('guidePane')) {
-        map.createPane('guidePane');
-        map.getPane('guidePane').style.zIndex = '650';
-        map.getPane('guidePane').style.pointerEvents = 'none';
-    }
-
-    if (!map.getPane('snapPane')) {
-        map.createPane('snapPane');
-        map.getPane('snapPane').style.zIndex = '660';
-        map.getPane('snapPane').style.pointerEvents = 'none';
-    }
-
-    guideSvgRenderer = L.svg({ pane: 'guidePane' });
+    ensureGuidePanes(map);
 
     actualModulesLayerGroup = L.layerGroup().addTo(map);
     prefetchReverseGeocode(lat, lng);
@@ -3722,7 +3730,7 @@ function handleMapMeasureClick(latlng) {
         iconSize: [14, 14],
         iconAnchor: [7, 7]
     });
-    const pinMarker = L.marker(clickedLatLng, { icon: pinIcon, interactive: false, pane: 'guidePane', renderer: guideSvgRenderer }).addTo(map);
+    const pinMarker = L.marker(clickedLatLng, { icon: pinIcon, interactive: false, pane: 'guidePane' }).addTo(map);
     mapMeasureActiveMarkers.push(pinMarker);
     
     // Node Label
@@ -3733,19 +3741,22 @@ function handleMapMeasureClick(latlng) {
         iconSize: [90, 20],
         iconAnchor: [45, 10]
     });
-    const labelMarker = L.marker(clickedLatLng, { icon: labelIcon, interactive: false, pane: 'guidePane', renderer: guideSvgRenderer }).addTo(map);
+    const labelMarker = L.marker(clickedLatLng, { icon: labelIcon, interactive: false, pane: 'guidePane' }).addTo(map);
     mapMeasureActiveMarkers.push(labelMarker);
     
     // Update temporary in-progress polyline
     if (mapMeasurePoints.length > 1) {
-        if (mapMeasureTempLine) {
+        if (mapMeasureTempLine && map.hasLayer(mapMeasureTempLine) && mapMeasureTempLine._path && mapMeasureTempLine._path.parentNode) {
             mapMeasureTempLine.setLatLngs(mapMeasurePoints);
         } else {
+            if (mapMeasureTempLine) {
+                try { map.removeLayer(mapMeasureTempLine); } catch (e) {}
+                mapMeasureTempLine = null;
+            }
             mapMeasureTempLine = L.polyline(mapMeasurePoints, {
                 color: '#22c55e',
                 weight: 3.5,
                 pane: 'guidePane',
-                renderer: guideSvgRenderer,
                 interactive: false
             }).addTo(map);
         }
@@ -3789,10 +3800,12 @@ function handleMapMeasureMouseMove(event) {
             try { map.removeLayer(mapMeasureRubberband); } catch (err) {}
             mapMeasureRubberband = null;
         }
+        ensureGuidePanes(map);
         mapMeasureRubberband = L.polyline([lastPt, currentLatLng], {
             color: '#22c55e',
             weight: 3.0,
             dashArray: '6, 6',
+            opacity: 1,
             pane: 'guidePane',
             renderer: guideSvgRenderer,
             interactive: false
@@ -3830,8 +3843,7 @@ function handleMapMeasureMouseMove(event) {
         mapMeasureLiveTooltip = L.marker(currentLatLng, {
             icon: badgeIcon,
             interactive: false,
-            pane: 'guidePane',
-            renderer: guideSvgRenderer
+            pane: 'guidePane'
         }).addTo(map);
     }
 }
@@ -3847,7 +3859,6 @@ function finishMapMeasurePolyline() {
         color: '#22c55e',
         weight: 3.5,
         pane: 'guidePane',
-        renderer: guideSvgRenderer,
         interactive: false
     }).addTo(map);
     
@@ -3873,8 +3884,7 @@ function finishMapMeasurePolyline() {
         const segMarker = L.marker(midpoint, {
             icon: segBadgeIcon,
             interactive: false,
-            pane: 'guidePane',
-            renderer: guideSvgRenderer
+            pane: 'guidePane'
         }).addTo(map);
         labels.push(segMarker);
     }
@@ -3891,8 +3901,7 @@ function finishMapMeasurePolyline() {
     const sumMarker = L.marker(lastPoint, {
         icon: sumBadgeIcon,
         interactive: false,
-        pane: 'guidePane',
-        renderer: guideSvgRenderer
+        pane: 'guidePane'
     }).addTo(map);
     labels.push(sumMarker);
     
@@ -3992,7 +4001,6 @@ function renderPolylineAdaptiveTicks(record) {
                 color: isMajor ? '#4ade80' : 'rgba(74, 222, 128, 0.75)',
                 weight: isMajor ? 2.2 : 1.3,
                 pane: 'guidePane',
-                renderer: guideSvgRenderer,
                 interactive: false
             }).addTo(map);
             record.tickLayers.push(tickLine);
@@ -4010,8 +4018,7 @@ function renderPolylineAdaptiveTicks(record) {
                 const tickMarker = L.marker(labelPos, {
                     icon: tickLabelIcon,
                     interactive: false,
-                    pane: 'guidePane',
-                    renderer: guideSvgRenderer
+                    pane: 'guidePane'
                 }).addTo(map);
                 record.tickLayers.push(tickMarker);
             }
@@ -4202,17 +4209,20 @@ function snapPolygonMovement(poly, rawLatLngs, startCenterPos, curMouseLatLng) {
                     const snappedLatLngs = rawLatLngs.map(pt => L.latLng(pt.lat + snapDLat, pt.lng + snapDLng));
 
                     updateSnapMarkerVisual(null);
-                    if (parallelGuidePolyline) {
+                    if (parallelGuidePolyline && map.hasLayer(parallelGuidePolyline) && parallelGuidePolyline._path && parallelGuidePolyline._path.parentNode) {
                         parallelGuidePolyline.setLatLngs([startCenterPos, snappedCenter]);
                         parallelGuidePolyline.setStyle({ color: '#ec4899', weight: 2.5, dashArray: '5, 5', opacity: 0.95 });
                     } else {
+                        if (parallelGuidePolyline) {
+                            try { map.removeLayer(parallelGuidePolyline); } catch (e) {}
+                            parallelGuidePolyline = null;
+                        }
                         parallelGuidePolyline = L.polyline([startCenterPos, snappedCenter], {
                             color: '#ec4899',
                             weight: 2.5,
                             dashArray: '5, 5',
                             opacity: 0.95,
                             pane: 'guidePane',
-                            renderer: guideSvgRenderer,
                             interactive: false
                         }).addTo(map);
                     }
@@ -4797,110 +4807,20 @@ let activeDrawingTouchMarker = null;
 let activeDrawingTouchTimer = null;
 
 function addDrawingVertexMarker(clickedLatLng, pointsArray, tempLine, color, snappersArray) {
-    if (activeDrawingTouchMarker) {
-        if (activeDrawingTouchTimer) clearTimeout(activeDrawingTouchTimer);
-        lockActiveDrawingVertex(activeDrawingTouchMarker);
-        activeDrawingTouchMarker = null;
-    }
-
     const strokeColor = color || 'rgba(56, 189, 248, 1)';
-    const pointIndex = pointsArray.length - 1;
     const marker = L.marker(clickedLatLng, {
         icon: L.divIcon({
             className: 'touch-vertex-marker-container',
-            html: `<div class="touch-vertex-outer" style="border-color: ${strokeColor} !important; box-shadow: 0 0 14px ${strokeColor} !important;">
-                <div class="touch-vertex-cross-h"></div>
-                <div class="touch-vertex-cross-v"></div>
-                <div class="touch-vertex-center-dot" style="border-color: ${strokeColor} !important;"></div>
-            </div>`,
+            html: `<div class="touch-vertex-solid" style="border-color: ${strokeColor} !important; box-shadow: 0 0 8px rgba(0,0,0,0.7), 0 0 6px ${strokeColor} !important;"></div>`,
             iconSize: [0, 0]
         }),
-        draggable: true,
+        interactive: false,
+        pane: 'snapPane',
         zIndexOffset: 1000
     }).addTo(map);
 
     marker._vertexColor = strokeColor;
-    activeDrawingTouchMarker = marker;
-    snappersArray.push(marker);
-
-    marker.on('click', (e) => {
-        if (e.originalEvent && e.originalEvent.stopPropagation) {
-            e.originalEvent.stopPropagation();
-        }
-        if (isSiteBoundaryDrawMode) {
-            handleSiteBoundaryMapClick(marker.getLatLng());
-        } else if (isObstacleDrawMode) {
-            handleObstacleMapClick(marker.getLatLng());
-        } else if (isExclusionDrawMode) {
-            handleExclusionMapClick(marker.getLatLng());
-        }
-    });
-
-    const resetLockTimer = () => {
-        if (activeDrawingTouchTimer) clearTimeout(activeDrawingTouchTimer);
-        activeDrawingTouchTimer = setTimeout(() => {
-            if (activeDrawingTouchMarker === marker) {
-                lockActiveDrawingVertex(marker);
-                activeDrawingTouchMarker = null;
-            }
-        }, 2000);
-    };
-
-    marker.on('dragstart', () => {
-        if (activeDrawingTouchTimer) clearTimeout(activeDrawingTouchTimer);
-        map.dragging.disable();
-    });
-
-    marker.on('drag', (e) => {
-        let mouseLatLng = e.target.getLatLng();
-        let targetLatLng = mouseLatLng;
-        
-        // 1. Check vertex snapping to other points/polygons
-        const snapCheck = checkVertexSnapping(mouseLatLng);
-        if (snapCheck) {
-            isRightAngleSnapActive = false;
-            isRectangleSnapActive = false;
-            isParallelSnapActive = false;
-            isPerpendicularSnapActive = false;
-            clearRightAngleIndicator();
-            updateSnapMarkerVisual(snapCheck);
-            targetLatLng = snapCheck.latlng;
-        } else {
-            updateSnapMarkerVisual(null);
-            // 2. Check right angle / parallel / perpendicular / rectangle snapping with previous vertices
-            const priorPoints = pointsArray.slice(0, pointIndex);
-            if (priorPoints.length > 0) {
-                targetLatLng = snapToPreviousSegmentRightAngle(priorPoints, mouseLatLng);
-            }
-        }
-        
-        pointsArray[pointIndex] = targetLatLng;
-        if (tempLine) {
-            tempLine.setLatLngs(pointsArray);
-        }
-    });
-
-    marker.on('dragend', () => {
-        updateMapDraggingState();
-        if (pointsArray[pointIndex]) {
-            marker.setLatLng(pointsArray[pointIndex]);
-        }
-        updateSnapMarkerVisual(null);
-        clearRightAngleIndicator();
-        resetLockTimer();
-    });
-
-    resetLockTimer();
-}
-
-function lockActiveDrawingVertex(marker) {
-    if (!marker || !map || !map.hasLayer(marker)) return;
-    const strokeColor = marker._vertexColor || 'rgba(56, 189, 248, 1)';
-    const el = marker.getElement();
-    if (el) {
-        el.innerHTML = `<div class="touch-vertex-solid" style="border-color: ${strokeColor} !important; box-shadow: 0 0 8px rgba(0,0,0,0.7), 0 0 6px ${strokeColor} !important;"></div>`;
-    }
-    if (marker.dragging) marker.dragging.disable();
+    if (snappersArray) snappersArray.push(marker);
 }
 
 function clearActiveDrawingTouchState() {
@@ -5008,12 +4928,18 @@ function handleSiteBoundaryMapClick(latlng) {
     isParallelSnapActive = false;
     isPerpendicularSnapActive = false;
     
-    if (siteBoundaryTempLine) {
+    if (siteBoundaryTempLine && map.hasLayer(siteBoundaryTempLine)) {
         siteBoundaryTempLine.setLatLngs(siteBoundaryPoints);
     } else {
+        if (siteBoundaryTempLine) {
+            try { map.removeLayer(siteBoundaryTempLine); } catch (e) {}
+            siteBoundaryTempLine = null;
+        }
+        ensureGuidePanes(map);
         siteBoundaryTempLine = L.polyline(siteBoundaryPoints, {
             color: 'rgba(56, 189, 248, 1)',
             weight: 2.5,
+            opacity: 1,
             pane: 'guidePane',
             renderer: guideSvgRenderer,
             interactive: false
@@ -5068,17 +4994,20 @@ function handleSiteBoundaryMouseMove(e) {
         exclusionRubberband.setStyle({
             color: isAnySnapActive ? 'rgba(255, 0, 128, 1)' : 'rgba(56, 189, 248, 1)',
             weight: isRectangleSnapActive ? 3.5 : (isAnySnapActive ? 2.8 : 2),
-            dashArray: isRectangleSnapActive ? null : '4, 4'
+            dashArray: isRectangleSnapActive ? null : '4, 4',
+            opacity: 1
         });
     } else {
         if (exclusionRubberband) {
             try { map.removeLayer(exclusionRubberband); } catch (err) {}
             exclusionRubberband = null;
         }
+        ensureGuidePanes(map);
         exclusionRubberband = L.polyline(rubberbandCoords, {
             color: isAnySnapActive ? 'rgba(255, 0, 128, 1)' : 'rgba(56, 189, 248, 1)',
             weight: isRectangleSnapActive ? 3.5 : (isAnySnapActive ? 2.8 : 2),
             dashArray: isRectangleSnapActive ? null : '4, 4',
+            opacity: 1,
             pane: 'guidePane',
             renderer: guideSvgRenderer,
             interactive: false
@@ -5539,17 +5468,20 @@ function handleObstacleMouseMove(e) {
         exclusionRubberband.setStyle({
             color: isAnySnapActive ? 'rgba(255, 0, 128, 1)' : 'rgba(239, 68, 68, 1)',
             weight: isRectangleSnapActive ? 3.5 : (isAnySnapActive ? 2.8 : 2),
-            dashArray: isRectangleSnapActive ? null : '4, 4'
+            dashArray: isRectangleSnapActive ? null : '4, 4',
+            opacity: 1
         });
     } else {
         if (exclusionRubberband) {
             try { map.removeLayer(exclusionRubberband); } catch (err) {}
             exclusionRubberband = null;
         }
+        ensureGuidePanes(map);
         exclusionRubberband = L.polyline(rubberbandCoords, {
             color: isAnySnapActive ? 'rgba(255, 0, 128, 1)' : 'rgba(239, 68, 68, 1)',
             weight: isRectangleSnapActive ? 3.5 : (isAnySnapActive ? 2.8 : 2),
             dashArray: isRectangleSnapActive ? null : '4, 4',
+            opacity: 1,
             pane: 'guidePane',
             renderer: guideSvgRenderer,
             interactive: false
@@ -5633,7 +5565,22 @@ function handleObstacleMapClick(latlng) {
         const pixelDist = mousePoint.distanceTo(firstPointScreen);
         
         if (pixelDist < 30 || distToFirst < 2.5 || (snapCheck && snapCheck.latlng && snapCheck.latlng.equals(firstPoint))) {
-            finishObstaclePolygon(obstaclePoints);
+            let autoPoints = [...obstaclePoints];
+            if (isRectangleSnapActive && obstaclePoints.length === 3) {
+                const p1 = obstaclePoints[0];
+                const p2 = obstaclePoints[1];
+                const p3 = obstaclePoints[2];
+                const metersPerLatDegree = 111320;
+                const latRad = (p1.lat * Math.PI) / 180;
+                const metersPerLngDegree = metersPerLatDegree * Math.cos(latRad);
+                
+                const vX = (p2.lng - p1.lng) * metersPerLngDegree;
+                const vY = (p2.lat - p1.lat) * metersPerLatDegree;
+                const p4 = L.latLng(p3.lat - vY / metersPerLatDegree, p3.lng - vX / metersPerLngDegree);
+                
+                autoPoints = [p1, p2, p3, p4];
+            }
+            finishObstaclePolygon(autoPoints);
             isRightAngleSnapBypassed = false;
             isRightAngleSnapActive = false;
             isRectangleSnapActive = false;
@@ -5643,35 +5590,6 @@ function handleObstacleMapClick(latlng) {
         }
     }
     
-    if ((obstaclePoints.length === 2 || obstaclePoints.length === 3) && isRectangleSnapActive) {
-        let autoObstacle;
-        if (obstaclePoints.length === 3) {
-            autoObstacle = [obstaclePoints[0], obstaclePoints[1], obstaclePoints[2], clickedLatLng];
-        } else {
-            const p1 = obstaclePoints[0];
-            const p2 = obstaclePoints[1];
-            const p3 = clickedLatLng;
-            
-            const metersPerLatDegree = 111320;
-            const latRad = (p1.lat * Math.PI) / 180;
-            const metersPerLngDegree = metersPerLatDegree * Math.cos(latRad);
-            
-            const vX = (p2.lng - p1.lng) * metersPerLngDegree;
-            const vY = (p2.lat - p1.lat) * metersPerLatDegree;
-            const p4 = L.latLng(p3.lat - vY / metersPerLatDegree, p3.lng - vX / metersPerLngDegree);
-            
-            autoObstacle = [p1, p2, p3, p4];
-        }
-        finishObstaclePolygon(autoObstacle);
-        
-        isRightAngleSnapBypassed = false;
-        isRightAngleSnapActive = false;
-        isRectangleSnapActive = false;
-        isParallelSnapActive = false;
-        isPerpendicularSnapActive = false;
-        return;
-    }
-    
     obstaclePoints.push(clickedLatLng);
     isRightAngleSnapBypassed = false;
     isRightAngleSnapActive = false;
@@ -5679,12 +5597,18 @@ function handleObstacleMapClick(latlng) {
     isParallelSnapActive = false;
     isPerpendicularSnapActive = false;
     
-    if (obstacleTempLine) {
+    if (obstacleTempLine && map.hasLayer(obstacleTempLine)) {
         obstacleTempLine.setLatLngs(obstaclePoints);
     } else {
+        if (obstacleTempLine) {
+            try { map.removeLayer(obstacleTempLine); } catch (e) {}
+            obstacleTempLine = null;
+        }
+        ensureGuidePanes(map);
         obstacleTempLine = L.polyline(obstaclePoints, {
             color: 'rgba(239, 68, 68, 1)',
             weight: 2.5,
+            opacity: 1,
             pane: 'guidePane',
             renderer: guideSvgRenderer,
             interactive: false
@@ -5742,17 +5666,20 @@ function handleExclusionMouseMove(e) {
             exclusionRubberband.setStyle({
                 color: isAnySnapActive ? 'rgba(255, 0, 128, 1)' : 'rgba(251, 191, 36, 1)',
                 weight: isRectangleSnapActive ? 3.5 : (isAnySnapActive ? 2.8 : 2),
-                dashArray: isRectangleSnapActive ? null : '4, 4'
+                dashArray: isRectangleSnapActive ? null : '4, 4',
+                opacity: 1
             });
         } else {
             if (exclusionRubberband) {
                 try { map.removeLayer(exclusionRubberband); } catch (err) {}
                 exclusionRubberband = null;
             }
+            ensureGuidePanes(map);
             exclusionRubberband = L.polyline(rubberbandCoords, {
                 color: isAnySnapActive ? 'rgba(255, 0, 128, 1)' : 'rgba(251, 191, 36, 1)',
                 weight: isRectangleSnapActive ? 3.5 : (isAnySnapActive ? 2.8 : 2),
                 dashArray: isRectangleSnapActive ? null : '4, 4',
+                opacity: 1,
                 pane: 'guidePane',
                 renderer: guideSvgRenderer,
                 interactive: false
@@ -5793,20 +5720,35 @@ function handleExclusionMapClick(latlng) {
              (snapCheck && snapCheck.latlng && snapCheck.latlng.equals(exclusionPoints[0])));
         
         if (isClosing) {
-            const poly = L.polygon(exclusionPoints, {
-                color: 'rgba(251, 191, 36, 1)',
-                fillColor: 'rgba(251, 191, 36, 1)',
-                fillOpacity: 0.3,
-                weight: 2.5,
-                dashArray: '6, 6',
+            let autoPoints = [...exclusionPoints];
+            if (isRectangleSnapActive && exclusionPoints.length === 3) {
+                const p1 = exclusionPoints[0];
+                const p2 = exclusionPoints[1];
+                const p3 = exclusionPoints[2];
+                const metersPerLatDegree = 111320;
+                const latRad = (p2.lat * Math.PI) / 180;
+                const metersPerLngDegree = metersPerLatDegree * Math.cos(latRad);
+                
+                const vX = (p2.lng - p1.lng) * metersPerLngDegree;
+                const vY = (p2.lat - p1.lat) * metersPerLatDegree;
+                const p4 = L.latLng(p3.lat - vY / metersPerLatDegree, p3.lng - vX / metersPerLngDegree);
+                
+                autoPoints = [p1, p2, p3, p4];
+            }
+            
+            const poly = L.polygon(autoPoints, {
+                color: 'rgba(249, 115, 22, 1)',
+                weight: 2,
+                fillColor: 'rgba(249, 115, 22, 0.4)',
+                fillOpacity: 0.4,
                 interactive: true
             }).addTo(map);
             
             clearExclusionDrawingState();
             promptPolygonKeepOrDiscard("排除區域", () => {
+                exclusionPolygons.push(poly);
                 makePolygonDraggable(poly);
                 makePolygonSelectable(poly);
-                exclusionPolygons.push(poly);
                 exitExclusionDrawMode();
                 calculateOutputs();
                 updateAllVisuals(true);
@@ -5832,12 +5774,18 @@ function handleExclusionMapClick(latlng) {
         isParallelSnapActive = false;
         isPerpendicularSnapActive = false;
         
-        if (exclusionTempLine) {
+        if (exclusionTempLine && map.hasLayer(exclusionTempLine)) {
             exclusionTempLine.setLatLngs(exclusionPoints);
         } else {
+            if (exclusionTempLine) {
+                try { map.removeLayer(exclusionTempLine); } catch (e) {}
+                exclusionTempLine = null;
+            }
+            ensureGuidePanes(map);
             exclusionTempLine = L.polyline(exclusionPoints, {
                 color: 'rgba(251, 191, 36, 1)',
                 weight: 2.5,
+                opacity: 1,
                 pane: 'guidePane',
                 renderer: guideSvgRenderer,
                 interactive: false
@@ -6162,7 +6110,6 @@ function updateSelectedPolygonVisuals(poly, edgeIndex) {
                 weight: 5.5,
                 opacity: 1.0,
                 pane: 'guidePane',
-                renderer: guideSvgRenderer,
                 interactive: false
             }).addTo(map);
             
@@ -6413,6 +6360,66 @@ function cleanPolygon2D(pts) {
         }
     }
     return (out.length >= 3) ? out : [];
+}
+
+function isPointInPolygon2D(pt, poly) {
+    if (!poly || poly.length < 3) return false;
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        const xi = poly[i].x, zi = poly[i].z;
+        const xj = poly[j].x, zj = poly[j].z;
+        const intersect = ((zi > pt.z) !== (zj > pt.z))
+            && (pt.x < (xj - xi) * (pt.z - zi) / (zj - zi + 1e-12) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+}
+
+function findSubBuildingForPoint(x, z, subBuildings) {
+    if (!subBuildings || subBuildings.length === 0) return null;
+    for (let i = 0; i < subBuildings.length; i++) {
+        const b = subBuildings[i];
+        if (isPointInPolygon2D({ x, z }, b.points)) return b;
+    }
+    for (let i = 0; i < subBuildings.length; i++) {
+        const b = subBuildings[i];
+        if (x >= b.minX - 0.2 && x <= b.maxX + 0.2 && z >= b.minZ - 0.2 && z <= b.maxZ + 0.2) {
+            return b;
+        }
+    }
+    return subBuildings[0];
+}
+
+function createThick3DLine(p1, p2, radius, color, opacity = 1.0) {
+    if (typeof THREE === 'undefined') return null;
+    const v1 = new THREE.Vector3(p1.x, p1.y, p1.z);
+    const v2 = new THREE.Vector3(p2.x, p2.y, p2.z);
+    const distance = v1.distanceTo(v2);
+    if (distance < 1e-4) return null;
+
+    const cylGeo = new THREE.CylinderGeometry(radius, radius, distance, 16);
+    const mat = new THREE.MeshStandardMaterial({
+        color: color,
+        roughness: 0.35,
+        metalness: 0.3,
+        transparent: opacity < 1.0,
+        opacity: opacity
+    });
+    const mesh = new THREE.Mesh(cylGeo, mat);
+    mesh.position.copy(v1).add(v2).multiplyScalar(0.5);
+    const orientation = new THREE.Vector3().subVectors(v2, v1).normalize();
+    const up = new THREE.Vector3(0, 1, 0);
+    const quaternion = new THREE.Quaternion().setFromUnitVectors(up, orientation);
+    mesh.quaternion.copy(quaternion);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    return mesh;
+}
+
+function drawSiteDivisionLines() {
+    if (typeof updateSiteDivisionLines === 'function') {
+        updateSiteDivisionLines(customSiteBoundary);
+    }
 }
 
 function getSubBuildingsFromDivisions(poly, refLat, refLng, azimuth, roofTiltRad, pitchStyle) {
@@ -6822,7 +6829,7 @@ function updateSiteDivisionLines(poly) {
                     updateSelectedPolygonVisuals(customSiteBoundary, -1);
                     showPolygonToolboxPanel(customSiteBoundary);
                     updateToolboxPopupEdgeUI();
-                    drawSiteDivisionLines();
+                    updateSiteDivisionLines(customSiteBoundary);
 
                     if (e) L.DomEvent.stopPropagation(e);
                 };
@@ -8212,9 +8219,7 @@ function updateViewer(params) {
     const getRoofY = (zVal, xVal = 0) => {
         if (siteType !== 'roof-slope') return 0;
         if (subBuildings && subBuildings.length > 0) {
-            const bldg = subBuildings.find(b => zVal >= b.minZ - 0.2 && zVal <= b.maxZ + 0.2 && xVal >= b.minX - 0.5 && xVal <= b.maxX + 0.5)
-                      || subBuildings.find(b => zVal >= b.minZ - 0.2 && zVal <= b.maxZ + 0.2)
-                      || subBuildings[0];
+            const bldg = findSubBuildingForPoint(xVal, zVal, subBuildings);
             if (bldg) {
                 if (pitchStyle === 'double') {
                     return Math.max(0, bldg.yRidge - Math.abs(zVal - bldg.zRidge) * Math.tan(roofTiltRad));
@@ -8391,6 +8396,63 @@ function updateViewer(params) {
                 });
 
                 localGroup.add(roofPlane);
+
+                // Slope roof 3D Ridge Lines (中脊線加粗) and Gutter / Valley Lines (天溝線加粗)
+                if (siteType === 'roof-slope') {
+                    const featureGroup = new THREE.Group();
+                    
+                    // 1. 中脊線 (Ridge Lines) - Bold amber/gold line (加粗表現)
+                    if (isDoublePitch) {
+                        buildingsToRender.forEach(bldg => {
+                            const bldgZRidge = bldg.zRidge !== undefined ? bldg.zRidge : z_ridge;
+                            const bldgYRidge = bldg.yRidge !== undefined ? bldg.yRidge : Y_ridge;
+                            const bldgMinX = (bldg.minX !== undefined && bldg.minX !== Infinity) ? bldg.minX : (-arrayWidth / 2);
+                            const bldgMaxX = (bldg.maxX !== undefined && bldg.maxX !== -Infinity) ? bldg.maxX : (arrayWidth / 2);
+
+                            const p1 = { x: bldgMinX, y: bldgYRidge + 0.03, z: bldgZRidge };
+                            const p2 = { x: bldgMaxX, y: bldgYRidge + 0.03, z: bldgZRidge };
+                            const ridgeTube = createThick3DLine(p1, p2, 0.04, 0xf59e0b); // 8cm thick amber gold ridge line
+                            if (ridgeTube) featureGroup.add(ridgeTube);
+                        });
+                    }
+
+                    // 2. 天溝線 (Gutter / Valley Lines) - Bold cyan/blue line (加粗表現)
+                    if (customSiteBoundary && customSiteBoundary.buildingDivisions) {
+                        const divSegments = getSiteDivisionLineSegments(customSiteBoundary);
+                        if (divSegments && divSegments.length > 0) {
+                            divSegments.forEach(seg => {
+                                const s1 = latLngToLocal(seg.startLatLng, state.lat, state.lng, params.azimuth);
+                                const s2 = latLngToLocal(seg.endLatLng, state.lat, state.lng, params.azimuth);
+                                
+                                const p1 = { x: s1.x, y: 0.03, z: s1.z };
+                                const p2 = { x: s2.x, y: 0.03, z: s2.z };
+                                const gutterTube = createThick3DLine(p1, p2, 0.04, 0x0284c7); // 8cm thick cyan blue gutter line
+                                if (gutterTube) featureGroup.add(gutterTube);
+
+                                const dx = s2.x - s1.x;
+                                const dz = s2.z - s1.z;
+                                const len = Math.sqrt(dx * dx + dz * dz);
+                                if (len > 0.01) {
+                                    const stripGeo = new THREE.PlaneGeometry(0.20, len);
+                                    const stripMat = new THREE.MeshBasicMaterial({
+                                        color: 0x0284c7,
+                                        side: THREE.DoubleSide,
+                                        transparent: true,
+                                        opacity: 0.6,
+                                        depthWrite: false
+                                    });
+                                    const stripMesh = new THREE.Mesh(stripGeo, stripMat);
+                                    stripMesh.position.set((s1.x + s2.x) / 2, 0.02, (s1.z + s2.z) / 2);
+                                    stripMesh.rotation.x = -Math.PI / 2;
+                                    stripMesh.rotation.z = Math.atan2(dx, dz);
+                                    featureGroup.add(stripMesh);
+                                }
+                            });
+                        }
+                    }
+
+                    localGroup.add(featureGroup);
+                }
 
                 // Flat roof 3D division line display (平屋頂分棟線 3D 視覺渲染)
                 if (siteType === 'roof-flat' && customSiteBoundary && customSiteBoundary.buildingDivisions) {
@@ -8692,7 +8754,7 @@ function updateViewer(params) {
                         
                         if (siteType === 'roof-slope' && isFlatLaid) {
                             const bldg = (subBuildings && subBuildings.length > 0)
-                                ? (subBuildings.find(b => rowZ >= b.minZ - 0.2 && rowZ <= b.maxZ + 0.2 && localX >= b.minX - 0.5 && localX <= b.maxX + 0.5) || subBuildings.find(b => rowZ >= b.minZ - 0.2 && rowZ <= b.maxZ + 0.2) || subBuildings[0])
+                                ? findSubBuildingForPoint(localX, rowZ, subBuildings)
                                 : null;
                             const ridgeZ = bldg ? bldg.zRidge : z_ridge;
                             rotX = (rowZ < ridgeZ) ? -roofTiltRad : +roofTiltRad;
@@ -8729,7 +8791,7 @@ function updateViewer(params) {
                         
                         if (siteType === 'roof-slope' && isFlatLaid) {
                             const bldg = (subBuildings && subBuildings.length > 0)
-                                ? (subBuildings.find(b => rowZ >= b.minZ - 0.2 && rowZ <= b.maxZ + 0.2 && localX >= b.minX - 0.5 && localX <= b.maxX + 0.5) || subBuildings.find(b => rowZ >= b.minZ - 0.2 && rowZ <= b.maxZ + 0.2) || subBuildings[0])
+                                ? findSubBuildingForPoint(localX, rowZ, subBuildings)
                                 : null;
                             const ridgeZ = bldg ? bldg.zRidge : z_ridge;
                             rotX = (rowZ < ridgeZ) ? -roofTiltRad : +roofTiltRad;
@@ -8771,7 +8833,7 @@ function updateViewer(params) {
                         
                         if (siteType === 'roof-slope' && isFlatLaid) {
                             const bldg = (subBuildings && subBuildings.length > 0)
-                                ? (subBuildings.find(b => rowZ >= b.minZ - 0.2 && rowZ <= b.maxZ + 0.2 && localX >= b.minX - 0.5 && localX <= b.maxX + 0.5) || subBuildings.find(b => rowZ >= b.minZ - 0.2 && rowZ <= b.maxZ + 0.2) || subBuildings[0])
+                                ? findSubBuildingForPoint(localX, rowZ, subBuildings)
                                 : null;
                             const ridgeZ = bldg ? bldg.zRidge : z_ridge;
                             rotX = (rowZ < ridgeZ) ? +roofTiltRad : -roofTiltRad;
@@ -8801,7 +8863,7 @@ function updateViewer(params) {
                         
                         if (siteType === 'roof-slope' && isFlatLaid) {
                             const bldg = (subBuildings && subBuildings.length > 0)
-                                ? (subBuildings.find(b => rowZ >= b.minZ - 0.2 && rowZ <= b.maxZ + 0.2 && localX >= b.minX - 0.5 && localX <= b.maxX + 0.5) || subBuildings.find(b => rowZ >= b.minZ - 0.2 && rowZ <= b.maxZ + 0.2) || subBuildings[0])
+                                ? findSubBuildingForPoint(localX, rowZ, subBuildings)
                                 : null;
                             const ridgeZ = bldg ? bldg.zRidge : z_ridge;
                             rotX = (rowZ < ridgeZ) ? +roofTiltRad : -roofTiltRad;
@@ -9146,70 +9208,238 @@ function updateViewer(params) {
 
     if (siteType === 'roof-slope') {
         if (isFlatLaid) {
-            // 平鋪時: 模組底面離屋面 200mm，每片模組底下 2支鋁支架，分配在離兩邊各自 1/5L (1/5 PV長度) 的位置
+            // 平鋪型 (Flat-Laid Slope Roof):
+            // 檁條由第一片模組貫穿到最後一片模組，頭尾外突模組 10cm (0.10m)。
+            // 腳座為鋁擠件，截面沿平行檁條方向擠出 7cm (0.07m)，平均配置在檁條下，以間距 90cm 為原則 (餘數留於頭尾)，頭尾內縮檁條 5cm (0.05m)。
+            // 腳座呈 "h" 形狀，"h" 上面的 "|" 完美貼合檁條側邊。
             const pvLength = params.pvL / 1000;
             const pvWidth = params.pvW / 1000;
             const isPortrait = params.pvOrient === 'portrait';
-            
-            panelsToDraw.forEach(panel => {
-                const bottomY = panel.y - 0.015;
-                
-                if (!isPortrait) {
-                    // Landscape: PV 長度 L 在 X 軸方向，寬度 W 沿斜坡 Z 軸方向
-                    const offsetL = 0.3 * pvLength; // 離兩邊各 1/5L => 距離中心 0.3L
-                    const x1 = panel.x - offsetL;
-                    const x2 = panel.x + offsetL;
-                    
-                    [x1, x2].forEach(xRail => {
-                        aluminumBoxes.push({
-                            pos: [xRail, bottomY - 0.02, panel.z],
-                            rot: [panel.rotX, 0, 0],
-                            scale: [0.04, 0.04, pvWidth]
-                        });
-                        
-                        // L-feet 固定件 (前端與後端各一個)
-                        const offsetW = 0.3 * pvWidth;
-                        [-offsetW, offsetW].forEach(dz => {
-                            const zFoot = panel.z + dz * Math.cos(panel.rotX);
-                            const yRailBottom = (bottomY - 0.04) - dz * Math.sin(panel.rotX);
-                            const yRoofFoot = getRoofY(zFoot, xRail);
-                            const hFoot = yRailBottom - yRoofFoot;
-                            if (hFoot > 0.005) {
-                                aluminumFeet.push({
-                                    pos: [xRail, yRoofFoot + hFoot / 2, zFoot],
-                                    rot: [0, 0, 0],
-                                    scale: [0.03, hFoot, 0.03]
-                                });
+            const railW = 0.04; // 鋁導軌截面寬 40mm
+            const railH = 0.04; // 鋁導軌截面高 40mm
+
+            // Group panels by sub-building and slope facet (rotX sign) so purlins never bridge across ridges or valleys
+            const groupsMap = new Map();
+            for (let i = 0; i < panelsToDraw.length; i++) {
+                const p = panelsToDraw[i];
+                const bldg = (subBuildings && subBuildings.length > 0) ? findSubBuildingForPoint(p.x, p.z, subBuildings) : null;
+                const bldgIdx = (subBuildings && bldg) ? subBuildings.indexOf(bldg) : 0;
+                const slopeSign = Math.abs(p.rotX || 0) < 0.001 ? 0 : (p.rotX > 0 ? 1 : -1);
+                const key = `bldg${bldgIdx}_slope${slopeSign}_g${p.g || 0}`;
+                if (!groupsMap.has(key)) {
+                    groupsMap.set(key, []);
+                }
+                groupsMap.get(key).push(p);
+            }
+
+            groupsMap.forEach((groupPanels) => {
+                if (groupPanels.length === 0) return;
+
+                if (isPortrait) {
+                    // Portrait (直放): PV 長度 L (pvLength) 沿斜坡 Z 軸，寬度 W (pvWidth) 沿 X 軸
+                    // 檁條沿水平 X 軸貫穿，每排模組下方放 2 支，位於兩側短邊往內 1/5 L 處 (ds = ±0.3 * pvLength)
+                    const rowMap = new Map();
+                    groupPanels.forEach(p => {
+                        const rKey = p.r !== undefined ? p.r : 0;
+                        if (!rowMap.has(rKey)) rowMap.set(rKey, []);
+                        rowMap.get(rKey).push(p);
+                    });
+
+                    const sortedRowKeys = Array.from(rowMap.keys()).sort((a, b) => a - b);
+                    sortedRowKeys.forEach(rKey => {
+                        const rPanels = rowMap.get(rKey).slice().sort((a, b) => a.x - b.x);
+                        if (rPanels.length === 0) return;
+
+                        // Identify continuous runs of modules in this row (split if gap > pvWidth + 0.25, slope differs, or sub-building changes)
+                        const runs = [];
+                        let curRun = [rPanels[0]];
+                        for (let i = 1; i < rPanels.length; i++) {
+                            const prev = rPanels[i - 1];
+                            const curr = rPanels[i];
+                            const bldgPrev = findSubBuildingForPoint(prev.x, prev.z, subBuildings);
+                            const bldgCurr = findSubBuildingForPoint(curr.x, curr.z, subBuildings);
+                            const isDifferentBldg = (subBuildings && subBuildings.length > 1 && bldgPrev !== bldgCurr);
+                            const isSlopeDiff = Math.abs(curr.rotX - prev.rotX) > 0.005;
+                            const isGapLarge = (curr.x - prev.x > pvWidth + 0.25 + (params.spX / 1000 || 0));
+                            if (isDifferentBldg || isSlopeDiff || isGapLarge) {
+                                runs.push(curRun);
+                                curRun = [curr];
+                            } else {
+                                curRun.push(curr);
                             }
+                        }
+                        if (curRun.length > 0) runs.push(curRun);
+
+                        runs.forEach(run => {
+                            const minX = run[0].x - pvWidth / 2;
+                            const maxX = run[run.length - 1].x + pvWidth / 2;
+                            // 頭尾外突 10cm
+                            const startX = minX - 0.10;
+                            const endX = maxX + 0.10;
+                            const purlinLen = endX - startX;
+                            const midX = (startX + endX) / 2;
+                            const refP = run[0];
+                            const rotX = refP.rotX;
+
+                            // 2 支檁條在 ds = ±0.3 * pvLength
+                            const offsetDs = [-0.3 * pvLength, 0.3 * pvLength];
+                            offsetDs.forEach((ds, railIdx) => {
+                                const purlinZ = refP.z + ds * Math.cos(rotX);
+                                const purlinY = (refP.y - 0.015 - railH / 2) - ds * Math.sin(rotX);
+
+                                // 1. 檁條本體
+                                aluminumBoxes.push({
+                                    pos: [midX, purlinY, purlinZ],
+                                    rot: [rotX, 0, 0],
+                                    scale: [purlinLen, railH, railW]
+                                });
+
+                                // 2. "h" 腳座配置: 沿檁條 X 方向以 90cm 為原則分佈，頭尾內縮 5cm
+                                const feetSpan = purlinLen - 0.10; // 頭尾各內縮 5cm
+                                if (feetSpan > 0) {
+                                    const numSpans = Math.max(1, Math.floor(feetSpan / 0.90));
+                                    const rem = feetSpan - numSpans * 0.90;
+                                    const firstX = startX + 0.05 + rem / 2;
+
+                                    // "|" of "h" side selection (facing outward for aesthetics)
+                                    const sideSign = (railIdx === 0) ? -1 : 1;
+                                    const flangeOffsetZ = sideSign * (railW / 2 + 0.003) * Math.cos(rotX);
+                                    const flangeOffsetY = -sideSign * (railW / 2 + 0.003) * Math.sin(rotX);
+
+                                    for (let k = 0; k <= numSpans; k++) {
+                                        const footX = firstX + k * 0.90;
+                                        const yRoof = getRoofY(purlinZ, footX);
+                                        const yRailBottom = purlinY - (railH / 2) * Math.cos(rotX);
+                                        const hFoot = yRailBottom - yRoof;
+                                        if (hFoot > 0.005) {
+                                            // 主支撐身 (平行檁條 X 軸擠出 7cm)
+                                            aluminumBoxes.push({
+                                                pos: [footX, yRoof + hFoot / 2, purlinZ],
+                                                rot: [0, 0, 0],
+                                                scale: [0.07, hFoot, 0.03]
+                                            });
+                                            // "h" 上方的 "|" 垂直側翼 (貼齊檁條側邊)
+                                            aluminumBoxes.push({
+                                                pos: [footX, purlinY + flangeOffsetY, purlinZ + flangeOffsetZ],
+                                                rot: [rotX, 0, 0],
+                                                scale: [0.07, railH, 0.006]
+                                            });
+                                            // 底部貼屋面基座底板
+                                            aluminumBoxes.push({
+                                                pos: [footX, yRoof + 0.003, purlinZ],
+                                                rot: [0, 0, 0],
+                                                scale: [0.07, 0.006, 0.05]
+                                            });
+                                        }
+                                    }
+                                }
+                            });
                         });
                     });
                 } else {
-                    // Portrait: PV 長度 L 沿斜坡 Z 軸方向，寬度 W 在 X 軸方向
-                    const offsetL = 0.3 * pvLength; // 沿斜坡方向離兩邊各 1/5L
-                    [-offsetL, offsetL].forEach(ds => {
-                        const zRail = panel.z + ds * Math.cos(panel.rotX);
-                        const yRail = (bottomY - 0.02) - ds * Math.sin(panel.rotX);
-                        
-                        aluminumBoxes.push({
-                            pos: [panel.x, yRail, zRail],
-                            rot: [panel.rotX, 0, 0],
-                            scale: [pvWidth, 0.04, 0.04]
-                        });
-                        
-                        // L-feet 固定件 (左端與右端各一個)
-                        const offsetW = 0.3 * pvWidth;
-                        [-offsetW, offsetW].forEach(dx => {
-                            const xFoot = panel.x + dx;
-                            const yRailBottom = yRail - 0.02;
-                            const yRoofFoot = getRoofY(zRail, xFoot);
-                            const hFoot = yRailBottom - yRoofFoot;
-                            if (hFoot > 0.005) {
-                                aluminumFeet.push({
-                                    pos: [xFoot, yRoofFoot + hFoot / 2, zRail],
-                                    rot: [0, 0, 0],
-                                    scale: [0.03, hFoot, 0.03]
-                                });
+                    // Landscape (橫放): PV 長度 L (pvLength) 沿 X 軸，寬度 W (pvWidth) 沿斜坡 Z 軸
+                    // 檁條沿斜坡 Z 軸貫穿，每列模組底下放 2 支，位於長度方向離兩側 1/5 L 處 (dx = ±0.3 * pvLength)
+                    const colMap = new Map();
+                    groupPanels.forEach(p => {
+                        const cKey = p.c !== undefined ? p.c : 0;
+                        if (!colMap.has(cKey)) colMap.set(cKey, []);
+                        colMap.get(cKey).push(p);
+                    });
+
+                    const sortedColKeys = Array.from(colMap.keys()).sort((a, b) => a - b);
+                    sortedColKeys.forEach(cKey => {
+                        const cPanels = colMap.get(cKey).slice().sort((a, b) => a.z - b.z);
+                        if (cPanels.length === 0) return;
+
+                        // Identify continuous runs of modules in this column along slope (split if gap > pvWidth + 0.25, slope differs, or sub-building changes)
+                        const runs = [];
+                        let curRun = [cPanels[0]];
+                        for (let i = 1; i < cPanels.length; i++) {
+                            const prev = cPanels[i - 1];
+                            const curr = cPanels[i];
+                            const bldgPrev = findSubBuildingForPoint(prev.x, prev.z, subBuildings);
+                            const bldgCurr = findSubBuildingForPoint(curr.x, curr.z, subBuildings);
+                            const isDifferentBldg = (subBuildings && subBuildings.length > 1 && bldgPrev !== bldgCurr);
+                            const isSlopeDiff = Math.abs(curr.rotX - prev.rotX) > 0.005;
+                            const isGapLarge = (curr.z - prev.z > pvWidth + 0.25 + (params.spY / 1000 || 0));
+                            if (isDifferentBldg || isSlopeDiff || isGapLarge) {
+                                runs.push(curRun);
+                                curRun = [curr];
+                            } else {
+                                curRun.push(curr);
                             }
+                        }
+                        if (curRun.length > 0) runs.push(curRun);
+
+                        runs.forEach(run => {
+                            const refFirst = run[0];
+                            const refLast = run[run.length - 1];
+                            const rotX = refFirst.rotX;
+
+                            // Calculate slope extent
+                            const minZ = refFirst.z - (pvWidth / 2) * Math.cos(rotX);
+                            const maxZ = refLast.z + (pvWidth / 2) * Math.cos(rotX);
+                            const slopeSpan = (maxZ - minZ) / (Math.cos(rotX) || 1);
+
+                            // 頭尾外突 10cm
+                            const purlinLen = slopeSpan + 0.20;
+                            const midZ = (minZ + maxZ) / 2;
+                            const midY = ((refFirst.y + refLast.y) / 2) - 0.015 - railH / 2;
+
+                            // 2 支檁條在 dx = ±0.3 * pvLength
+                            const offsetDx = [-0.3 * pvLength, 0.3 * pvLength];
+                            offsetDx.forEach((dx, railIdx) => {
+                                const railX = refFirst.x + dx;
+
+                                // 1. 檁條本體 (沿斜坡 Z 軸貫穿)
+                                aluminumBoxes.push({
+                                    pos: [railX, midY, midZ],
+                                    rot: [rotX, 0, 0],
+                                    scale: [railW, railH, purlinLen]
+                                });
+
+                                // 2. "h" 腳座配置: 沿檁條斜坡 Z 方向以 90cm 為原則分佈，頭尾內縮 5cm
+                                const feetSpan = purlinLen - 0.10;
+                                if (feetSpan > 0) {
+                                    const numSpans = Math.max(1, Math.floor(feetSpan / 0.90));
+                                    const rem = feetSpan - numSpans * 0.90;
+                                    const firstS = -purlinLen / 2 + 0.05 + rem / 2;
+
+                                    // "|" of "h" side selection (facing outward along X)
+                                    const sideSign = (railIdx === 0) ? -1 : 1;
+                                    const flangeX = railX + sideSign * (railW / 2 + 0.003);
+
+                                    for (let k = 0; k <= numSpans; k++) {
+                                        const curS = firstS + k * 0.90;
+                                        const footZ = midZ + curS * Math.cos(rotX);
+                                        const footY = midY - curS * Math.sin(rotX);
+                                        const yRailBottom = footY - (railH / 2) * Math.cos(rotX);
+                                        const yRoof = getRoofY(footZ, railX);
+                                        const hFoot = yRailBottom - yRoof;
+
+                                        if (hFoot > 0.005) {
+                                            // 主支撐身 (平行檁條 Z 軸擠出 7cm)
+                                            aluminumBoxes.push({
+                                                pos: [railX, yRoof + hFoot / 2, footZ],
+                                                rot: [0, 0, 0],
+                                                scale: [0.03, hFoot, 0.07]
+                                            });
+                                            // "h" 上方的 "|" 垂直側翼 (貼齊檁條側邊)
+                                            aluminumBoxes.push({
+                                                pos: [flangeX, footY, footZ],
+                                                rot: [rotX, 0, 0],
+                                                scale: [0.006, railH, 0.07]
+                                            });
+                                            // 底部貼屋面基座底板
+                                            aluminumBoxes.push({
+                                                pos: [railX, yRoof + 0.003, footZ],
+                                                rot: [0, 0, 0],
+                                                scale: [0.05, 0.006, 0.07]
+                                            });
+                                        }
+                                    }
+                                }
+                            });
                         });
                     });
                 }
@@ -9920,6 +10150,7 @@ const state = {
     totalPower: 0,
     dimW: 0,
     dimH: 0,
+    liveUpdate3D: true,
     showShadows: true,
     showSupports: true
 };
@@ -10000,6 +10231,7 @@ const elements = {
     sunHourSlider: document.getElementById('sun-hour-slider'),
     sunHourVal: document.getElementById('sun-hour-val'),
     
+    slider3DLive: document.getElementById('slider-3d-live'),
     slider3DShadows: document.getElementById('slider-3d-shadows'),
     slider3DSupports: document.getElementById('slider-3d-supports')
 };
@@ -10379,27 +10611,25 @@ function isModuleExcluded(localX, rowZ, params) {
     
     if (isExcludedByExclusion) return true;
 
-    // C. Check Building Division Lines (分棟線排除: 地面型完全忽略分棟線)
+    // C. Check Building Division Lines (分棟線兩側留白 30cm 排除，地面型完全忽略分棟線)
     const siteType = config.siteType !== undefined ? config.siteType : state.siteType;
-    if (siteType !== 'ground' && customSiteBoundary && customSiteBoundary.buildingDivisions) {
+    if (siteType !== 'ground' && !config.ignoreDivisionLines && customSiteBoundary && customSiteBoundary.buildingDivisions) {
         const divSegments = getSiteDivisionLineSegments(customSiteBoundary);
         if (divSegments && divSegments.length > 0) {
-            const lineSegmentsIntersect = (p1, p2, p3, p4) => {
-                const ccw = (A, B, C) => (C.z - A.z) * (B.x - A.x) > (B.z - A.z) * (C.x - A.x);
-                return (ccw(p1, p3, p4) !== ccw(p2, p3, p4)) && (ccw(p1, p2, p3) !== ccw(p1, p2, p4));
-            };
+            const margin = 0.30; // 30cm (0.30m) 留白緩衝區
+            const boxMinX = localX - halfL - margin;
+            const boxMaxX = localX + halfL + margin;
+            const boxMinZ = rowZ - halfW_z - margin;
+            const boxMaxZ = rowZ + halfW_z + margin;
 
-            const distToSegmentSq = (p, v, w) => {
-                const l2 = (v.x - w.x) * (v.x - w.x) + (v.z - w.z) * (v.z - w.z);
-                if (l2 === 0) return (p.x - v.x) * (p.x - v.x) + (p.z - v.z) * (p.z - v.z);
-                let t = ((p.x - v.x) * (w.x - v.x) + (p.z - v.z) * (w.z - v.z)) / l2;
-                t = Math.max(0, Math.min(1, t));
-                const projX = v.x + t * (w.x - v.x);
-                const projZ = v.z + t * (w.z - v.z);
-                return (p.x - projX) * (p.x - projX) + (p.z - projZ) * (p.z - projZ);
-            };
+            const boxCorners = [
+                { x: boxMinX, z: boxMinZ },
+                { x: boxMaxX, z: boxMinZ },
+                { x: boxMaxX, z: boxMaxZ },
+                { x: boxMinX, z: boxMaxZ }
+            ];
 
-            const corners = [
+            const modCorners = [
                 { x: localX - halfL, z: rowZ - halfW_z },
                 { x: localX + halfL, z: rowZ - halfW_z },
                 { x: localX + halfL, z: rowZ + halfW_z },
@@ -10410,23 +10640,89 @@ function isModuleExcluded(localX, rowZ, params) {
                 const s1 = latLngToLocal(seg.startLatLng, lat, lng, azimuth);
                 const s2 = latLngToLocal(seg.endLatLng, lat, lng, azimuth);
 
+                // 1. Check if either division line endpoint is inside the 30cm expanded bounding box
+                if ((s1.x >= boxMinX && s1.x <= boxMaxX && s1.z >= boxMinZ && s1.z <= boxMaxZ) ||
+                    (s2.x >= boxMinX && s2.x <= boxMaxX && s2.z >= boxMinZ && s2.z <= boxMaxZ)) {
+                    return true;
+                }
+
+                // 2. Check if division segment intersects any of the 4 edges of the 30cm expanded box
                 let crosses = false;
                 for (let i = 0; i < 4; i++) {
-                    const c1 = corners[i];
-                    const c2 = corners[(i + 1) % 4];
-                    if (lineSegmentsIntersect(s1, s2, c1, c2)) {
+                    const c1 = boxCorners[i];
+                    const c2 = boxCorners[(i + 1) % 4];
+                    if (doSegmentsIntersect({ x: s1.x, y: s1.z }, { x: s2.x, y: s2.z }, { x: c1.x, y: c1.z }, { x: c2.x, y: c2.z })) {
                         crosses = true;
                         break;
                     }
                 }
-                if (crosses || distToSegmentSq({ x: localX, z: rowZ }, s1, s2) < 0.25) {
-                    return true;
+                if (crosses) return true;
+
+                // 3. Check distance from 4 original module corners to segment
+                for (let i = 0; i < 4; i++) {
+                    const l2 = (s1.x - s2.x) ** 2 + (s1.z - s2.z) ** 2;
+                    let distSq = 0;
+                    if (l2 === 0) {
+                        distSq = (modCorners[i].x - s1.x) ** 2 + (modCorners[i].z - s1.z) ** 2;
+                    } else {
+                        let t = ((modCorners[i].x - s1.x) * (s2.x - s1.x) + (modCorners[i].z - s1.z) * (s2.z - s1.z)) / l2;
+                        t = Math.max(0, Math.min(1, t));
+                        const px = s1.x + t * (s2.x - s1.x);
+                        const pz = s1.z + t * (s2.z - s1.z);
+                        distSq = (modCorners[i].x - px) ** 2 + (modCorners[i].z - pz) ** 2;
+                    }
+                    if (distSq <= margin * margin) {
+                        return true;
+                    }
                 }
             }
         }
     }
     
-    // D. Check Obstacles (Planar 2D Footprint + 3D Height Collision)
+    // D. Check Ridge Clearance (斜屋頂雙向坡中脊線兩側各預留 50cm / 0.50m 留白空間)
+    const currentPitchStyle = config.pitchStyle || state.pitchStyle || 'single';
+    const isDoublePitchRoof = (currentPitchStyle === 'double' || currentPitchStyle === 'double-v');
+    if (siteType === 'roof-slope' && isDoublePitchRoof && customSiteBoundary) {
+        const roofTiltRad = ((config.roofTilt !== undefined ? config.roofTilt : state.roofTilt || 0) * Math.PI) / 180;
+        const totalTiltRad = ((config.tilt !== undefined ? config.tilt : state.tilt || 0) * Math.PI) / 180;
+        const subBuildings = (customSiteBoundary.buildingDivisions)
+            ? getSubBuildingsFromDivisions(customSiteBoundary, lat, lng, azimuth, roofTiltRad, currentPitchStyle)
+            : null;
+
+        const ridgeList = [];
+        if (subBuildings && subBuildings.length > 0) {
+            subBuildings.forEach(bldg => {
+                ridgeList.push({ zRidge: bldg.zRidge, minX: bldg.minX, maxX: bldg.maxX });
+            });
+        } else {
+            const latlngs = getOuterRingLatLngs(customSiteBoundary);
+            if (latlngs && latlngs.length >= 3) {
+                let minZ_b = Infinity, maxZ_b = -Infinity, minX_b = Infinity, maxX_b = -Infinity;
+                for (let i = 0; i < latlngs.length; i++) {
+                    const pt = latLngToLocal(latlngs[i], lat, lng, azimuth);
+                    minZ_b = Math.min(minZ_b, pt.z);
+                    maxZ_b = Math.max(maxZ_b, pt.z);
+                    minX_b = Math.min(minX_b, pt.x);
+                    maxX_b = Math.max(maxX_b, pt.x);
+                }
+                if (minZ_b !== Infinity && maxZ_b !== -Infinity) {
+                    ridgeList.push({ zRidge: (minZ_b + maxZ_b) / 2, minX: minX_b, maxX: maxX_b });
+                }
+            }
+        }
+
+        const requiredZMargin = 0.50 * Math.cos(totalTiltRad);
+        for (const r of ridgeList) {
+            if (localX + halfL >= r.minX - 0.2 && localX - halfL <= r.maxX + 0.2) {
+                const distZ = Math.abs(rowZ - r.zRidge);
+                if (distZ < halfW_z + requiredZMargin - 0.005) {
+                    return true; // Excluded by 50cm ridge clearance margin!
+                }
+            }
+        }
+    }
+
+    // E. Check Obstacles (Planar 2D Footprint + 3D Height Collision)
     let isExcludedByObstacle = false;
     if (obstaclePolygons.length > 0) {
         const corners = [
@@ -10512,55 +10808,6 @@ function isModuleExcluded(localX, rowZ, params) {
     }
     
     if (isExcludedByObstacle) return true;
-
-    // D. Check Building Division Lines (modules crossed by division lines are automatically deleted, ignored for ground mount!)
-    const currentSiteType = config.siteType !== undefined ? config.siteType : state.siteType;
-    if (currentSiteType !== 'ground' && !config.ignoreDivisionLines && customSiteBoundary && customSiteBoundary.buildingDivisions) {
-        const divSegments = getSiteDivisionLineSegments(customSiteBoundary);
-        if (divSegments && divSegments.length > 0) {
-            const corners = [
-                { x: localX - halfL, z: rowZ - halfW_z },
-                { x: localX + halfL, z: rowZ - halfW_z },
-                { x: localX + halfL, z: rowZ + halfW_z },
-                { x: localX - halfL, z: rowZ + halfW_z }
-            ];
-
-            for (const seg of divSegments) {
-                const s1Local = latLngToLocal(seg.startLatLng, lat, lng, azimuth);
-                const s2Local = latLngToLocal(seg.endLatLng, lat, lng, azimuth);
-                const p1 = { x: s1Local.x, y: s1Local.z };
-                const p2 = { x: s2Local.x, y: s2Local.z };
-
-                // Check segment intersection with any of the 4 edges of the module rectangle
-                let intersected = false;
-                for (let k = 0; k < 4; k++) {
-                    const c1 = { x: corners[k].x, y: corners[k].z };
-                    const c2 = { x: corners[(k + 1) % 4].x, y: corners[(k + 1) % 4].z };
-                    if (doSegmentsIntersect(p1, p2, c1, c2)) {
-                        intersected = true;
-                        break;
-                    }
-                }
-
-                // Check if either division line endpoint is inside the module bounding box
-                if (!intersected) {
-                    const minX = localX - halfL - 0.01;
-                    const maxX = localX + halfL + 0.01;
-                    const minZ = rowZ - halfW_z - 0.01;
-                    const maxZ = rowZ + halfW_z + 0.01;
-
-                    if ((p1.x >= minX && p1.x <= maxX && p1.y >= minZ && p1.y <= maxZ) ||
-                        (p2.x >= minX && p2.x <= maxX && p2.y >= minZ && p2.y <= maxZ)) {
-                        intersected = true;
-                    }
-                }
-
-                if (intersected) {
-                    return true; // Excluded by division line!
-                }
-            }
-        }
-    }
     
     return false;
 }
@@ -11469,7 +11716,7 @@ function getShiftedLayoutCoords(params) {
         const moduleSequence = [];
         if (isDoublePitch) {
             for (let g = 0; g < m; g++) {
-                const ridgeZ = hasSubBuildings ? subBuildings[g].zRidge : (-zOffset + (g - (m - 1) / 2) * arrP);
+                const ridgeZ = hasSubBuildings ? subBuildings[g].zRidge : ((siteType === 'roof-slope' && hasCustomBoundZ) ? bound_z_center : (-zOffset + (g - (m - 1) / 2) * arrP));
                 const rowsForBldg = hasSubBuildings ? (Math.floor(arrJ / m) + (g < (arrJ % m) ? 1 : 0)) : arrJ;
                 const numSouth_g = hasSubBuildings ? ((rowsForBldg % 2 !== 0) ? (rowsForBldg + 1) / 2 : rowsForBldg / 2) : numSouth;
                 const numNorth_g = hasSubBuildings ? (rowsForBldg - numSouth_g) : numNorth;
@@ -11499,7 +11746,7 @@ function getShiftedLayoutCoords(params) {
             }
         } else {
             for (let g = 0; g < m; g++) {
-                const centerZ = hasSubBuildings ? ((subBuildings[g].minZ + subBuildings[g].maxZ) / 2) : ((g - (m - 1) / 2) * arrP);
+                const centerZ = hasSubBuildings ? ((subBuildings[g].minZ + subBuildings[g].maxZ) / 2) : ((siteType === 'roof-slope' && hasCustomBoundZ) ? bound_z_center : ((g - (m - 1) / 2) * arrP));
                 const rowsForBldg = hasSubBuildings ? (Math.floor(arrJ / m) + (g < (arrJ % m) ? 1 : 0)) : arrJ;
                 let currentLocalZ = -halfLen + pvW / 2;
                 for (let r = 0; r < rowsForBldg; r++) {
@@ -11804,11 +12051,11 @@ function getMaxPossibleArrJ() {
         const refLng = state.lng;
         const azimuth = parseFloat(state.azimuth) || 180;
 
+        const isDoublePitch = (state.pitchStyle === 'double' || state.pitchStyle === 'double-v');
+
         const subBuildings = (customSiteBoundary && (state.siteType === 'roof-slope') && customSiteBoundary.buildingDivisions)
             ? getSubBuildingsFromDivisions(customSiteBoundary, refLat, refLng, azimuth, roofTiltRad, state.pitchStyle)
             : null;
-
-        const isDoublePitch = (state.pitchStyle === 'double' || state.pitchStyle === 'double-v');
 
         if (subBuildings && subBuildings.length > 1) {
             let totalRows = 0;
@@ -12064,9 +12311,12 @@ function calculateOutputs() {
     const blockLength_horizontal_mm = blockLength_sloped_mm * Math.cos(rad);
     
     if (subBuildings && subBuildings.length > 1) {
-        let totalSpanZ = 0;
-        subBuildings.forEach(b => { totalSpanZ += (b.maxZ - b.minZ); });
-        state.dimH = totalSpanZ.toFixed(2);
+        let minZ_all = Infinity, maxZ_all = -Infinity;
+        subBuildings.forEach(b => {
+            minZ_all = Math.min(minZ_all, b.minZ);
+            maxZ_all = Math.max(maxZ_all, b.maxZ);
+        });
+        state.dimH = (maxZ_all - minZ_all).toFixed(2);
     } else {
         const m = state.siteType === 'roof-slope' ? 1 : state.arrM;
         const pitch_mm = state.arrP * 1000;
@@ -12093,14 +12343,16 @@ function keepActivePopoutOnTop() {
 function updateAllVisuals(forceImmediate = false) {
     updateCoverage(state.lat, state.lng, parseFloat(state.dimW), parseFloat(state.dimH), state.azimuth, state.pitchStyle);
     
-    if (forceImmediate) {
-        if (throttled3DTimeout) {
-            clearTimeout(throttled3DTimeout);
-            throttled3DTimeout = null;
+    if (state.liveUpdate3D) {
+        if (forceImmediate) {
+            if (throttled3DTimeout) {
+                clearTimeout(throttled3DTimeout);
+                throttled3DTimeout = null;
+            }
+            run3DUpdate();
+        } else {
+            triggerThrottled3DUpdate();
         }
-        run3DUpdate();
-    } else {
-        triggerThrottled3DUpdate();
     }
 
     // 當有彈出視窗在作業中時，保持彈出視窗在最上層
@@ -12108,6 +12360,7 @@ function updateAllVisuals(forceImmediate = false) {
 }
 
 function triggerThrottled3DUpdate() {
+    if (!state.liveUpdate3D) return;
     const now = Date.now();
     const timeSinceLastUpdate = now - last3DUpdateTime;
     const throttleDelay = 80; // 80ms throttle is ~12 FPS, very responsive but smooth
@@ -12126,7 +12379,8 @@ function triggerThrottled3DUpdate() {
     }
 }
 
-function run3DUpdate() {
+function run3DUpdate(force = false) {
+    if (!state.liveUpdate3D && !force) return;
     last3DUpdateTime = Date.now();
     if (!scene) return;
     updateViewer({
@@ -12572,6 +12826,17 @@ function setupEventListeners() {
         });
     }
     
+    if (elements.slider3DLive) {
+        elements.slider3DLive.addEventListener('input', (e) => {
+            const val = e.target.value;
+            elements.slider3DLive.setAttribute('value', val);
+            state.liveUpdate3D = (val === '1');
+            if (state.liveUpdate3D) {
+                run3DUpdate(true);
+            }
+        });
+    }
+
     if (elements.slider3DShadows) {
         elements.slider3DShadows.addEventListener('input', (e) => {
             const val = e.target.value;
@@ -13032,12 +13297,13 @@ function hideLoadingOverlay() {
             lat: state.lat,
             lng: state.lng,
             sunMonth: parseInt(elements.sunMonthSlider ? elements.sunMonthSlider.value : state.sunMonth) || 12,
-            sunHour: parseFloat(elements.sunHourSlider ? elements.sunHourSlider.value : state.sunHour) || 15.0
+            sunHour: parseFloat(elements.sunHourSlider ? elements.sunHourSlider.value : state.sunHour) || 15.0,
+            liveUpdate3D: state.liveUpdate3D !== undefined ? state.liveUpdate3D : true
         };
 
         const projectData = {
             app: "PV-Super",
-            version: "2.9.1",
+            version: "3.0.0",
             savedAt: new Date().toISOString(),
             parameters: parametersData,
             lockedParams: Object.assign({}, lockedParams),
@@ -13213,6 +13479,14 @@ function hideLoadingOverlay() {
             if (elements.sunHourSlider) {
                 elements.sunHourSlider.value = state.sunHour;
                 elements.sunHourSlider.dispatchEvent(new Event('input'));
+            }
+        }
+
+        if (params.liveUpdate3D !== undefined) {
+            state.liveUpdate3D = !!params.liveUpdate3D;
+            if (elements.slider3DLive) {
+                elements.slider3DLive.value = state.liveUpdate3D ? '1' : '0';
+                elements.slider3DLive.setAttribute('value', elements.slider3DLive.value);
             }
         }
 
@@ -14397,19 +14671,7 @@ function setupPopoutWindows() {
             targetMap._animatingZoom = false;
             targetMap.stop();
 
-            if (!targetMap.getPane('guidePane')) {
-                targetMap.createPane('guidePane');
-                targetMap.getPane('guidePane').style.zIndex = '650';
-                targetMap.getPane('guidePane').style.pointerEvents = 'none';
-            }
-            if (!targetMap.getPane('snapPane')) {
-                targetMap.createPane('snapPane');
-                targetMap.getPane('snapPane').style.zIndex = '660';
-                targetMap.getPane('snapPane').style.pointerEvents = 'none';
-            }
-            if (!guideSvgRenderer) {
-                guideSvgRenderer = L.svg({ pane: 'guidePane' });
-            }
+            ensureGuidePanes(targetMap);
 
             const center = targetMap.getCenter();
             const zoom = targetMap.getZoom();
@@ -15062,16 +15324,23 @@ function snapToPreviousSegmentRightAngle(pointsArray, currentLatLng) {
                 const B = L.latLng(P2.lat + (v1y + v2y) / metersPerLatDegree, P2.lng + (v1x + v2x) / metersPerLngDegree);
                 const C = L.latLng(P2.lat + v2y / metersPerLatDegree, P2.lng + v2x / metersPerLngDegree);
                 
-                if (rightAngleIndicatorPolyline) {
+                if (rightAngleIndicatorPolyline && map.hasLayer(rightAngleIndicatorPolyline)) {
                     rightAngleIndicatorPolyline.setLatLngs([A, B, C]);
                     rightAngleIndicatorPolyline.setStyle({
                         color: 'rgba(255, 0, 128, 1)',
-                        weight: isRectangleSnapActive ? 3.0 : 2.0
+                        weight: isRectangleSnapActive ? 3.0 : 2.0,
+                        opacity: 1
                     });
                 } else {
+                    if (rightAngleIndicatorPolyline) {
+                        try { map.removeLayer(rightAngleIndicatorPolyline); } catch (e) {}
+                        rightAngleIndicatorPolyline = null;
+                    }
+                    ensureGuidePanes(map);
                     rightAngleIndicatorPolyline = L.polyline([A, B, C], {
                         color: 'rgba(255, 0, 128, 1)',
                         weight: isRectangleSnapActive ? 3.0 : 2.0,
+                        opacity: 1,
                         pane: 'guidePane',
                         renderer: guideSvgRenderer,
                         interactive: false
@@ -15147,18 +15416,25 @@ function snapToPreviousSegmentRightAngle(pointsArray, currentLatLng) {
                 
                 // Draw parallel guide line along matched site boundary edge in sparkling magenta
                 if (bestParallelEdge && map) {
-                    if (parallelGuidePolyline) {
+                    if (parallelGuidePolyline && map.hasLayer(parallelGuidePolyline)) {
                         parallelGuidePolyline.setLatLngs(bestParallelEdge);
                         parallelGuidePolyline.setStyle({
                             color: 'rgba(255, 0, 128, 1)',
                             weight: 2.5,
-                            dashArray: '6, 4'
+                            dashArray: '6, 4',
+                            opacity: 1
                         });
                     } else {
+                        if (parallelGuidePolyline) {
+                            try { map.removeLayer(parallelGuidePolyline); } catch (e) {}
+                            parallelGuidePolyline = null;
+                        }
+                        ensureGuidePanes(map);
                         parallelGuidePolyline = L.polyline(bestParallelEdge, {
                             color: 'rgba(255, 0, 128, 1)',
                             weight: 2.5,
                             dashArray: '6, 4',
+                            opacity: 1,
                             pane: 'guidePane',
                             renderer: guideSvgRenderer,
                             interactive: false
@@ -15200,16 +15476,23 @@ function snapToPreviousSegmentRightAngle(pointsArray, currentLatLng) {
                 const B = L.latLng(P2.lat + (v1y + v2y) / metersPerLatDegree, P2.lng + (v1x + v2x) / metersPerLngDegree);
                 const C = L.latLng(P2.lat + v2y / metersPerLatDegree, P2.lng + v2x / metersPerLngDegree);
                 
-                if (rightAngleIndicatorPolyline) {
+                if (rightAngleIndicatorPolyline && map.hasLayer(rightAngleIndicatorPolyline)) {
                     rightAngleIndicatorPolyline.setLatLngs([A, B, C]);
                     rightAngleIndicatorPolyline.setStyle({
                         color: 'rgba(255, 0, 128, 1)',
-                        weight: 2.0
+                        weight: 2.0,
+                        opacity: 1
                     });
                 } else {
+                    if (rightAngleIndicatorPolyline) {
+                        try { map.removeLayer(rightAngleIndicatorPolyline); } catch (e) {}
+                        rightAngleIndicatorPolyline = null;
+                    }
+                    ensureGuidePanes(map);
                     rightAngleIndicatorPolyline = L.polyline([A, B, C], {
                         color: 'rgba(255, 0, 128, 1)',
                         weight: 2.0,
+                        opacity: 1,
                         pane: 'guidePane',
                         renderer: guideSvgRenderer,
                         interactive: false
