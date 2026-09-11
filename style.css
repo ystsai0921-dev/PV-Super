@@ -2391,16 +2391,29 @@ tr.tr-azimuth-row td {
 }
 
 /* 導引線與吸附圖層面板置頂樣式 (防止滑鼠移過線條或標籤時吞噬事件導致引導線隱形) */
+.leaflet-guide-pane,
 .leaflet-guidePane-pane {
     z-index: 650 !important;
     pointer-events: none !important;
 }
+.leaflet-snap-pane,
 .leaflet-snapPane-pane {
     z-index: 660 !important;
     pointer-events: none !important;
 }
+.leaflet-guide-pane *,
 .leaflet-guidePane-pane *,
+.leaflet-snap-pane *,
 .leaflet-snapPane-pane *,
+.custom-snap-marker,
+.custom-snap-marker *,
+.snap-icon-endpoint,
+.snap-icon-endpoint *,
+.snap-icon-midpoint,
+.snap-icon-midpoint *,
+.touch-vertex-marker-container,
+.touch-vertex-marker-container *,
+.rubberband-rect-locked,
 .map-measure-live-container,
 .map-measure-live-container *,
 .map-measure-node-icon,

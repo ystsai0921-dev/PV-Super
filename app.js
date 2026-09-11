@@ -119,6 +119,7 @@ let isRectangleSnapActive = false;
 let lastMouseMoveEvent = null;
 let selectedEdgeHighlightLine = null;
 let activeSelectedEdgeIndex = -1;
+let activeSelectedSegmentIndex = -1;
 let activeSelectedDivision = null;
 let activeSelectedPolygonPopup = null;
 let rightAngleIndicatorPolyline = null;
@@ -149,15 +150,22 @@ function ensureGuidePanes(targetMap) {
         targetMap.createPane('guidePane');
         targetMap.getPane('guidePane').style.zIndex = '650';
         targetMap.getPane('guidePane').style.pointerEvents = 'none';
+    } else {
+        targetMap.getPane('guidePane').style.pointerEvents = 'none';
     }
     if (!targetMap.getPane('snapPane')) {
         targetMap.createPane('snapPane');
         targetMap.getPane('snapPane').style.zIndex = '660';
         targetMap.getPane('snapPane').style.pointerEvents = 'none';
+    } else {
+        targetMap.getPane('snapPane').style.pointerEvents = 'none';
     }
     if (!guideSvgRenderer || guideSvgRenderer._map !== targetMap) {
         try {
             guideSvgRenderer = L.svg({ pane: 'guidePane' }).addTo(targetMap);
+            if (guideSvgRenderer && guideSvgRenderer._container) {
+                guideSvgRenderer._container.style.pointerEvents = 'none';
+            }
         } catch (e) {}
     }
     return guideSvgRenderer;
@@ -569,6 +577,19 @@ function initMap(lat, lng, onMarkerDrag) {
     map.on('moveend', keepToolboxPopupInViewport);
     map.on('resize', keepToolboxPopupInViewport);
     map.on('viewreset', keepToolboxPopupInViewport);
+
+    // Container-level mousemove event listener to ensure smooth real-time rubberband guide line updates
+    if (map.getContainer()) {
+        map.getContainer().addEventListener('mousemove', (e) => {
+            if (isSiteBoundaryDrawMode && siteBoundaryPoints.length > 0) {
+                handleSiteBoundaryMouseMove(e);
+            } else if (isObstacleDrawMode && obstaclePoints.length > 0) {
+                handleObstacleMouseMove(e);
+            } else if (isExclusionDrawMode && currentExclusionTool === 'polygon' && exclusionPoints.length > 0) {
+                handleExclusionMouseMove(e);
+            }
+        }, { passive: true });
+    }
 
     updateMarkerDragStates();
     initPegmanControl();
@@ -2249,38 +2270,92 @@ async function export3DGLB() {
             exportedAt: new Date().toISOString()
         };
 
-        // 標準 PBR 材質 (防止自訂 onBeforeCompile 或著色器鉤子導致 GLTFExporter 崩潰，並啟用雙面渲染防止背向消隱破圖)
+        // 標準 PBR 純幾何無光影材質 (使用飽和對比、真實 PBR 色系材質，防止在 3D 軟體中出現死白過曝或泛白)
         const exportMats = {
-            panelFace: new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2, metalness: 0.8, side: THREE.DoubleSide }),
-            frame: new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.4, metalness: 0.6, side: THREE.DoubleSide }),
-            rack: new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.5, metalness: 0.5, side: THREE.DoubleSide }),
-            aluminum: new THREE.MeshStandardMaterial({ color: 0xdbeafe, roughness: 0.3, metalness: 0.7, side: THREE.DoubleSide }),
-            concrete: new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.9, metalness: 0.1, side: THREE.DoubleSide }),
-            concretePier: new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9, metalness: 0.1, side: THREE.DoubleSide }),
-            roofTile: new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8, metalness: 0.1, side: THREE.DoubleSide }),
-            building: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8, metalness: 0.1, side: THREE.DoubleSide }),
-            obstacle: new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.7, metalness: 0.1, opacity: 1.0, transparent: false, side: THREE.DoubleSide })
+            panelFace: new THREE.MeshStandardMaterial({
+                color: 0x0f172a, // 深沉單晶矽深藍 (Deep Photovoltaic Navy Blue)
+                roughness: 0.25,
+                metalness: 0.30,
+                side: THREE.DoubleSide
+            }),
+            frame: new THREE.MeshStandardMaterial({
+                color: 0x64748b, // 陽極氧化銀灰鋁框 (Anodized Aluminum Frame)
+                roughness: 0.45,
+                metalness: 0.65,
+                side: THREE.DoubleSide
+            }),
+            rack: new THREE.MeshStandardMaterial({
+                color: 0x475569, // 熱浸鍍鋅支架鋼構 (Galvanized Steel)
+                roughness: 0.45,
+                metalness: 0.70,
+                side: THREE.DoubleSide
+            }),
+            aluminum: new THREE.MeshStandardMaterial({
+                color: 0x94a3b8, // 輕量鋁合金導軌 (Aluminum Rail)
+                roughness: 0.35,
+                metalness: 0.75,
+                side: THREE.DoubleSide
+            }),
+            concrete: new THREE.MeshStandardMaterial({
+                color: 0x64748b, // 啞光結構混凝土 (Concrete)
+                roughness: 0.90,
+                metalness: 0.05,
+                side: THREE.DoubleSide
+            }),
+            concretePier: new THREE.MeshStandardMaterial({
+                color: 0x475569, // 水泥基墩 (Concrete Pier)
+                roughness: 0.90,
+                metalness: 0.05,
+                side: THREE.DoubleSide
+            }),
+            roofTile: new THREE.MeshStandardMaterial({
+                color: 0x94a3b8, // 沉穩工程金屬浪板/屋面 (Roof Surface)
+                roughness: 0.75,
+                metalness: 0.10,
+                side: THREE.DoubleSide
+            }),
+            building: new THREE.MeshStandardMaterial({
+                color: 0xdde3ea, // 主建物牆面/外觀立面淺灰 (Main Architectural Facade)
+                roughness: 0.85,
+                metalness: 0.05,
+                side: THREE.DoubleSide
+            }),
+            surroundBuilding: new THREE.MeshStandardMaterial({
+                color: 0xc8d1dc, // 周邊建物中性建築灰 (Surrounding Building Facade)
+                roughness: 0.88,
+                metalness: 0.05,
+                side: THREE.DoubleSide
+            }),
+            surroundRoof: new THREE.MeshStandardMaterial({
+                color: 0x8a99ad, // 周邊建物屋面灰 (Surrounding Roof)
+                roughness: 0.80,
+                metalness: 0.08,
+                side: THREE.DoubleSide
+            }),
+            outlineEdge: new THREE.LineBasicMaterial({
+                color: 0x334155, // 沉穩外框輪廓深色邊線
+                linewidth: 1
+            })
         };
 
-        const getCleanMat = (mat) => {
-            if (!mat) return exportMats.frame;
+        const getCleanMat = (mat, isSurround = false) => {
+            if (!mat) return isSurround ? exportMats.surroundBuilding : exportMats.frame;
             if (mat === materials.panelFace) return exportMats.panelFace;
             if (mat === materials.frame) return exportMats.frame;
             if (mat === materials.rack) return exportMats.rack;
             if (mat === materials.aluminum) return exportMats.aluminum;
             if (mat === materials.concrete) return exportMats.concrete;
             if (mat === materials.concretePier) return exportMats.concretePier;
-            if (mat === materials.roofTile) return exportMats.roofTile;
-            if (mat === materials.building) return exportMats.building;
-            if (mat.color && mat.color.getHex && (mat.color.getHex() === 0xef4444 || mat.color.getHex() === 0x991b1b)) {
-                return exportMats.obstacle;
-            }
+            if (mat === materials.roofTile) return isSurround ? exportMats.surroundRoof : exportMats.roofTile;
+            if (mat === materials.building) return isSurround ? exportMats.surroundBuilding : exportMats.building;
+            if (isSurround) return exportMats.surroundBuilding;
             return new THREE.MeshStandardMaterial({
                 color: (mat.color && mat.color.getHex) ? mat.color.getHex() : 0xcccccc,
-                roughness: mat.roughness !== undefined ? mat.roughness : 0.5,
-                metalness: mat.metalness !== undefined ? mat.metalness : 0.3,
+                roughness: 0.7,
+                metalness: 0.0,
                 opacity: mat.opacity !== undefined ? mat.opacity : 1.0,
-                transparent: mat.transparent || false
+                transparent: mat.transparent || false,
+                side: THREE.DoubleSide
             });
         };
 
@@ -2288,58 +2363,178 @@ async function export3DGLB() {
         if (pvGroup) pvGroup.updateMatrixWorld(true);
         if (obstacleGroup) obstacleGroup.updateMatrixWorld(true);
 
-        // 展開 InstancedMesh 與 Mesh 為獨立帶空間世界矩陣的物件 (確保建築、支架、模組與障礙物世界座標 100% 精準對齊)
-        const processGroup = (sourceGroup, groupName) => {
-            if (!sourceGroup) return;
-            const targetGroup = new THREE.Group();
-            targetGroup.name = groupName;
-            const isObstacleGroup = (sourceGroup === obstacleGroup);
+        // 判斷主建物（屋面有鋪設太陽能板的建物）及周邊建物，並將中脊線、天溝線等輔助圖形剔除，僅保留表達外型的簡潔外框線與外表實體
+        const targetSolarGroup = new THREE.Group();
+        targetSolarGroup.name = "Solar_Array_And_Panels";
 
-            sourceGroup.traverse((child) => {
-                if (child.isInstancedMesh && child.visible) {
+        const targetStructureGroup = new THREE.Group();
+        targetStructureGroup.name = "Support_Structures_And_Racking";
+
+        const targetMainBuildingGroup = new THREE.Group();
+        targetMainBuildingGroup.name = "Main_Buildings";
+
+        const targetSurroundBuildingGroup = new THREE.Group();
+        targetSurroundBuildingGroup.name = "Surrounding_Buildings";
+
+        // 1. 處理 pvGroup 內的太陽能模組、鋼構支架、腳座、導軌與主建物
+        if (pvGroup) {
+            pvGroup.traverse((child) => {
+                if (!child.visible) return;
+
+                // 剔除中脊線、天溝線、平屋頂分棟色帶標記與對齊輔助線
+                if (child.isLine || child.isLineSegments) return;
+                if (child === ground || child === snapIndicator) return;
+                if (child.material && child.material.depthWrite === false && child.material.transparent) {
+                    // 天溝線與分棟線之半透明色帶 (Gutter/Division Color Strip)
+                    return;
+                }
+
+                // 判斷是否為中脊線或天溝線加粗圓管 (createThick3DLine 生成之 CylinderGeometry)
+                if (child.isMesh && child.geometry && child.geometry.type === 'CylinderGeometry') {
+                    // 若父節點為 featureGroup 或 divGroup，或材質帶天溝/中脊顏色則予以濾除
+                    const p = child.parent;
+                    if (p && (p.name === 'Buildings_Group' || p.children.some(c => c.isMesh && c.geometry && c.geometry.type === 'PlaneGeometry' && c.material && c.material.depthWrite === false))) {
+                        return;
+                    }
+                    if (child.material && child.material.color) {
+                        const hex = child.material.color.getHex ? child.material.color.getHex() : 0;
+                        if (hex === 0xf59e0b || hex === 0x0284c7 || hex === 0xff3b30) return;
+                    }
+                }
+
+                if (child.isInstancedMesh) {
                     const count = child.count;
                     const geo = child.geometry ? child.geometry.clone() : null;
                     if (!geo) return;
-                    const cleanMat = isObstacleGroup ? exportMats.obstacle : getCleanMat(child.material);
+                    
+                    const cleanMat = getCleanMat(child.material, false);
                     const instMatrix = new THREE.Matrix4();
                     const childWorldMatrix = child.matrixWorld;
                     
                     let subName = "Component";
-                    if (child.material === materials.panelFace) subName = "PV_Cell";
-                    else if (child.material === materials.frame) subName = "PV_Frame";
-                    else if (child.material === materials.rack) subName = "Support_Beam";
-                    else if (child.material === materials.aluminum) subName = "Aluminum_Purlin";
-                    else if (child.material === materials.concrete || child.material === materials.concretePier) subName = "Concrete_Pier";
+                    let isSolar = false;
+                    
+                    if (child.material === materials.panelFace) {
+                        subName = "PV_Cell";
+                        isSolar = true;
+                    } else if (child.material === materials.frame) {
+                        subName = "PV_Frame";
+                        isSolar = true;
+                    } else if (child.material === materials.rack) {
+                        subName = "Steel_Structure_Beam";
+                    } else if (child.material === materials.aluminum) {
+                        // 判斷是導軌還是腳座
+                        const isFoot = (child.geometry && child.geometry.type !== 'BoxGeometry');
+                        subName = isFoot ? "Mounting_Foot" : "Aluminum_Purlin_Rail";
+                    } else if (child.material === materials.concrete || child.material === materials.concretePier) {
+                        subName = "Concrete_Pier_Base";
+                    }
 
                     const subGroup = new THREE.Group();
-                    subGroup.name = subName + "_Array";
+                    subGroup.name = subName + "_Group";
 
                     for (let i = 0; i < count; i++) {
                         child.getMatrixAt(i, instMatrix);
                         const finalMatrix = new THREE.Matrix4().multiplyMatrices(childWorldMatrix, instMatrix);
                         const mesh = new THREE.Mesh(geo, cleanMat);
                         mesh.name = `${subName}_${i + 1}`;
+                        mesh.castShadow = false;
+                        mesh.receiveShadow = false;
                         mesh.applyMatrix4(finalMatrix);
                         subGroup.add(mesh);
                     }
-                    targetGroup.add(subGroup);
-                } else if (child.isMesh && !child.isInstancedMesh && child.visible) {
-                    if (child === ground || child === snapIndicator || child.isLine || child.isLineSegments) return;
+
+                    if (isSolar) {
+                        targetSolarGroup.add(subGroup);
+                    } else {
+                        targetStructureGroup.add(subGroup);
+                    }
+                } else if (child.isMesh && !child.isInstancedMesh) {
+                    // 主建物 Mesh (Building_Main, Building_1, etc.)
                     const geo = child.geometry ? child.geometry.clone() : null;
                     if (!geo) return;
-                    const cleanMat = isObstacleGroup ? exportMats.obstacle : getCleanMat(child.material);
-                    const mesh = new THREE.Mesh(geo, cleanMat);
-                    mesh.name = child.name || (isObstacleGroup ? "Obstacle_Building" : "Mesh_Object");
-                    mesh.applyMatrix4(child.matrixWorld.clone());
-                    targetGroup.add(mesh);
+
+                    const isBuildingMesh = (child.name && child.name.startsWith('Building_')) ||
+                        child.material === materials.building ||
+                        (Array.isArray(child.material) && child.material.includes(materials.building));
+
+                    if (isBuildingMesh) {
+                        const cleanMat = Array.isArray(child.material)
+                            ? child.material.map(m => getCleanMat(m, false))
+                            : getCleanMat(child.material, false);
+                        const mesh = new THREE.Mesh(geo, cleanMat);
+                        mesh.name = child.name || "Main_Building";
+                        mesh.castShadow = false;
+                        mesh.receiveShadow = false;
+                        mesh.applyMatrix4(child.matrixWorld.clone());
+                        targetMainBuildingGroup.add(mesh);
+
+                        // 產生純外框輪廓線 (僅保留表達外型的乾淨外框線，大於 25 度的特徵外角才保留)
+                        try {
+                            const edgeGeo = new THREE.EdgesGeometry(geo, 25);
+                            const edgeLines = new THREE.LineSegments(edgeGeo, exportMats.outlineEdge);
+                            edgeLines.name = `${mesh.name}_Outline`;
+                            edgeLines.applyMatrix4(child.matrixWorld.clone());
+                            targetMainBuildingGroup.add(edgeLines);
+                        } catch (e) {
+                            console.warn('Building outline creation skipped:', e);
+                        }
+                    } else {
+                        // 其他一般結構網格
+                        const cleanMat = Array.isArray(child.material)
+                            ? child.material.map(m => getCleanMat(m, false))
+                            : getCleanMat(child.material, false);
+                        const mesh = new THREE.Mesh(geo, cleanMat);
+                        mesh.name = child.name || "Structure_Component";
+                        mesh.castShadow = false;
+                        mesh.receiveShadow = false;
+                        mesh.applyMatrix4(child.matrixWorld.clone());
+                        targetStructureGroup.add(mesh);
+                    }
                 }
             });
+        }
 
-            exportRoot.add(targetGroup);
-        };
+        // 2. 處理 obstacleGroup（障礙區域／周邊建物：屋面無太陽能板者皆視為周邊建物）
+        if (obstacleGroup) {
+            let surroundIdx = 1;
+            obstacleGroup.traverse((child) => {
+                if (!child.visible) return;
+                // 去除所有內部線條、中脊線、標記線或舊有的厚線條
+                if (child.isLine || child.isLineSegments) return;
 
-        processGroup(pvGroup, "Solar_Array_And_Structures");
-        processGroup(obstacleGroup, "Obstacles");
+                if (child.isMesh && !child.isInstancedMesh) {
+                    const geo = child.geometry ? child.geometry.clone() : null;
+                    if (!geo) return;
+
+                    // 使用優雅沉穩的周邊建物材質，取代刺眼的鮮紅色
+                    const bldgName = `Surrounding_Building_${surroundIdx++}`;
+                    const mesh = new THREE.Mesh(geo, exportMats.surroundBuilding);
+                    mesh.name = bldgName;
+                    mesh.castShadow = false;
+                    mesh.receiveShadow = false;
+                    mesh.applyMatrix4(child.matrixWorld.clone());
+                    targetSurroundBuildingGroup.add(mesh);
+
+                    // 僅保留簡化外型外框線 (EdgesGeometry with 25 deg threshold)
+                    try {
+                        const edgeGeo = new THREE.EdgesGeometry(geo, 25);
+                        const edgeLines = new THREE.LineSegments(edgeGeo, exportMats.outlineEdge);
+                        edgeLines.name = `${bldgName}_Outline`;
+                        edgeLines.applyMatrix4(child.matrixWorld.clone());
+                        targetSurroundBuildingGroup.add(edgeLines);
+                    } catch (e) {
+                        console.warn('Surrounding building outline skipped:', e);
+                    }
+                }
+            });
+        }
+
+        // 依序加入根節點，階層分類清楚嚴謹
+        if (targetSolarGroup.children.length > 0) exportRoot.add(targetSolarGroup);
+        if (targetStructureGroup.children.length > 0) exportRoot.add(targetStructureGroup);
+        if (targetMainBuildingGroup.children.length > 0) exportRoot.add(targetMainBuildingGroup);
+        if (targetSurroundBuildingGroup.children.length > 0) exportRoot.add(targetSurroundBuildingGroup);
 
         const exporter = new THREE.GLTFExporter();
         await new Promise((resolve, reject) => {
@@ -2368,7 +2563,7 @@ async function export3DGLB() {
                         reject(saveErr);
                     }
                 },
-                { binary: true }
+                { binary: true, onlyVisible: true, includeCustomExtensions: false }
             );
         });
     } catch (err) {
@@ -4337,10 +4532,13 @@ function updatePolygonVertexHandles(poly) {
     clearPolygonVertexHandles();
     if (!poly || !map) return;
     
-    const latlngs = getOuterRingLatLngs(poly);
+    const isSite = (poly === customSiteBoundary);
+    if (isSite && (!poly.baseLatLngs || poly.baseLatLngs.length < 3)) {
+        poly.baseLatLngs = getOuterRingLatLngs(poly).map(pt => L.latLng(pt.lat, pt.lng));
+    }
+    const latlngs = isSite ? poly.baseLatLngs : getOuterRingLatLngs(poly);
     if (!latlngs || latlngs.length < 3) return;
     
-    const isSite = (poly === customSiteBoundary);
     const handleBg = isSite
         ? 'radial-gradient(circle, #f472b6 0%, #db2777 100%)'
         : (poly.isObstacle ? 'radial-gradient(circle, #f87171 0%, #dc2626 100%)' : 'radial-gradient(circle, #fb923c 0%, #ea580c 100%)');
@@ -4369,12 +4567,21 @@ function updatePolygonVertexHandles(poly) {
         
         vMarker.on('drag', (e) => {
             const newPos = e.target.getLatLng();
-            const currentRings = getOuterRingLatLngs(poly);
-            currentRings[idx] = newPos;
-            if (poly instanceof L.Polygon) {
-                poly.setLatLngs([currentRings]);
+            if (isSite) {
+                poly.baseLatLngs[idx] = newPos;
+                if (typeof rebuildSteppedBoundaryLatLngs === 'function') {
+                    rebuildSteppedBoundaryLatLngs(poly);
+                } else {
+                    poly.setLatLngs([poly.baseLatLngs]);
+                }
             } else {
-                poly.setLatLngs(currentRings);
+                const currentRings = getOuterRingLatLngs(poly);
+                currentRings[idx] = newPos;
+                if (poly instanceof L.Polygon) {
+                    poly.setLatLngs([currentRings]);
+                } else {
+                    poly.setLatLngs(currentRings);
+                }
             }
             
             if (activePolygonCenterMarker) {
@@ -4383,9 +4590,7 @@ function updatePolygonVertexHandles(poly) {
             }
             
             if (selectedEdgeHighlightLine && typeof activeSelectedEdgeIndex !== 'undefined' && activeSelectedEdgeIndex !== -1) {
-                const p1 = currentRings[activeSelectedEdgeIndex];
-                const p2 = currentRings[(activeSelectedEdgeIndex + 1) % currentRings.length];
-                selectedEdgeHighlightLine.setLatLngs([p1, p2]);
+                updateSelectedPolygonVisuals(poly, activeSelectedEdgeIndex);
             }
             
             if (isSite) {
@@ -4395,6 +4600,12 @@ function updatePolygonVertexHandles(poly) {
         
         vMarker.on('dragend', () => {
             if (isSite) {
+                if (typeof rebuildSteppedBoundaryLatLngs === 'function') {
+                    rebuildSteppedBoundaryLatLngs(poly);
+                }
+                if (typeof updateSiteDivisionLines === 'function') {
+                    updateSiteDivisionLines(poly);
+                }
                 inferParametersFromSiteBoundary(poly, true);
             } else {
                 calculateOutputs();
@@ -4614,6 +4825,7 @@ function clearActivePolygonSelection() {
         selectedEdgeHighlightLine = null;
     }
     activeSelectedEdgeIndex = -1;
+    activeSelectedSegmentIndex = -1;
     activeSelectedDivision = null;
     clearRightAngleIndicator();
     if (typeof drawSiteDivisionLines === 'function') {
@@ -4942,7 +5154,8 @@ function handleSiteBoundaryMapClick(latlng) {
             opacity: 1,
             pane: 'guidePane',
             renderer: guideSvgRenderer,
-            interactive: false
+            interactive: false,
+            noClip: true
         }).addTo(map);
     }
     
@@ -4989,7 +5202,7 @@ function handleSiteBoundaryMouseMove(e) {
     const isAnySnapActive = isRectangleSnapActive || isParallelSnapActive || isPerpendicularSnapActive || isRightAngleSnapActive || (snapCheck !== null);
     
     const rubberbandCoords = [siteBoundaryPoints[siteBoundaryPoints.length - 1], finalLatLng];
-    if (exclusionRubberband && map.hasLayer(exclusionRubberband)) {
+    if (exclusionRubberband && map.hasLayer(exclusionRubberband) && exclusionRubberband._path && exclusionRubberband._path.parentNode) {
         exclusionRubberband.setLatLngs(rubberbandCoords);
         exclusionRubberband.setStyle({
             color: isAnySnapActive ? 'rgba(255, 0, 128, 1)' : 'rgba(56, 189, 248, 1)',
@@ -5010,10 +5223,11 @@ function handleSiteBoundaryMouseMove(e) {
             opacity: 1,
             pane: 'guidePane',
             renderer: guideSvgRenderer,
-            interactive: false
+            interactive: false,
+            noClip: true
         }).addTo(map);
+        try { exclusionRubberband.bringToFront(); } catch (err) {}
     }
-    try { exclusionRubberband.bringToFront(); } catch (err) {}
     if (exclusionRubberband && exclusionRubberband._path) {
         if (isRectangleSnapActive) {
             exclusionRubberband._path.classList.add('rubberband-rect-locked');
@@ -5047,7 +5261,9 @@ function localToLatLng(localX, localZ, referenceLat, referenceLng, azimuth) {
  */
 function computeSiteCenterFromPrincipalEdges(polygon) {
     if (!polygon) return null;
-    const latlngs = getOuterRingLatLngs(polygon);
+    const latlngs = (polygon === customSiteBoundary && polygon.baseLatLngs && polygon.baseLatLngs.length >= 3)
+        ? polygon.baseLatLngs
+        : getOuterRingLatLngs(polygon);
     if (!latlngs || latlngs.length < 3) return null;
 
     const refLat = latlngs[0].lat;
@@ -5195,7 +5411,9 @@ function updateSiteCenterFromBoundary(polygon) {
 
 function inferParametersFromSiteBoundary(polygon, keepCurrentAzimuth = false) {
     if (!polygon) return;
-    const latlngs = getOuterRingLatLngs(polygon);
+    const latlngs = (polygon === customSiteBoundary && polygon.baseLatLngs && polygon.baseLatLngs.length >= 3)
+        ? polygon.baseLatLngs
+        : getOuterRingLatLngs(polygon);
     if (!latlngs || latlngs.length < 3) return;
 
     // 1. 更新案場中心經緯度
@@ -5463,7 +5681,7 @@ function handleObstacleMouseMove(e) {
     const isAnySnapActive = isRectangleSnapActive || isParallelSnapActive || isPerpendicularSnapActive || isRightAngleSnapActive || (snapCheck !== null);
     
     const rubberbandCoords = [obstaclePoints[obstaclePoints.length - 1], finalLatLng];
-    if (exclusionRubberband && map.hasLayer(exclusionRubberband)) {
+    if (exclusionRubberband && map.hasLayer(exclusionRubberband) && exclusionRubberband._path && exclusionRubberband._path.parentNode) {
         exclusionRubberband.setLatLngs(rubberbandCoords);
         exclusionRubberband.setStyle({
             color: isAnySnapActive ? 'rgba(255, 0, 128, 1)' : 'rgba(239, 68, 68, 1)',
@@ -5484,10 +5702,11 @@ function handleObstacleMouseMove(e) {
             opacity: 1,
             pane: 'guidePane',
             renderer: guideSvgRenderer,
-            interactive: false
+            interactive: false,
+            noClip: true
         }).addTo(map);
+        try { exclusionRubberband.bringToFront(); } catch (err) {}
     }
-    try { exclusionRubberband.bringToFront(); } catch (err) {}
     if (exclusionRubberband && exclusionRubberband._path) {
         if (isRectangleSnapActive) {
             exclusionRubberband._path.classList.add('rubberband-rect-locked');
@@ -5611,7 +5830,8 @@ function handleObstacleMapClick(latlng) {
             opacity: 1,
             pane: 'guidePane',
             renderer: guideSvgRenderer,
-            interactive: false
+            interactive: false,
+            noClip: true
         }).addTo(map);
     }
     
@@ -5661,7 +5881,7 @@ function handleExclusionMouseMove(e) {
         const isAnySnapActive = isRectangleSnapActive || isParallelSnapActive || isPerpendicularSnapActive || isRightAngleSnapActive || (snapCheck !== null);
         
         const rubberbandCoords = [exclusionPoints[exclusionPoints.length - 1], finalLatLng];
-        if (exclusionRubberband && map.hasLayer(exclusionRubberband)) {
+        if (exclusionRubberband && map.hasLayer(exclusionRubberband) && exclusionRubberband._path && exclusionRubberband._path.parentNode) {
             exclusionRubberband.setLatLngs(rubberbandCoords);
             exclusionRubberband.setStyle({
                 color: isAnySnapActive ? 'rgba(255, 0, 128, 1)' : 'rgba(251, 191, 36, 1)',
@@ -5682,10 +5902,11 @@ function handleExclusionMouseMove(e) {
                 opacity: 1,
                 pane: 'guidePane',
                 renderer: guideSvgRenderer,
-                interactive: false
+                interactive: false,
+                noClip: true
             }).addTo(map);
+            try { exclusionRubberband.bringToFront(); } catch (err) {}
         }
-        try { exclusionRubberband.bringToFront(); } catch (err) {}
         if (exclusionRubberband && exclusionRubberband._path) {
             if (isRectangleSnapActive) {
                 exclusionRubberband._path.classList.add('rubberband-rect-locked');
@@ -5788,7 +6009,8 @@ function handleExclusionMapClick(latlng) {
                 opacity: 1,
                 pane: 'guidePane',
                 renderer: guideSvgRenderer,
-                interactive: false
+                interactive: false,
+                noClip: true
             }).addTo(map);
         }
         
@@ -5815,7 +6037,9 @@ function getPolygonCenter(polygon) {
         const principalCenter = computeSiteCenterFromPrincipalEdges(polygon);
         if (principalCenter) return principalCenter;
     }
-    const latlngs = getOuterRingLatLngs(polygon);
+    const latlngs = (polygon === customSiteBoundary && polygon.baseLatLngs && polygon.baseLatLngs.length >= 3)
+        ? polygon.baseLatLngs
+        : getOuterRingLatLngs(polygon);
     let sumLat = 0, sumLng = 0;
     for (const pt of latlngs) {
         sumLat += pt.lat;
@@ -5901,26 +6125,390 @@ function findClosestEdge(polygon, clickLatLng) {
     const latlngs = getOuterRingLatLngs(polygon);
     let minDistance = Infinity;
     let closestIndex = -1;
+    let closestSegment = -1;
     
-    if (!map || !latlngs || latlngs.length < 2) return -1;
+    if (!map || !latlngs || latlngs.length < 2) return { edgeIndex: -1, segmentIndex: -1, distance: Infinity };
     const clickPoint = map.latLngToContainerPoint(clickLatLng);
     
-    for (let i = 0; i < latlngs.length; i++) {
-        const p1 = map.latLngToContainerPoint(latlngs[i]);
-        const p2 = map.latLngToContainerPoint(latlngs[(i + 1) % latlngs.length]);
-        
-        const dist = distToSegment(clickPoint, p1, p2);
-        if (dist < minDistance) {
-            minDistance = dist;
-            closestIndex = i;
+    if (polygon === customSiteBoundary && polygon.buildingDivisions && state.siteType === 'roof-slope') {
+        const baseLatLngs = (polygon.baseLatLngs && polygon.baseLatLngs.length >= 3)
+            ? polygon.baseLatLngs
+            : latlngs;
+        const N = baseLatLngs.length;
+        for (let i = 0; i < N; i++) {
+            const segs = getBoundaryEdgeSegments(polygon, i);
+            if (segs && segs.length > 0) {
+                for (let s = 0; s < segs.length; s++) {
+                    const seg = segs[s];
+                    const p1 = map.latLngToContainerPoint(seg.shiftedStartLatLng);
+                    const p2 = map.latLngToContainerPoint(seg.shiftedEndLatLng);
+                    const dist = distToSegment(clickPoint, p1, p2);
+                    if (dist < minDistance) {
+                        minDistance = dist;
+                        closestIndex = i;
+                        closestSegment = s;
+                    }
+
+                    // Also check the step connector between segment s and s + 1
+                    if (s < segs.length - 1) {
+                        const nextSeg = segs[s + 1];
+                        if (Math.abs((seg.offsetMeters || 0) - (nextSeg.offsetMeters || 0)) > 1e-4) {
+                            const step_p1 = map.latLngToContainerPoint(seg.shiftedEndLatLng);
+                            const step_p2 = map.latLngToContainerPoint(nextSeg.shiftedStartLatLng);
+                            const stepDist = distToSegment(clickPoint, step_p1, step_p2);
+                            if (stepDist < minDistance) {
+                                minDistance = stepDist;
+                                closestIndex = i;
+                                closestSegment = (Math.abs(seg.offsetMeters || 0) >= Math.abs(nextSeg.offsetMeters || 0)) ? s : (s + 1);
+                            }
+                        }
+                    }
+                }
+            } else {
+                const p1 = map.latLngToContainerPoint(baseLatLngs[i]);
+                const p2 = map.latLngToContainerPoint(baseLatLngs[(i + 1) % N]);
+                const dist = distToSegment(clickPoint, p1, p2);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    closestIndex = i;
+                    closestSegment = -1;
+                }
+            }
+        }
+    } else {
+        for (let i = 0; i < latlngs.length; i++) {
+            const p1 = map.latLngToContainerPoint(latlngs[i]);
+            const p2 = map.latLngToContainerPoint(latlngs[(i + 1) % latlngs.length]);
+            
+            const dist = distToSegment(clickPoint, p1, p2);
+            if (dist < minDistance) {
+                minDistance = dist;
+                closestIndex = i;
+                closestSegment = -1;
+            }
         }
     }
     
-    // 距離邊線 <= 12px 判定為選取特定邊線；點擊在多邊形面內 (> 12px) 則判定為選取整個多邊形面 (-1)
-    if (minDistance <= 12) {
-        return closestIndex;
+    if (minDistance <= 24) {
+        return { edgeIndex: closestIndex, segmentIndex: closestSegment, distance: minDistance };
     }
-    return -1;
+    return { edgeIndex: -1, segmentIndex: -1, distance: Infinity };
+}
+
+function getBoundaryEdgeSegments(poly, edgeIndex) {
+    if (!poly || !poly.buildingDivisions || state.siteType === 'ground') {
+        return [];
+    }
+    const baseLatLngs = (poly.baseLatLngs && poly.baseLatLngs.length >= 3)
+        ? poly.baseLatLngs
+        : getOuterRingLatLngs(poly);
+    if (!baseLatLngs || baseLatLngs.length < 3) return [];
+
+    const N = baseLatLngs.length;
+    if (edgeIndex < 0 || edgeIndex >= N) return [];
+
+    const center = getPolygonCenter(poly);
+    const centerLat = center.lat;
+    const centerLng = center.lng;
+
+    const metersPerLatDegree = 111320;
+    const latRad = (centerLat * Math.PI) / 180;
+    const metersPerLngDegree = metersPerLatDegree * Math.cos(latRad);
+
+    const baseVertices = baseLatLngs.map(pt => ({
+        x: (pt.lng - centerLng) * metersPerLngDegree,
+        y: (pt.lat - centerLat) * metersPerLatDegree
+    }));
+
+    let areaSum = 0;
+    for (let i = 0; i < N; i++) {
+        const v1 = baseVertices[i];
+        const v2 = baseVertices[(i + 1) % N];
+        areaSum += (v1.x * v2.y - v2.x * v1.y);
+    }
+    const isCCW = areaSum > 0;
+
+    const Vi = baseVertices[edgeIndex];
+    const Vi1 = baseVertices[(edgeIndex + 1) % N];
+    const ux = Vi1.x - Vi.x;
+    const uy = Vi1.y - Vi.y;
+    const len = Math.sqrt(ux * ux + uy * uy);
+    if (len < 1e-6) return [];
+
+    const in_nx = isCCW ? -uy / len : uy / len;
+    const in_ny = isCCW ? ux / len : -ux / len;
+    const out_nx = -in_nx;
+    const out_ny = -in_ny;
+
+    // Get all division line segments
+    const divSegments = getSiteDivisionLineSegments(poly);
+    const splitPoints = [];
+
+    divSegments.forEach(divSeg => {
+        [divSeg.startLatLng, divSeg.endLatLng].forEach(ptLL => {
+            if (!ptLL) return;
+            const px = (ptLL.lng - centerLng) * metersPerLngDegree;
+            const py = (ptLL.lat - centerLat) * metersPerLatDegree;
+            const dx = px - Vi.x;
+            const dy = py - Vi.y;
+            const t = (dx * ux + dy * uy) / (len * len);
+            const projX = Vi.x + t * ux;
+            const projY = Vi.y + t * uy;
+            const dist = Math.hypot(px - projX, py - projY);
+            if (dist < 0.35 && t > 0.01 && t < 0.99) {
+                if (!splitPoints.some(sp => Math.abs(sp.t - t) < 0.02)) {
+                    splitPoints.push({
+                        t: t,
+                        pt: { x: projX, y: projY }
+                    });
+                }
+            }
+        });
+    });
+
+    splitPoints.sort((a, b) => a.t - b.t);
+    if (splitPoints.length === 0) {
+        return [];
+    }
+
+    const numSegments = splitPoints.length + 1;
+    const segments = [];
+
+    for (let s = 0; s < numSegments; s++) {
+        const tStart = (s === 0) ? 0 : splitPoints[s - 1].t;
+        const tEnd = (s === numSegments - 1) ? 1 : splitPoints[s].t;
+        const basePt1 = (s === 0) ? Vi : splitPoints[s - 1].pt;
+        const basePt2 = (s === numSegments - 1) ? Vi1 : splitPoints[s].pt;
+
+        const curOffset = (poly.segmentOffsets && poly.segmentOffsets[edgeIndex] && poly.segmentOffsets[edgeIndex][s]) || 0;
+
+        const shiftedPt1 = {
+            x: basePt1.x + curOffset * out_nx,
+            y: basePt1.y + curOffset * out_ny
+        };
+        const shiftedPt2 = {
+            x: basePt2.x + curOffset * out_nx,
+            y: basePt2.y + curOffset * out_ny
+        };
+
+        const shiftedStartLatLng = L.latLng(
+            centerLat + shiftedPt1.y / metersPerLatDegree,
+            centerLng + shiftedPt1.x / metersPerLngDegree
+        );
+        const shiftedEndLatLng = L.latLng(
+            centerLat + shiftedPt2.y / metersPerLatDegree,
+            centerLng + shiftedPt2.x / metersPerLngDegree
+        );
+
+        segments.push({
+            edgeIndex: edgeIndex,
+            segmentIndex: s,
+            buildingIndex: s,
+            tStart: tStart,
+            tEnd: tEnd,
+            basePt1: basePt1,
+            basePt2: basePt2,
+            shiftedPt1: shiftedPt1,
+            shiftedPt2: shiftedPt2,
+            shiftedStartLatLng: shiftedStartLatLng,
+            shiftedEndLatLng: shiftedEndLatLng,
+            offsetMeters: curOffset,
+            normal: { x: out_nx, y: out_ny }
+        });
+    }
+
+    return segments;
+}
+
+function lineIntersection(A, d1, B, d2) {
+    const denom = d1.x * d2.y - d1.y * d2.x;
+    if (Math.abs(denom) < 1e-8) {
+        return A;
+    }
+    const t = ((B.x - A.x) * d2.y - (B.y - A.y) * d2.x) / denom;
+    return { x: A.x + t * d1.x, y: A.y + t * d1.y };
+}
+
+function rebuildSteppedBoundaryLatLngs(poly) {
+    if (!poly || poly !== customSiteBoundary) return;
+    if (!poly.baseLatLngs || poly.baseLatLngs.length < 3) {
+        poly.baseLatLngs = getOuterRingLatLngs(poly).map(pt => L.latLng(pt.lat, pt.lng));
+    }
+    const baseLatLngs = poly.baseLatLngs;
+    const N = baseLatLngs.length;
+    if (N < 3) return;
+
+    let hasAnyOffset = false;
+    if (poly.segmentOffsets) {
+        for (const k in poly.segmentOffsets) {
+            for (const s in poly.segmentOffsets[k]) {
+                if (Math.abs(poly.segmentOffsets[k][s]) > 1e-4) {
+                    hasAnyOffset = true;
+                    break;
+                }
+            }
+            if (hasAnyOffset) break;
+        }
+    }
+
+    if (!hasAnyOffset) {
+        if (poly instanceof L.Polygon) {
+            poly.setLatLngs([baseLatLngs]);
+        } else {
+            poly.setLatLngs(baseLatLngs);
+        }
+        return;
+    }
+
+    const center = getPolygonCenter(poly);
+    const centerLat = center.lat;
+    const centerLng = center.lng;
+
+    const metersPerLatDegree = 111320;
+    const latRad = (centerLat * Math.PI) / 180;
+    const metersPerLngDegree = metersPerLatDegree * Math.cos(latRad);
+
+    const baseVertices = baseLatLngs.map(pt => ({
+        x: (pt.lng - centerLng) * metersPerLngDegree,
+        y: (pt.lat - centerLat) * metersPerLatDegree
+    }));
+
+    let areaSum = 0;
+    for (let i = 0; i < N; i++) {
+        const v1 = baseVertices[i];
+        const v2 = baseVertices[(i + 1) % N];
+        areaSum += (v1.x * v2.y - v2.x * v1.y);
+    }
+    const isCCW = areaSum > 0;
+
+    // Compute edge vectors and outward normals for each base edge
+    const u = [];
+    const out_n = [];
+    const edgeSegs = [];
+
+    for (let i = 0; i < N; i++) {
+        const Vi = baseVertices[i];
+        const Vi1 = baseVertices[(i + 1) % N];
+        const ux = Vi1.x - Vi.x;
+        const uy = Vi1.y - Vi.y;
+        const l = Math.sqrt(ux * ux + uy * uy) || 1e-6;
+        u[i] = { x: ux, y: uy };
+        out_n[i] = {
+            x: isCCW ? uy / l : -uy / l,
+            y: isCCW ? -ux / l : ux / l
+        };
+        edgeSegs[i] = getBoundaryEdgeSegments(poly, i);
+    }
+
+    function getEdgeEndOffset(edgeIdx, isEnd) {
+        if (!poly.segmentOffsets || !poly.segmentOffsets[edgeIdx]) return 0;
+        const segs = edgeSegs[edgeIdx];
+        if (!segs || segs.length === 0) {
+            return poly.segmentOffsets[edgeIdx][0] || 0;
+        }
+        const sIdx = isEnd ? (segs.length - 1) : 0;
+        return poly.segmentOffsets[edgeIdx][sIdx] || 0;
+    }
+
+    // Compute corner Ci for each base vertex i (intersection between edge i-1 and edge i)
+    const corners = [];
+    for (let i = 0; i < N; i++) {
+        const prevIdx = (i - 1 + N) % N;
+        const off_prev = getEdgeEndOffset(prevIdx, true);
+        const off_cur = getEdgeEndOffset(i, false);
+        const Vi = baseVertices[i];
+
+        if (Math.abs(off_prev) < 1e-4 && Math.abs(off_cur) < 1e-4) {
+            corners[i] = Vi;
+        } else {
+            const pPrev = {
+                x: Vi.x + off_prev * out_n[prevIdx].x,
+                y: Vi.y + off_prev * out_n[prevIdx].y
+            };
+            const pCur = {
+                x: Vi.x + off_cur * out_n[i].x,
+                y: Vi.y + off_cur * out_n[i].y
+            };
+            corners[i] = lineIntersection(pPrev, u[prevIdx], pCur, u[i]);
+        }
+    }
+
+    // Assemble fullVertices by walking around the perimeter
+    const fullVertices = [];
+    for (let i = 0; i < N; i++) {
+        fullVertices.push(corners[i]);
+
+        const segs = edgeSegs[i];
+        if (segs && segs.length > 1) {
+            for (let s = 0; s < segs.length - 1; s++) {
+                const off_s = (poly.segmentOffsets && poly.segmentOffsets[i] && poly.segmentOffsets[i][s]) || 0;
+                const off_next = (poly.segmentOffsets && poly.segmentOffsets[i] && poly.segmentOffsets[i][s + 1]) || 0;
+                const divPt = segs[s].basePt2;
+
+                if (Math.abs(off_s - off_next) > 1e-4) {
+                    fullVertices.push({
+                        x: divPt.x + off_s * out_n[i].x,
+                        y: divPt.y + off_s * out_n[i].y
+                    });
+                    fullVertices.push({
+                        x: divPt.x + off_next * out_n[i].x,
+                        y: divPt.y + off_next * out_n[i].y
+                    });
+                }
+            }
+        }
+    }
+
+    // Clean duplicate consecutive vertices
+    const cleanedVertices = [];
+    for (let i = 0; i < fullVertices.length; i++) {
+        const cur = fullVertices[i];
+        if (cleanedVertices.length === 0) {
+            cleanedVertices.push(cur);
+        } else {
+            const prev = cleanedVertices[cleanedVertices.length - 1];
+            if (Math.hypot(cur.x - prev.x, cur.y - prev.y) > 0.02) {
+                cleanedVertices.push(cur);
+            }
+        }
+    }
+    if (cleanedVertices.length > 2) {
+        const first = cleanedVertices[0];
+        const last = cleanedVertices[cleanedVertices.length - 1];
+        if (Math.hypot(first.x - last.x, first.y - last.y) < 0.02) {
+            cleanedVertices.pop();
+        }
+    }
+
+    const newLatLngs = cleanedVertices.map(v => L.latLng(
+        centerLat + v.y / metersPerLatDegree,
+        centerLng + v.x / metersPerLngDegree
+    ));
+
+    if (poly instanceof L.Polygon) {
+        poly.setLatLngs([newLatLngs]);
+    } else {
+        poly.setLatLngs(newLatLngs);
+    }
+}
+
+function offsetBuildingEdgeSegment(poly, edgeIndex, segmentIndex, amountMeters) {
+    if (!poly || poly !== customSiteBoundary) return;
+    if (!poly.segmentOffsets) poly.segmentOffsets = {};
+    if (!poly.segmentOffsets[edgeIndex]) poly.segmentOffsets[edgeIndex] = {};
+
+    const cur = poly.segmentOffsets[edgeIndex][segmentIndex] || 0;
+    const nextVal = Math.max(-20, Math.min(50, Math.round((cur + amountMeters) * 10) / 10));
+    poly.segmentOffsets[edgeIndex][segmentIndex] = nextVal;
+
+    rebuildSteppedBoundaryLatLngs(poly);
+    updateSiteDivisionLines(poly);
+    updateSelectedPolygonVisuals(poly, edgeIndex);
+    updateToolboxPopupEdgeUI();
+
+    calculateOutputs();
+    updateAllVisuals(true);
+    if (typeof saveStateToHistory === 'function') saveStateToHistory();
 }
 
 function distToSegment(p, v, w) {
@@ -5935,15 +6523,6 @@ function dist2(v, w) {
     return (v.x - w.x) * (v.x - w.x) + (v.y - w.y) * (v.y - w.y);
 }
 
-function lineIntersection(A, d1, B, d2) {
-    const denom = d1.x * d2.y - d1.y * d2.x;
-    if (Math.abs(denom) < 1e-8) {
-        return A;
-    }
-    const t = ((B.x - A.x) * d2.y - (B.y - A.y) * d2.x) / denom;
-    return { x: A.x + t * d1.x, y: A.y + t * d1.y };
-}
-
 function offsetSelectedEdge(poly, edgeIndex, amountMeters) {
     const center = getPolygonCenter(poly);
     const centerLat = center.lat;
@@ -5953,7 +6532,14 @@ function offsetSelectedEdge(poly, edgeIndex, amountMeters) {
     const latRad = (centerLat * Math.PI) / 180;
     const metersPerLngDegree = metersPerLatDegree * Math.cos(latRad);
     
-    const latlngs = getOuterRingLatLngs(poly);
+    const isSite = (poly === customSiteBoundary);
+    if (isSite && (!poly.baseLatLngs || poly.baseLatLngs.length < 3)) {
+        poly.baseLatLngs = getOuterRingLatLngs(poly).map(pt => L.latLng(pt.lat, pt.lng));
+    }
+    const latlngs = (isSite && poly.baseLatLngs && poly.baseLatLngs.length >= 3)
+        ? poly.baseLatLngs
+        : getOuterRingLatLngs(poly);
+
     const vertices = latlngs.map(pt => ({
         x: (pt.lng - centerLng) * metersPerLngDegree,
         y: (pt.lat - centerLat) * metersPerLatDegree
@@ -6003,19 +6589,20 @@ function offsetSelectedEdge(poly, edgeIndex, amountMeters) {
         centerLng + v.x / metersPerLngDegree
     ));
     
-    if (poly instanceof L.Polygon) {
-        poly.setLatLngs([newLatLngs]);
-    } else {
-        poly.setLatLngs(newLatLngs);
-    }
-    
-    if (poly === customSiteBoundary) {
+    if (isSite) {
+        poly.baseLatLngs = newLatLngs;
+        rebuildSteppedBoundaryLatLngs(poly);
         updateSiteCenterFromBoundary(customSiteBoundary);
+        updateSiteDivisionLines(customSiteBoundary);
+    } else {
+        if (poly instanceof L.Polygon) {
+            poly.setLatLngs([newLatLngs]);
+        } else {
+            poly.setLatLngs(newLatLngs);
+        }
     }
     
-    if (selectedEdgeHighlightLine) {
-        selectedEdgeHighlightLine.setLatLngs([newLatLngs[edgeIndex], newLatLngs[(edgeIndex + 1) % n_vertices]]);
-    }
+    updateSelectedPolygonVisuals(poly, edgeIndex);
     
     calculateOutputs();
     updateAllVisuals(true);
@@ -6101,10 +6688,27 @@ function updateSelectedPolygonVisuals(poly, edgeIndex) {
         else if (poly.isWalkway) normalColor = 'rgba(16, 185, 129, 1)';
         poly.setStyle({ color: normalColor, weight: 2.5, fillOpacity: poly === customSiteBoundary ? 0 : 0.25 });
         
-        const outerLatLngs = getOuterRingLatLngs(poly);
-        if (outerLatLngs && outerLatLngs.length > 0) {
-            const p1 = outerLatLngs[edgeIndex];
-            const p2 = outerLatLngs[(edgeIndex + 1) % outerLatLngs.length];
+        let p1 = null;
+        let p2 = null;
+
+        if (activeSelectedSegmentIndex !== -1 && poly === customSiteBoundary) {
+            const segs = getBoundaryEdgeSegments(poly, edgeIndex);
+            const curSeg = segs.find(s => s.segmentIndex === activeSelectedSegmentIndex);
+            if (curSeg) {
+                p1 = curSeg.shiftedStartLatLng;
+                p2 = curSeg.shiftedEndLatLng;
+            }
+        }
+
+        if (!p1 || !p2) {
+            const outerLatLngs = (poly.baseLatLngs && poly.baseLatLngs.length >= 3) ? poly.baseLatLngs : getOuterRingLatLngs(poly);
+            if (outerLatLngs && outerLatLngs.length > 0) {
+                p1 = outerLatLngs[edgeIndex];
+                p2 = outerLatLngs[(edgeIndex + 1) % outerLatLngs.length];
+            }
+        }
+
+        if (p1 && p2) {
             selectedEdgeHighlightLine = L.polyline([p1, p2], {
                 color: '#ffffff',
                 weight: 5.5,
@@ -6202,7 +6806,7 @@ function getSiteDivisionLineSegments(poly) {
     const latRad = (centerLat * Math.PI) / 180;
     const metersPerLngDegree = metersPerLatDegree * Math.cos(latRad);
 
-    const latlngs = getOuterRingLatLngs(poly);
+    const latlngs = (poly.baseLatLngs && poly.baseLatLngs.length >= 3) ? poly.baseLatLngs : getOuterRingLatLngs(poly);
     if (!latlngs || latlngs.length < 3) return [];
 
     const vertices = latlngs.map(pt => ({
@@ -6252,6 +6856,7 @@ function getSiteDivisionLineSegments(poly) {
 
             let bestS = Infinity;
             let bestEndPt = null;
+            let bestTargetEdgeIndex = -1;
 
             for (let m = 0; m < N; m++) {
                 if (m === edgeIdx) continue;
@@ -6262,6 +6867,7 @@ function getSiteDivisionLineSegments(poly) {
                 if (hit && hit.s < bestS) {
                     bestS = hit.s;
                     bestEndPt = hit.point;
+                    bestTargetEdgeIndex = m;
                 }
             }
 
@@ -6279,7 +6885,8 @@ function getSiteDivisionLineSegments(poly) {
                     startLatLng: startLatLng,
                     endLatLng: endLatLng,
                     edgeIndex: edgeIdx,
-                    divisionIndex: k
+                    divisionIndex: k,
+                    targetEdgeIndex: bestTargetEdgeIndex
                 });
             }
         });
@@ -6424,12 +7031,16 @@ function drawSiteDivisionLines() {
 
 function getSubBuildingsFromDivisions(poly, refLat, refLng, azimuth, roofTiltRad, pitchStyle) {
     if (!poly || poly !== customSiteBoundary) return [];
-    const latlngs = getOuterRingLatLngs(poly);
-    if (!latlngs || latlngs.length < 3) return [];
+    
+    // Always use baseLatLngs (the unretracted clean footprint) for division slicing
+    const baseLatLngs = (poly.baseLatLngs && poly.baseLatLngs.length >= 3)
+        ? poly.baseLatLngs
+        : getOuterRingLatLngs(poly);
+    if (!baseLatLngs || baseLatLngs.length < 3) return [];
 
     let basePoints = [];
-    for (let i = 0; i < latlngs.length; i++) {
-        const localPt = latLngToLocal(latlngs[i], refLat, refLng, azimuth);
+    for (let i = 0; i < baseLatLngs.length; i++) {
+        const localPt = latLngToLocal(baseLatLngs[i], refLat, refLng, azimuth);
         basePoints.push({ x: localPt.x, z: localPt.z });
     }
     basePoints = cleanPolygon2D(basePoints);
@@ -6448,11 +7059,15 @@ function getSubBuildingsFromDivisions(poly, refLat, refLng, azimuth, roofTiltRad
         const yRidge = halfZ * Math.tan(roofTiltRad || 0);
         return [{
             points: basePoints,
+            basePoints: basePoints,
             minZ, maxZ, minX, maxX,
-            zRidge, yRidge
+            baseMinZ: minZ, baseMaxZ: maxZ, baseMinX: minX, baseMaxX: maxX,
+            zRidge, yRidge,
+            baseZRidge: zRidge, baseYRidge: yRidge
         }];
     }
 
+    // 1. Cut clean base polygon with division lines
     const divSegments = getSiteDivisionLineSegments(poly);
     let subPolys = [basePoints];
 
@@ -6482,23 +7097,214 @@ function getSubBuildingsFromDivisions(poly, refLat, refLng, azimuth, roofTiltRad
         });
     }
 
-    return subPolys.map(pts => {
-        let minZ = Infinity, maxZ = -Infinity, minX = Infinity, maxX = -Infinity;
+    // 2. Sort sub-polygons so index 0, 1, 2... corresponds to Building 1, 2, 3...
+    subPolys.sort((a, b) => {
+        let aMinZ = Infinity, aMaxZ = -Infinity, bMinZ = Infinity, bMaxZ = -Infinity;
+        a.forEach(p => { aMinZ = Math.min(aMinZ, p.z); aMaxZ = Math.max(aMaxZ, p.z); });
+        b.forEach(p => { bMinZ = Math.min(bMinZ, p.z); bMaxZ = Math.max(bMaxZ, p.z); });
+        const aCenterZ = (aMinZ + aMaxZ) / 2;
+        const bCenterZ = (bMinZ + bMaxZ) / 2;
+        if (Math.abs(aCenterZ - bCenterZ) > 0.1) return aCenterZ - bCenterZ;
+        let aMinX = Infinity, bMinX = Infinity;
+        a.forEach(p => aMinX = Math.min(aMinX, p.x));
+        b.forEach(p => bMinX = Math.min(bMinX, p.x));
+        return aMinX - bMinX;
+    });
+
+    // 3. Compute outward normals for each base exterior edge in local (x, z)
+    const N = basePoints.length;
+    let baseAreaSum = 0;
+    for (let i = 0; i < N; i++) {
+        const p1 = basePoints[i];
+        const p2 = basePoints[(i + 1) % N];
+        baseAreaSum += (p1.x * p2.z - p2.x * p1.z);
+    }
+    const isBaseCCW = baseAreaSum > 0;
+
+    const baseEdgeNormals = [];
+    const baseEdgeMidpoints = [];
+    for (let i = 0; i < N; i++) {
+        const p1 = basePoints[i];
+        const p2 = basePoints[(i + 1) % N];
+        const dx = p2.x - p1.x;
+        const dz = p2.z - p1.z;
+        const len = Math.hypot(dx, dz) || 1e-6;
+        baseEdgeNormals[i] = {
+            x: isBaseCCW ? dz / len : -dz / len,
+            z: isBaseCCW ? -dx / len : dx / len
+        };
+        baseEdgeMidpoints[i] = {
+            x: (p1.x + p2.x) / 2,
+            z: (p1.z + p2.z) / 2
+        };
+    }
+
+    // Pre-calculate segments for each base edge in local (x, z) space
+    const center = getPolygonCenter(poly);
+    const centerLat = center.lat;
+    const centerLng = center.lng;
+    const metersPerLatDegree = 111320;
+    const latRad = (centerLat * Math.PI) / 180;
+    const metersPerLngDegree = metersPerLatDegree * Math.cos(latRad);
+
+    const allEdgeSegments = [];
+    for (let i = 0; i < N; i++) {
+        const segs = getBoundaryEdgeSegments(poly, i);
+        if (segs && segs.length > 0) {
+            allEdgeSegments[i] = segs.map(seg => {
+                const ll1 = L.latLng(centerLat + seg.basePt1.y / metersPerLatDegree, centerLng + seg.basePt1.x / metersPerLngDegree);
+                const ll2 = L.latLng(centerLat + seg.basePt2.y / metersPerLatDegree, centerLng + seg.basePt2.x / metersPerLngDegree);
+                const lp1 = latLngToLocal(ll1, refLat, refLng, azimuth);
+                const lp2 = latLngToLocal(ll2, refLat, refLng, azimuth);
+                return {
+                    segmentIndex: seg.segmentIndex,
+                    p1: { x: lp1.x, z: lp1.z },
+                    p2: { x: lp2.x, z: lp2.z },
+                    mid: { x: (lp1.x + lp2.x) / 2, z: (lp1.z + lp2.z) / 2 }
+                };
+            });
+        } else {
+            allEdgeSegments[i] = [];
+        }
+    }
+
+    // 4. Apply segment offsets to each sub-building
+    const sortedSubBuildings = subPolys.map((pts, bldgIdx) => {
+        let finalPts = pts;
+
+        if (poly.segmentOffsets) {
+            const m = pts.length;
+            const shiftedLines = [];
+
+            for (let j = 0; j < m; j++) {
+                const Vj = pts[j];
+                const Vj1 = pts[(j + 1) % m];
+                const edgeMidX = (Vj.x + Vj1.x) / 2;
+                const edgeMidZ = (Vj.z + Vj1.z) / 2;
+                const edgeDirX = Vj1.x - Vj.x;
+                const edgeDirZ = Vj1.z - Vj.z;
+                const edgeLen = Math.hypot(edgeDirX, edgeDirZ);
+
+                let matchedBaseEdge = -1;
+                let matchedSegmentIdx = -1;
+                let bestDist = 0.30;
+
+                for (let i = 0; i < N; i++) {
+                    const B1 = basePoints[i];
+                    const B2 = basePoints[(i + 1) % N];
+                    const bdx = B2.x - B1.x;
+                    const bdz = B2.z - B1.z;
+                    const blen = Math.hypot(bdx, bdz);
+                    if (blen < 1e-4 || edgeLen < 1e-4) continue;
+
+                    // Check if direction aligns with base edge
+                    const dotDir = (edgeDirX * bdx + edgeDirZ * bdz) / (edgeLen * blen);
+                    if (dotDir > 0.80) {
+                        const t = ((edgeMidX - B1.x) * bdx + (edgeMidZ - B1.z) * bdz) / (blen * blen);
+                        if (t >= -0.05 && t <= 1.05) {
+                            const projX = B1.x + t * bdx;
+                            const projZ = B1.z + t * bdz;
+                            const d = Math.hypot(edgeMidX - projX, edgeMidZ - projZ);
+                            if (d < bestDist) {
+                                bestDist = d;
+                                matchedBaseEdge = i;
+                            }
+                        }
+                    }
+                }
+
+                let offsetAmount = 0;
+                let outNorm = { x: 0, z: 0 };
+
+                if (matchedBaseEdge !== -1) {
+                    outNorm = baseEdgeNormals[matchedBaseEdge];
+                    const segs = allEdgeSegments[matchedBaseEdge];
+                    if (segs && segs.length > 0) {
+                        // Find which segment contains this sub-edge midpoint
+                        let bestSegDist = Infinity;
+                        for (let s = 0; s < segs.length; s++) {
+                            const dSeg = Math.hypot(edgeMidX - segs[s].mid.x, edgeMidZ - segs[s].mid.z);
+                            if (dSeg < bestSegDist) {
+                                bestSegDist = dSeg;
+                                matchedSegmentIdx = segs[s].segmentIndex;
+                            }
+                        }
+                        if (matchedSegmentIdx !== -1 && poly.segmentOffsets[matchedBaseEdge]) {
+                            offsetAmount = poly.segmentOffsets[matchedBaseEdge][matchedSegmentIdx] || 0;
+                        }
+                    } else if (poly.segmentOffsets[matchedBaseEdge]) {
+                        offsetAmount = poly.segmentOffsets[matchedBaseEdge][0] || 0;
+                    }
+                }
+
+                shiftedLines.push({
+                    p: { x: Vj.x + offsetAmount * outNorm.x, z: Vj.z + offsetAmount * outNorm.z },
+                    d: { x: edgeDirX, z: edgeDirZ },
+                    offset: offsetAmount
+                });
+            }
+
+            // Intersect consecutive shifted lines
+            const newVertices = [];
+            for (let j = 0; j < m; j++) {
+                const prevLine = shiftedLines[(j - 1 + m) % m];
+                const curLine = shiftedLines[j];
+                if (Math.abs(prevLine.offset) < 1e-4 && Math.abs(curLine.offset) < 1e-4) {
+                    newVertices.push(pts[j]);
+                } else {
+                    const denom = prevLine.d.x * curLine.d.z - prevLine.d.z * curLine.d.x;
+                    if (Math.abs(denom) > 1e-7) {
+                        const t = ((curLine.p.x - prevLine.p.x) * curLine.d.z - (curLine.p.z - prevLine.p.z) * curLine.d.x) / denom;
+                        newVertices.push({
+                            x: prevLine.p.x + t * prevLine.d.x,
+                            z: prevLine.p.z + t * prevLine.d.z
+                        });
+                    } else {
+                        newVertices.push(curLine.p);
+                    }
+                }
+            }
+
+            const cleanedNew = cleanPolygon2D(newVertices);
+            if (cleanedNew.length >= 3 && polygonArea2D(cleanedNew) > 0.5) {
+                finalPts = cleanedNew;
+            }
+        }
+
+        // 1. Calculate un-retracted base geometry for this sub-building (from pts)
+        let baseMinZ = Infinity, baseMaxZ = -Infinity, baseMinX = Infinity, baseMaxX = -Infinity;
         pts.forEach(p => {
+            baseMinZ = Math.min(baseMinZ, p.z);
+            baseMaxZ = Math.max(baseMaxZ, p.z);
+            baseMinX = Math.min(baseMinX, p.x);
+            baseMaxX = Math.max(baseMaxX, p.x);
+        });
+        const baseZRidge = (baseMinZ + baseMaxZ) / 2;
+        const baseHalfZ = Math.max(0.1, (baseMaxZ - baseMinZ) / 2);
+        const baseYRidge = baseHalfZ * Math.tan(roofTiltRad || 0);
+
+        // 2. Calculate bounds of the actual trimmed/retracted footprint (from finalPts)
+        let minZ = Infinity, maxZ = -Infinity, minX = Infinity, maxX = -Infinity;
+        finalPts.forEach(p => {
             minZ = Math.min(minZ, p.z);
             maxZ = Math.max(maxZ, p.z);
             minX = Math.min(minX, p.x);
             maxX = Math.max(maxX, p.x);
         });
-        const zRidge = (minZ + maxZ) / 2;
-        const halfZ = Math.max(0.1, (maxZ - minZ) / 2);
-        const yRidge = halfZ * Math.tan(roofTiltRad || 0);
+
+        // The architectural ridge line and roof apex height remain anchored to the base building geometry!
         return {
-            points: pts,
+            points: finalPts,
+            basePoints: pts,
             minZ, maxZ, minX, maxX,
-            zRidge, yRidge
+            baseMinZ, baseMaxZ, baseMinX, baseMaxX,
+            zRidge: baseZRidge,
+            yRidge: baseYRidge,
+            baseZRidge, baseYRidge
         };
     });
+
+    return sortedSubBuildings;
 }
 
 function offsetDivisionLine(poly, edgeIndex, divisionIndex, isShrink) {
@@ -6597,6 +7403,9 @@ function offsetDivisionLine(poly, edgeIndex, divisionIndex, isShrink) {
 
     updateSiteDivisionLines(poly);
     updateToolboxPopupEdgeUI();
+    if (typeof calculateOutputs === 'function') calculateOutputs();
+    if (typeof createPVScene === 'function') createPVScene();
+    if (typeof saveStateToHistory === 'function') saveStateToHistory();
 }
 
 function findClosestDivisionLine(poly, clickLatLng) {
@@ -6610,7 +7419,7 @@ function findClosestDivisionLine(poly, clickLatLng) {
     const latRad = (centerLat * Math.PI) / 180;
     const metersPerLngDegree = metersPerLatDegree * Math.cos(latRad);
 
-    const latlngs = getOuterRingLatLngs(poly);
+    const latlngs = (poly.baseLatLngs && poly.baseLatLngs.length >= 3) ? poly.baseLatLngs : getOuterRingLatLngs(poly);
     if (!latlngs || latlngs.length < 3) return null;
 
     const vertices = latlngs.map(pt => ({
@@ -6719,7 +7528,7 @@ function updateSiteDivisionLines(poly) {
     const latRad = (centerLat * Math.PI) / 180;
     const metersPerLngDegree = metersPerLatDegree * Math.cos(latRad);
 
-    const latlngs = getOuterRingLatLngs(poly);
+    const latlngs = (poly.baseLatLngs && poly.baseLatLngs.length >= 3) ? poly.baseLatLngs : getOuterRingLatLngs(poly);
     if (!latlngs || latlngs.length < 3) return;
 
     const vertices = latlngs.map(pt => ({
@@ -6806,10 +7615,23 @@ function updateSiteDivisionLines(poly) {
                     className: isSelected ? 'building-division-line active-selected-division' : 'building-division-line'
                 }).addTo(map);
 
-                // 2. Invisible enlarged hit-box line for ultra-responsive click selection
-                const hitBoxLayer = L.polyline([startLatLng, endLatLng], {
+                // 2. Invisible enlarged hit-box line for responsive click selection (inset by 1.5m from ends)
+                const divLenM = Math.hypot(bestEndPt.x - startPt.x, bestEndPt.y - startPt.y);
+                let hbStart = startLatLng;
+                let hbEnd = endLatLng;
+                if (divLenM > 3.0) {
+                    const trimRatio = 1.5 / divLenM;
+                    const sX = startPt.x + trimRatio * (bestEndPt.x - startPt.x);
+                    const sY = startPt.y + trimRatio * (bestEndPt.y - startPt.y);
+                    const eX = bestEndPt.x - trimRatio * (bestEndPt.x - startPt.x);
+                    const eY = bestEndPt.y - trimRatio * (bestEndPt.y - startPt.y);
+                    hbStart = L.latLng(centerLat + sY / metersPerLatDegree, centerLng + sX / metersPerLngDegree);
+                    hbEnd = L.latLng(centerLat + eY / metersPerLatDegree, centerLng + eX / metersPerLngDegree);
+                }
+
+                const hitBoxLayer = L.polyline([hbStart, hbEnd], {
                     color: 'transparent',
-                    weight: 24,
+                    weight: 20,
                     opacity: 0,
                     interactive: (siteBoundaryState === 'edit')
                 }).addTo(map);
@@ -6818,8 +7640,26 @@ function updateSiteDivisionLines(poly) {
                     if (isSiteBoundaryDrawMode || isExclusionDrawMode || isObstacleDrawMode) return;
                     if (siteBoundaryState !== 'edit') return;
 
+                    // If user clicked right near an exterior boundary edge/step, prioritize edge selection
+                    if (e && e.latlng && customSiteBoundary) {
+                        const edgeCheck = findClosestEdge(customSiteBoundary, e.latlng);
+                        if (edgeCheck && edgeCheck.edgeIndex !== -1 && edgeCheck.distance <= 20) {
+                            activeSelectedPolygon = customSiteBoundary;
+                            activeSelectedEdgeIndex = edgeCheck.edgeIndex;
+                            activeSelectedSegmentIndex = edgeCheck.segmentIndex;
+                            activeSelectedDivision = null;
+                            updatePolygonVertexHandles(customSiteBoundary);
+                            updateSelectedPolygonVisuals(customSiteBoundary, activeSelectedEdgeIndex);
+                            showPolygonToolboxPanel(customSiteBoundary);
+                            updateToolboxPopupEdgeUI();
+                            if (e) L.DomEvent.stopPropagation(e);
+                            return;
+                        }
+                    }
+
                     activeSelectedPolygon = customSiteBoundary;
                     activeSelectedEdgeIndex = -1;
+                    activeSelectedSegmentIndex = -1;
                     activeSelectedDivision = {
                         edgeIndex: edgeIdx,
                         divisionIndex: k
@@ -6874,9 +7714,19 @@ function updateToolboxPopupEdgeUI() {
         if (btnBuildingSub) btnBuildingSub.disabled = (count <= 0);
     } else if (activeSelectedEdgeIndex !== -1) {
         if (lbl) {
-            lbl.innerHTML = `已選取邊線 #${activeSelectedEdgeIndex + 1}`;
-            if (btnIn) btnIn.title = "將邊線向內平移 0.5m";
-            if (btnOut) btnOut.title = "將邊線向外平移 0.5m";
+            if (activeSelectedSegmentIndex !== -1 && activeSelectedPolygon === customSiteBoundary) {
+                const curOff = (activeSelectedPolygon.segmentOffsets && 
+                                activeSelectedPolygon.segmentOffsets[activeSelectedEdgeIndex] && 
+                                activeSelectedPolygon.segmentOffsets[activeSelectedEdgeIndex][activeSelectedSegmentIndex]) || 0;
+                const sign = curOff > 0 ? '+' : '';
+                lbl.innerHTML = `已選取邊線 #${activeSelectedEdgeIndex + 1} (棟 ${activeSelectedSegmentIndex + 1}) [${sign}${curOff}m]`;
+                if (btnIn) btnIn.title = `將棟別 ${activeSelectedSegmentIndex + 1} 邊線向內平移 0.5m`;
+                if (btnOut) btnOut.title = `將棟別 ${activeSelectedSegmentIndex + 1} 邊線向外平移 0.5m`;
+            } else {
+                lbl.innerHTML = `已選取邊線 #${activeSelectedEdgeIndex + 1}`;
+                if (btnIn) btnIn.title = "將邊線向內平移 0.5m";
+                if (btnOut) btnOut.title = "將邊線向外平移 0.5m";
+            }
         }
         if (btnIn) btnIn.disabled = false;
         if (btnOut) btnOut.disabled = false;
@@ -6920,21 +7770,41 @@ function makePolygonSelectable(poly) {
         
         try { poly.bringToFront(); } catch (err) {}
         
-        // 1. Check if a division line was clicked near the point
+        // 1. Determine closest edge / segment to click point
+        let closestEdge = -1;
+        let closestSegment = -1;
+        let edgeDist = Infinity;
+        if (!poly.isWalkway) {
+            const edgeRes = findClosestEdge(poly, e.latlng);
+            if (typeof edgeRes === 'object' && edgeRes !== null) {
+                closestEdge = edgeRes.edgeIndex;
+                closestSegment = edgeRes.segmentIndex;
+                edgeDist = (edgeRes.distance !== undefined) ? edgeRes.distance : Infinity;
+            } else {
+                closestEdge = edgeRes;
+            }
+        }
+
+        // 2. Check if a division line was clicked near the point
         let closestDivision = null;
         if (poly === customSiteBoundary) {
             closestDivision = findClosestDivisionLine(poly, e.latlng);
         }
 
-        // 2. Determine closest edge to click point if no division line clicked
-        let closestEdge = -1;
-        if (!closestDivision && !poly.isWalkway) {
-            closestEdge = findClosestEdge(poly, e.latlng);
+        // Prioritize edge if user clicked closer to the edge, or if edge is clearly within click tolerance
+        if (closestEdge !== -1 && closestDivision) {
+            if (edgeDist <= closestDivision.distance + 4) {
+                closestDivision = null;
+            } else {
+                closestEdge = -1;
+                closestSegment = -1;
+            }
         }
         
         clearActivePolygonSelection();
         activeSelectedPolygon = poly;
         activeSelectedEdgeIndex = closestEdge;
+        activeSelectedSegmentIndex = closestSegment;
         activeSelectedDivision = closestDivision ? {
             edgeIndex: closestDivision.edgeIndex,
             divisionIndex: closestDivision.divisionIndex
@@ -6985,7 +7855,11 @@ function showPolygonToolboxPanel(poly) {
         edgeLabelText = `已選取分棟線 (邊線 #${activeSelectedDivision.edgeIndex + 1}-第${activeSelectedDivision.divisionIndex + 1}條)`;
         isOffsetBtnDisabled = false;
     } else if (activeSelectedEdgeIndex !== -1) {
-        edgeLabelText = `已選取邊線 #${activeSelectedEdgeIndex + 1}`;
+        if (activeSelectedSegmentIndex !== -1 && poly === customSiteBoundary) {
+            edgeLabelText = `已選取邊線 #${activeSelectedEdgeIndex + 1} (棟 ${activeSelectedSegmentIndex + 1})`;
+        } else {
+            edgeLabelText = `已選取邊線 #${activeSelectedEdgeIndex + 1}`;
+        }
         isOffsetBtnDisabled = false;
     }
 
@@ -7058,6 +7932,15 @@ function showPolygonToolboxPanel(poly) {
             divList.push({ offsetMeters: 0 });
             updateSiteDivisionLines(poly);
             updateToolboxPopupEdgeUI();
+            if (state.siteType === 'roof-slope' && typeof getMaxPossibleArrJ === 'function') {
+                const inferredJ = getMaxPossibleArrJ();
+                state.arrJ = inferredJ;
+                if (elements.arrJ) elements.arrJ.value = inferredJ;
+                if (elements.arrJSlider) elements.arrJSlider.value = inferredJ;
+            }
+            if (typeof calculateOutputs === 'function') calculateOutputs();
+            if (typeof createPVScene === 'function') createPVScene();
+            if (typeof saveStateToHistory === 'function') saveStateToHistory();
         });
     }
 
@@ -7078,6 +7961,15 @@ function showPolygonToolboxPanel(poly) {
             }
             updateSiteDivisionLines(poly);
             updateToolboxPopupEdgeUI();
+            if (state.siteType === 'roof-slope' && typeof getMaxPossibleArrJ === 'function') {
+                const inferredJ = getMaxPossibleArrJ();
+                state.arrJ = inferredJ;
+                if (elements.arrJ) elements.arrJ.value = inferredJ;
+                if (elements.arrJSlider) elements.arrJSlider.value = inferredJ;
+            }
+            if (typeof calculateOutputs === 'function') calculateOutputs();
+            if (typeof createPVScene === 'function') createPVScene();
+            if (typeof saveStateToHistory === 'function') saveStateToHistory();
         });
     }
 
@@ -7086,7 +7978,11 @@ function showPolygonToolboxPanel(poly) {
             if (activeSelectedDivision && poly === customSiteBoundary) {
                 offsetDivisionLine(poly, activeSelectedDivision.edgeIndex, activeSelectedDivision.divisionIndex, true);
             } else if (activeSelectedEdgeIndex >= 0) {
-                offsetSelectedEdge(poly, activeSelectedEdgeIndex, -0.5);
+                if (activeSelectedSegmentIndex !== -1 && poly === customSiteBoundary) {
+                    offsetBuildingEdgeSegment(poly, activeSelectedEdgeIndex, activeSelectedSegmentIndex, -0.5);
+                } else {
+                    offsetSelectedEdge(poly, activeSelectedEdgeIndex, -0.5);
+                }
                 updateToolboxPopupEdgeUI();
             }
         });
@@ -7096,7 +7992,11 @@ function showPolygonToolboxPanel(poly) {
             if (activeSelectedDivision && poly === customSiteBoundary) {
                 offsetDivisionLine(poly, activeSelectedDivision.edgeIndex, activeSelectedDivision.divisionIndex, false);
             } else if (activeSelectedEdgeIndex >= 0) {
-                offsetSelectedEdge(poly, activeSelectedEdgeIndex, 0.5);
+                if (activeSelectedSegmentIndex !== -1 && poly === customSiteBoundary) {
+                    offsetBuildingEdgeSegment(poly, activeSelectedEdgeIndex, activeSelectedSegmentIndex, 0.5);
+                } else {
+                    offsetSelectedEdge(poly, activeSelectedEdgeIndex, 0.5);
+                }
                 updateToolboxPopupEdgeUI();
             }
         });
@@ -7111,6 +8011,7 @@ function showPolygonToolboxPanel(poly) {
                 selectedEdgeHighlightLine = null;
             }
             activeSelectedEdgeIndex = -1;
+            activeSelectedSegmentIndex = -1;
             activeSelectedDivision = null;
             if (poly === customSiteBoundary) {
                 clearSiteDivisionLineLayers();
@@ -7359,6 +8260,7 @@ function makePolygonDraggable(polygon) {
     let isDraggingPoly = false;
     let startMouseLatLng = null;
     let startLatLngs = null;
+    let startBaseLatLngs = null;
     let startSubstationCenter = null;
     let startSiteCenterLat = null;
     let startSiteCenterLng = null;
@@ -7396,10 +8298,15 @@ function makePolygonDraggable(polygon) {
 
         activeSelectedPolygon = activeDragPoly;
         activeSelectedEdgeIndex = -1;
+        activeSelectedSegmentIndex = -1;
         updateSelectedPolygonVisuals(activeDragPoly, -1);
         updatePolygonVertexHandles(activeDragPoly);
         showPolygonToolboxPanel(activeDragPoly);
         updateToolboxPopupEdgeUI();
+
+        startBaseLatLngs = (activeDragPoly === customSiteBoundary && activeDragPoly.baseLatLngs)
+            ? activeDragPoly.baseLatLngs.map(pt => L.latLng(pt.lat, pt.lng))
+            : null;
 
         if (activeDragPoly.isWalkway) {
             startLatLngs = activeDragPoly.getLatLngs().map(pt => L.latLng(pt.lat, pt.lng));
@@ -7420,6 +8327,10 @@ function makePolygonDraggable(polygon) {
             const curLatLng = map.mouseEventToLatLng(moveEvt);
             const dLat = curLatLng.lat - startMouseLatLng.lat;
             const dLng = curLatLng.lng - startMouseLatLng.lng;
+
+            if (activeDragPoly === customSiteBoundary && startBaseLatLngs) {
+                activeDragPoly.baseLatLngs = startBaseLatLngs.map(pt => L.latLng(pt.lat + dLat, pt.lng + dLng));
+            }
 
             let newLatLngs = startLatLngs.map(pt => L.latLng(pt.lat + dLat, pt.lng + dLng));
 
@@ -7457,10 +8368,13 @@ function makePolygonDraggable(polygon) {
             }
 
             if (activeDragPoly.isSubstation && startSubstationCenter) {
-                activeDragPoly.substationCenter = L.latLng(
-                    startSubstationCenter.lat + dLat,
-                    startSubstationCenter.lng + dLng
-                );
+                activeDragPoly.substationCenter = L.latLng(startSubstationCenter.lat + dLat, startSubstationCenter.lng + dLng);
+                if (activeSubstationPoly === activeDragPoly) {
+                    if (substationCenterMarker) substationCenterMarker.setLatLng(activeDragPoly.substationCenter);
+                    const rotateLatLng = projectLatLng(activeDragPoly.substationCenter, activeDragPoly.substationAngle || 0, 4.0);
+                    if (substationRotationMarker) substationRotationMarker.setLatLng(rotateLatLng);
+                    if (substationConnectLine) substationConnectLine.setLatLngs([activeDragPoly.substationCenter, rotateLatLng]);
+                }
             }
 
             if (activeDragPoly === customSiteBoundary) {
@@ -7492,6 +8406,9 @@ function makePolygonDraggable(polygon) {
                 updateMapDraggingState();
                 if (map && map.getContainer()) {
                     map.getContainer().style.cursor = '';
+                }
+                if (activeDragPoly === customSiteBoundary && typeof updateSiteDivisionLines === 'function') {
+                    updateSiteDivisionLines(customSiteBoundary);
                 }
                 calculateOutputs();
                 updateAllVisuals(true);
@@ -7756,6 +8673,214 @@ function robustEarClipping(pts, signedArea) {
     return faces;
 }
 
+function triangulatePolygon2D(points2D, signedArea) {
+    const n = points2D.length;
+    if (n < 3) return [];
+    if (n === 3) return [[0, 1, 2]];
+
+    let faces2D = [];
+
+    // Method A: THREE.Earcut
+    if (typeof THREE !== 'undefined' && THREE.Earcut && typeof THREE.Earcut.triangulate === 'function') {
+        const flatCoords = [];
+        for (let i = 0; i < n; i++) {
+            flatCoords.push(points2D[i].x, points2D[i].z);
+        }
+        const indices = THREE.Earcut.triangulate(flatCoords, null, 2);
+        if (indices && indices.length >= 3) {
+            for (let i = 0; i < indices.length; i += 3) {
+                faces2D.push([indices[i], indices[i + 1], indices[i + 2]]);
+            }
+        }
+    }
+
+    // Method B: THREE.ShapeUtils.triangulateShape
+    if ((!faces2D || faces2D.length === 0) && typeof THREE !== 'undefined' && THREE.ShapeUtils && THREE.ShapeUtils.triangulateShape) {
+        const shapePoints = points2D.map(p => new THREE.Vector2(p.x, p.z));
+        try {
+            const result = THREE.ShapeUtils.triangulateShape(shapePoints, []);
+            if (result && result.length > 0) {
+                faces2D = result;
+            }
+        } catch (e) {
+            console.warn("ShapeUtils triangulation failed:", e);
+        }
+    }
+
+    // Method C: Robust Ear Clipping Algorithm
+    if (!faces2D || faces2D.length === 0) {
+        let area = signedArea;
+        if (area === undefined) {
+            area = 0;
+            for (let i = 0; i < n; i++) {
+                const next = (i + 1) % n;
+                area += (points2D[i].x * points2D[next].z - points2D[next].x * points2D[i].z);
+            }
+            area *= 0.5;
+        }
+        faces2D = robustEarClipping(points2D, area);
+    }
+
+    return faces2D;
+}
+
+function createBuilding3DGeometry(points, options = {}) {
+    const cleaned = cleanPolygon2D(points);
+    if (!cleaned || cleaned.length < 3) return null;
+
+    let n = cleaned.length;
+    let signedArea = 0;
+    for (let i = 0; i < n; i++) {
+        const next = (i + 1) % n;
+        signedArea += (cleaned[i].x * cleaned[next].z - cleaned[next].x * cleaned[i].z);
+    }
+    signedArea *= 0.5;
+
+    // Standardize to CCW in X-Z space (signedArea > 0)
+    let pts = cleaned;
+    if (signedArea < 0) {
+        pts = cleaned.slice().reverse();
+        signedArea = -signedArea;
+    }
+    n = pts.length;
+
+    const siteType = options.siteType || 'roof-flat';
+    const isDoublePitch = options.isDoublePitch || false;
+    const zRidge = options.zRidge !== undefined ? options.zRidge : 0;
+    const roofH = options.roofH !== undefined ? options.roofH : 0;
+    const groundY = (roofH > 0.05) ? -roofH : -0.15;
+    const getRoofY = options.getBldgRoofY || ((z) => 0);
+
+    const topPositions = [];
+    const wallAndBotPositions = [];
+
+    // 1. Top Cap (Roof faces)
+    if (siteType === 'roof-slope' && isDoublePitch) {
+        const polyNeg = cleanPolygon2D(clipPolygonByZ(pts, zRidge, true));
+        const polyPos = cleanPolygon2D(clipPolygonByZ(pts, zRidge, false));
+
+        [polyNeg, polyPos].forEach(poly => {
+            if (!poly || poly.length < 3) return;
+            let pArea = 0;
+            const pn = poly.length;
+            for (let i = 0; i < pn; i++) {
+                const next = (i + 1) % pn;
+                pArea += (poly[i].x * poly[next].z - poly[next].x * poly[i].z);
+            }
+            pArea *= 0.5;
+            let subPts = poly;
+            if (pArea < 0) {
+                subPts = poly.slice().reverse();
+                pArea = -pArea;
+            }
+            const faces = triangulatePolygon2D(subPts, pArea);
+            for (let f = 0; f < faces.length; f++) {
+                const tri = faces[f];
+                const p0 = subPts[tri[0]], p1 = subPts[tri[1]], p2 = subPts[tri[2]];
+                // Normal pointing UP (outward)
+                topPositions.push(p0.x, getRoofY(p0.z), p0.z);
+                topPositions.push(p2.x, getRoofY(p2.z), p2.z);
+                topPositions.push(p1.x, getRoofY(p1.z), p1.z);
+            }
+        });
+    } else {
+        const faces = triangulatePolygon2D(pts, signedArea);
+        for (let f = 0; f < faces.length; f++) {
+            const tri = faces[f];
+            const p0 = pts[tri[0]], p1 = pts[tri[1]], p2 = pts[tri[2]];
+            topPositions.push(p0.x, getRoofY(p0.z), p0.z);
+            topPositions.push(p2.x, getRoofY(p2.z), p2.z);
+            topPositions.push(p1.x, getRoofY(p1.z), p1.z);
+        }
+    }
+
+    // 2. Bottom Cap (Ground faces, facing DOWN)
+    const facesBot = triangulatePolygon2D(pts, signedArea);
+    for (let f = 0; f < facesBot.length; f++) {
+        const tri = facesBot[f];
+        const p0 = pts[tri[0]], p1 = pts[tri[1]], p2 = pts[tri[2]];
+        wallAndBotPositions.push(p0.x, groundY, p0.z);
+        wallAndBotPositions.push(p1.x, groundY, p1.z);
+        wallAndBotPositions.push(p2.x, groundY, p2.z);
+    }
+
+    // 3. Perimeter Exterior Walls (connecting ground to roof slope)
+    for (let i = 0; i < n; i++) {
+        const next = (i + 1) % n;
+        const pA = pts[i];
+        const pB = pts[next];
+
+        // If double pitch and edge crosses the ridge z = zRidge, split the edge at zRidge
+        const crossRidge = (siteType === 'roof-slope' && isDoublePitch &&
+            (pA.z - zRidge) * (pB.z - zRidge) < -1e-5);
+
+        const segments = [];
+        if (crossRidge) {
+            const dz = pB.z - pA.z;
+            const t = (zRidge - pA.z) / (Math.abs(dz) > 1e-6 ? dz : 1e-6);
+            const pM = { x: pA.x + t * (pB.x - pA.x), z: zRidge };
+            segments.push([pA, pM]);
+            segments.push([pM, pB]);
+        } else {
+            segments.push([pA, pB]);
+        }
+
+        segments.forEach(([p1, p2]) => {
+            const y1_top = getRoofY(p1.z);
+            const y2_top = getRoofY(p2.z);
+            const y1_bot = groundY;
+            const y2_bot = groundY;
+
+            // Quad: p1_bot -> p1_top -> p2_top -> p2_bot (Outward normals)
+            // Triangle 1: p1_bot -> p1_top -> p2_top
+            wallAndBotPositions.push(p1.x, y1_bot, p1.z);
+            wallAndBotPositions.push(p1.x, y1_top, p1.z);
+            wallAndBotPositions.push(p2.x, y2_top, p2.z);
+
+            // Triangle 2: p1_bot -> p2_top -> p2_bot
+            wallAndBotPositions.push(p1.x, y1_bot, p1.z);
+            wallAndBotPositions.push(p2.x, y2_top, p2.z);
+            wallAndBotPositions.push(p2.x, y2_bot, p2.z);
+        });
+    }
+
+    const allPositions = topPositions.concat(wallAndBotPositions);
+    if (allPositions.length === 0) return null;
+
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(allPositions, 3));
+
+    // Groups for multi-material: top roof face (group 0), wall & bottom face (group 1)
+    const topCount = topPositions.length / 3;
+    const wallAndBotCount = wallAndBotPositions.length / 3;
+    geom.addGroup(0, topCount, 0);
+    geom.addGroup(topCount, wallAndBotCount, 1);
+
+    // UVs
+    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    for (let i = 0; i < pts.length; i++) {
+        if (pts[i].x < minX) minX = pts[i].x;
+        if (pts[i].x > maxX) maxX = pts[i].x;
+        if (pts[i].z < minZ) minZ = pts[i].z;
+        if (pts[i].z > maxZ) maxZ = pts[i].z;
+    }
+    const dxRange = Math.max(maxX - minX, 1);
+    const dzRange = Math.max(maxZ - minZ, 1);
+    const uvs = new Float32Array((allPositions.length / 3) * 2);
+    for (let i = 0; i < allPositions.length / 3; i++) {
+        const vx = allPositions[i * 3];
+        const vz = allPositions[i * 3 + 2];
+        uvs[i * 2] = (vx - minX) / dxRange;
+        uvs[i * 2 + 1] = (vz - minZ) / dzRange;
+    }
+    geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+
+    geom.computeVertexNormals();
+    geom.computeBoundingBox();
+    geom.computeBoundingSphere();
+    return geom;
+}
+
 function createObstacle3DGeometry(latlngs, extrudeHeight, isOnRoof, siteType, roofH, azimuthDeg, getRoofYFunc) {
     if (!latlngs || latlngs.length < 3) return null;
 
@@ -7826,40 +8951,7 @@ function createObstacle3DGeometry(latlngs, extrudeHeight, isOnRoof, siteType, ro
     }
 
     // 4. Robust 2D Triangulation for complex/concave polygons
-    let faces2D = [];
-
-    // Method A: THREE.Earcut
-    if (typeof THREE !== 'undefined' && THREE.Earcut && typeof THREE.Earcut.triangulate === 'function') {
-        const flatCoords = [];
-        for (let i = 0; i < n; i++) {
-            flatCoords.push(points2D[i].x, points2D[i].z);
-        }
-        const indices = THREE.Earcut.triangulate(flatCoords, null, 2);
-        if (indices && indices.length >= 3) {
-            for (let i = 0; i < indices.length; i += 3) {
-                faces2D.push([indices[i], indices[i + 1], indices[i + 2]]);
-            }
-        }
-    }
-
-    // Method B: THREE.ShapeUtils.triangulateShape
-    if ((!faces2D || faces2D.length === 0) && THREE.ShapeUtils && THREE.ShapeUtils.triangulateShape) {
-        const shapePoints = points2D.map(p => new THREE.Vector2(p.x, p.z));
-        try {
-            const result = THREE.ShapeUtils.triangulateShape(shapePoints, []);
-            if (result && result.length > 0) {
-                faces2D = result;
-            }
-        } catch (e) {
-            console.warn("ShapeUtils triangulation failed:", e);
-        }
-    }
-
-    // Method C: Robust Ear Clipping Algorithm (Never cuts across concave indents)
-    if (!faces2D || faces2D.length === 0) {
-        faces2D = robustEarClipping(points2D, signedArea);
-    }
-
+    const faces2D = triangulatePolygon2D(points2D, signedArea);
     if (!faces2D || faces2D.length === 0) return null;
 
     const positions = [];
@@ -8097,7 +9189,8 @@ function updateViewer(params) {
         // Calculate neg_max_s and pos_max_s relative to this actual zOffset
         for (let g = 0; g < totalCoordGroups; g++) {
             const blockZ = (g - (totalCoordGroups - 1) / 2) * arrP;
-            for (let r = 0; r < numNeg; r++) {
+            const curNegRows = (layoutCoords[g]?.['neg'] || []).length;
+            for (let r = 0; r < curNegRows; r++) {
                 for (let c = 0; c < arrI; c++) {
                     const coord = layoutCoords[g]?.['neg']?.[r]?.[c];
                     if (coord) {
@@ -8111,7 +9204,8 @@ function updateViewer(params) {
                     }
                 }
             }
-            for (let r = 0; r < numPos; r++) {
+            const curPosRows = (layoutCoords[g]?.['pos'] || []).length;
+            for (let r = 0; r < curPosRows; r++) {
                 for (let c = 0; c < arrI; c++) {
                     const coord = layoutCoords[g]?.['pos']?.[r]?.[c];
                     if (coord) {
@@ -8130,7 +9224,8 @@ function updateViewer(params) {
         const totalCoordGroups = (layoutCoords && layoutCoords.length > 0) ? layoutCoords.length : arrM;
         for (let g = 0; g < totalCoordGroups; g++) {
             const blockZ = (g - (totalCoordGroups - 1) / 2) * arrP;
-            for (let r = 0; r < arrJ; r++) {
+            const curSingleRows = (layoutCoords[g]?.['single'] || []).length;
+            for (let r = 0; r < curSingleRows; r++) {
                 for (let c = 0; c < arrI; c++) {
                     const coord = layoutCoords[g]?.['single']?.[r]?.[c];
                     if (coord) {
@@ -8315,6 +9410,7 @@ function updateViewer(params) {
                 };
 
                 roofPlane = new THREE.Group();
+                roofPlane.name = "Buildings_Group";
 
                 const buildingsToRender = (subBuildings && subBuildings.length > 0) ? subBuildings : [{
                     points: latlngs.map(pt => {
@@ -8327,13 +9423,12 @@ function updateViewer(params) {
                     yRidge: Y_ridge
                 }];
 
-                buildingsToRender.forEach(bldg => {
+                buildingsToRender.forEach((bldg, idx) => {
                     const bldgPoints = bldg.points;
-                    const bldgZRidge = bldg.zRidge !== undefined ? bldg.zRidge : z_ridge;
-                    const bldgYRidge = bldg.yRidge !== undefined ? bldg.yRidge : Y_ridge;
-                    const bldgZFront = bldg.minZ !== undefined ? bldg.minZ : z_front;
-                    const bldgZBack = bldg.maxZ !== undefined ? bldg.maxZ : z_back;
-                    const bldgYHigh = (bldgZBack - bldgZFront) * Math.tan(roofTiltRad);
+                    const bldgZRidge = bldg.baseZRidge !== undefined ? bldg.baseZRidge : (bldg.zRidge !== undefined ? bldg.zRidge : z_ridge);
+                    const bldgYRidge = bldg.baseYRidge !== undefined ? bldg.baseYRidge : (bldg.yRidge !== undefined ? bldg.yRidge : Y_ridge);
+                    const bldgZFront = bldg.baseMinZ !== undefined ? bldg.baseMinZ : (bldg.minZ !== undefined ? bldg.minZ : z_front);
+                    const bldgZBack = bldg.baseMaxZ !== undefined ? bldg.baseMaxZ : (bldg.maxZ !== undefined ? bldg.maxZ : z_back);
 
                     const getBldgRoofY = (zVal) => {
                         if (siteType !== 'roof-slope') return 0;
@@ -8346,52 +9441,26 @@ function updateViewer(params) {
                         }
                     };
 
-                    if (siteType === 'roof-slope' && isDoublePitch) {
-                        const polyNeg = clipPolygonByZ(bldgPoints, bldgZRidge, true);
-                        const polyPos = clipPolygonByZ(bldgPoints, bldgZRidge, false);
+                    const bldgGeo = createBuilding3DGeometry(bldgPoints, {
+                        siteType,
+                        pitchStyle,
+                        isDoublePitch,
+                        roofTiltRad,
+                        roofH: params.roofH || 0,
+                        zRidge: bldgZRidge,
+                        yRidge: bldgYRidge,
+                        zFront: bldgZFront,
+                        zBack: bldgZBack,
+                        getBldgRoofY
+                    });
 
-                        [polyNeg, polyPos].forEach(poly => {
-                            const subMesh = makeSafeExtrudedMesh(poly, 0.15, (x, y, z) => {
-                                const y_roof = getBldgRoofY(z);
-                                return (y > 0.075) ? y_roof : (y_roof - 0.15);
-                            }, materials.roofTile);
-                            if (subMesh) {
-                                roofPlane.add(subMesh);
-                            }
-                        });
-                    } else {
-                        const slabMesh = makeSafeExtrudedMesh(bldgPoints, 0.15, (x, y, z) => {
-                            let y_roof = 0;
-                            if (siteType === 'roof-slope') {
-                                y_roof = getBldgRoofY(z);
-                            }
-                            return (y > 0.075) ? y_roof : (y_roof - 0.15);
-                        }, (siteType === 'roof-flat') ? materials.concrete : materials.roofTile);
-                        if (slabMesh) {
-                            roofPlane.add(slabMesh);
-                        }
-                    }
-
-                    // Building walls under each sub-building roof
-                    const roofH = params.roofH || 0;
-                    if (roofH > 0.05) {
-                        const makeBuildingMesh = (polyPts) => {
-                            const buildingMesh = makeSafeExtrudedMesh(polyPts, roofH, (x, y, z) => {
-                                const y_roof = (siteType === 'roof-slope') ? getBldgRoofY(z) : 0;
-                                return (y > roofH / 2) ? (y_roof - 0.15) : -roofH;
-                            }, materials.building);
-                            if (buildingMesh) {
-                                localGroup.add(buildingMesh);
-                            }
-                        };
-
-                        if (siteType === 'roof-slope' && isDoublePitch) {
-                            const polyNeg = clipPolygonByZ(bldgPoints, bldgZRidge, true);
-                            const polyPos = clipPolygonByZ(bldgPoints, bldgZRidge, false);
-                            [polyNeg, polyPos].forEach(poly => makeBuildingMesh(poly));
-                        } else {
-                            makeBuildingMesh(bldgPoints);
-                        }
+                    if (bldgGeo) {
+                        const roofMat = (siteType === 'roof-flat') ? materials.concrete : materials.roofTile;
+                        const bldgMesh = new THREE.Mesh(bldgGeo, [roofMat, materials.building]);
+                        bldgMesh.name = (buildingsToRender.length > 1) ? `Building_${idx + 1}` : "Building_Main";
+                        bldgMesh.receiveShadow = true;
+                        bldgMesh.castShadow = true;
+                        roofPlane.add(bldgMesh);
                     }
                 });
 
@@ -8404,8 +9473,8 @@ function updateViewer(params) {
                     // 1. 中脊線 (Ridge Lines) - Bold amber/gold line (加粗表現)
                     if (isDoublePitch) {
                         buildingsToRender.forEach(bldg => {
-                            const bldgZRidge = bldg.zRidge !== undefined ? bldg.zRidge : z_ridge;
-                            const bldgYRidge = bldg.yRidge !== undefined ? bldg.yRidge : Y_ridge;
+                            const bldgZRidge = bldg.baseZRidge !== undefined ? bldg.baseZRidge : (bldg.zRidge !== undefined ? bldg.zRidge : z_ridge);
+                            const bldgYRidge = bldg.baseYRidge !== undefined ? bldg.baseYRidge : (bldg.yRidge !== undefined ? bldg.yRidge : Y_ridge);
                             const bldgMinX = (bldg.minX !== undefined && bldg.minX !== Infinity) ? bldg.minX : (-arrayWidth / 2);
                             const bldgMaxX = (bldg.maxX !== undefined && bldg.maxX !== -Infinity) ? bldg.maxX : (arrayWidth / 2);
 
@@ -8414,41 +9483,6 @@ function updateViewer(params) {
                             const ridgeTube = createThick3DLine(p1, p2, 0.04, 0xf59e0b); // 8cm thick amber gold ridge line
                             if (ridgeTube) featureGroup.add(ridgeTube);
                         });
-                    }
-
-                    // 2. 天溝線 (Gutter / Valley Lines) - Bold cyan/blue line (加粗表現)
-                    if (customSiteBoundary && customSiteBoundary.buildingDivisions) {
-                        const divSegments = getSiteDivisionLineSegments(customSiteBoundary);
-                        if (divSegments && divSegments.length > 0) {
-                            divSegments.forEach(seg => {
-                                const s1 = latLngToLocal(seg.startLatLng, state.lat, state.lng, params.azimuth);
-                                const s2 = latLngToLocal(seg.endLatLng, state.lat, state.lng, params.azimuth);
-                                
-                                const p1 = { x: s1.x, y: 0.03, z: s1.z };
-                                const p2 = { x: s2.x, y: 0.03, z: s2.z };
-                                const gutterTube = createThick3DLine(p1, p2, 0.04, 0x0284c7); // 8cm thick cyan blue gutter line
-                                if (gutterTube) featureGroup.add(gutterTube);
-
-                                const dx = s2.x - s1.x;
-                                const dz = s2.z - s1.z;
-                                const len = Math.sqrt(dx * dx + dz * dz);
-                                if (len > 0.01) {
-                                    const stripGeo = new THREE.PlaneGeometry(0.20, len);
-                                    const stripMat = new THREE.MeshBasicMaterial({
-                                        color: 0x0284c7,
-                                        side: THREE.DoubleSide,
-                                        transparent: true,
-                                        opacity: 0.6,
-                                        depthWrite: false
-                                    });
-                                    const stripMesh = new THREE.Mesh(stripGeo, stripMat);
-                                    stripMesh.position.set((s1.x + s2.x) / 2, 0.02, (s1.z + s2.z) / 2);
-                                    stripMesh.rotation.x = -Math.PI / 2;
-                                    stripMesh.rotation.z = Math.atan2(dx, dz);
-                                    featureGroup.add(stripMesh);
-                                }
-                            });
-                        }
                     }
 
                     localGroup.add(featureGroup);
@@ -8515,154 +9549,69 @@ function updateViewer(params) {
             }
         }
     } else {
-        if (siteType === 'roof-slope') {
-            if (isDoublePitch) {
-                roofPlane = new THREE.Group();
-                const isDoubleV = (pitchStyle === 'double-v');
-                
-                // Negative slope roof plane
-                const roofGeoNeg = new THREE.BoxGeometry(arrayWidth + 3, 0.15, L_neg_ext);
-                const roofMeshNeg = new THREE.Mesh(roofGeoNeg, materials.roofTile);
-                roofMeshNeg.receiveShadow = true;
-                roofMeshNeg.castShadow = true;
-                roofMeshNeg.rotation.x = isDoubleV ? +roofTiltRad : -roofTiltRad;
-                
-                const dyOffsetNeg = -0.075 * Math.cos(roofTiltRad);
-                const dzOffsetNeg = 0.075 * Math.sin(roofTiltRad);
-                const yNegPos = isDoubleV
-                    ? (L_neg_ext / 2) * Math.sin(roofTiltRad) + dyOffsetNeg
-                    : Y_ridge - (L_neg_ext / 2) * Math.sin(roofTiltRad) + dyOffsetNeg;
-                roofMeshNeg.position.set(
-                    xCenterOffset,
-                    yNegPos,
-                    z_ridge - (L_neg_ext / 2) * Math.cos(roofTiltRad) + dzOffsetNeg
-                );
-                roofPlane.add(roofMeshNeg);
-                
-                // Positive slope roof plane
-                const roofGeoPos = new THREE.BoxGeometry(arrayWidth + 3, 0.15, L_pos_ext);
-                const roofMeshPos = new THREE.Mesh(roofGeoPos, materials.roofTile);
-                roofMeshPos.receiveShadow = true;
-                roofMeshPos.castShadow = true;
-                roofMeshPos.rotation.x = isDoubleV ? -roofTiltRad : +roofTiltRad;
-                
-                const dyOffsetPos = -0.075 * Math.cos(roofTiltRad);
-                const dzOffsetPos = -0.075 * Math.sin(roofTiltRad);
-                const yPosPos = isDoubleV
-                    ? (L_pos_ext / 2) * Math.sin(roofTiltRad) + dyOffsetPos
-                    : Y_ridge - (L_pos_ext / 2) * Math.sin(roofTiltRad) + dyOffsetPos;
-                roofMeshPos.position.set(
-                    xCenterOffset,
-                    yPosPos,
-                    z_ridge + (L_pos_ext / 2) * Math.cos(roofTiltRad) + dzOffsetPos
-                );
-                roofPlane.add(roofMeshPos);
-                
-                localGroup.add(roofPlane);
-            } else {
-                // Single Slope Roof Plane: Slopes down from z_back towards z_front
-                const roofGeo = new THREE.BoxGeometry(arrayWidth + 3, 0.15, L_ext);
-                roofPlane = new THREE.Mesh(roofGeo, materials.roofTile);
-                roofPlane.receiveShadow = true;
-                roofPlane.castShadow = true;
-                
-                roofPlane.rotation.x = -roofTiltRad;
-                const dyOffset = -0.075 * Math.cos(roofTiltRad);
-                const dzOffset = 0.075 * Math.sin(roofTiltRad);
-                roofPlane.position.set(
-                    xCenterOffset,
-                    Y_high / 2 + dyOffset,
-                    (z_front + z_back) / 2 + dzOffset
-                );
-                
-                localGroup.add(roofPlane);
-            }
-            
-            // Render building body walls under the slope roof
-            const roofH = params.roofH || 0;
-            if (roofH > 0.05) {
-                const shape = new THREE.Shape();
+        if (siteType === 'roof-slope' || siteType === 'roof-flat') {
+            roofPlane = new THREE.Group();
+            roofPlane.name = "Buildings_Group";
+
+            const bldgW = arrayWidth + 3.0;
+            const xMin = xCenterOffset - bldgW / 2;
+            const xMax = xCenterOffset + bldgW / 2;
+            let zMin, zMax;
+            if (siteType === 'roof-slope') {
                 if (isDoublePitch) {
-                    const zFront = z_ridge - L_neg_ext * Math.cos(roofTiltRad);
-                    const zBack = z_ridge + L_pos_ext * Math.cos(roofTiltRad);
-                    const Y_front = getRoofY(zFront);
-                    const Y_back = getRoofY(zBack);
-                    const Y_center = (pitchStyle === 'double-v') ? 0 : Y_ridge;
-                    
-                    shape.moveTo(zFront, -roofH);
-                    shape.lineTo(zBack, -roofH);
-                    shape.lineTo(zBack, Y_back);
-                    shape.lineTo(z_ridge, Y_center);
-                    shape.lineTo(zFront, Y_front);
+                    zMin = z_ridge - L_neg_ext * Math.cos(roofTiltRad);
+                    zMax = z_ridge + L_pos_ext * Math.cos(roofTiltRad);
                 } else {
-                    const zFront = z_front;
-                    const zBack = z_back;
-                    const yFrontSlope = getRoofY(zFront);
-                    const yBackSlope = getRoofY(zBack);
-                    
-                    shape.moveTo(zFront, -roofH);
-                    shape.lineTo(zBack, -roofH);
-                    shape.lineTo(zBack, yBackSlope);
-                    shape.lineTo(zFront, yFrontSlope);
+                    zMin = z_front;
+                    zMax = z_back;
                 }
-                const W = arrayWidth + 3.0;
-                const extrudeSettings = {
-                    depth: W,
-                    bevelEnabled: false
-                };
-                const ExtrudeGeoClass = THREE.ExtrudeBufferGeometry || THREE.ExtrudeGeometry;
-                const buildingGeo = new ExtrudeGeoClass(shape, extrudeSettings);
-                
-                if (buildingGeo.attributes && buildingGeo.attributes.position) {
-                    const pos = buildingGeo.attributes.position;
-                    for (let i = 0; i < pos.count; i++) {
-                        const origZ_world = pos.getX(i);
-                        const origY_world = pos.getY(i);
-                        const origX_ext = pos.getZ(i);
-                        pos.setXYZ(i, origX_ext - W / 2 + xCenterOffset, origY_world, origZ_world);
-                    }
-                    pos.needsUpdate = true;
-                    buildingGeo.computeVertexNormals();
-                } else if (buildingGeo.vertices) {
-                    for (let i = 0; i < buildingGeo.vertices.length; i++) {
-                        const v = buildingGeo.vertices[i];
-                        const origZ_world = v.x;
-                        const origY_world = v.y;
-                        const origX_ext = v.z;
-                        v.x = origX_ext - W / 2 + xCenterOffset;
-                        v.y = origY_world;
-                        v.z = origZ_world;
-                    }
-                    buildingGeo.verticesNeedUpdate = true;
-                    buildingGeo.computeFaceNormals();
-                    buildingGeo.computeVertexNormals();
-                }
-                
-                const buildingMesh = new THREE.Mesh(buildingGeo, materials.building);
-                buildingMesh.castShadow = true;
-                buildingMesh.receiveShadow = true;
-                localGroup.add(buildingMesh);
+            } else {
+                // roof-flat
+                zMin = zCenterOffset - (systemLength + 3.0) / 2;
+                zMax = zCenterOffset + (systemLength + 3.0) / 2;
             }
-        } else if (siteType === 'roof-flat') {
-            // Flat roof concrete slab at local y = 0
-            const roofGeo = new THREE.BoxGeometry(arrayWidth + 3, 0.15, systemLength + 3);
-            roofPlane = new THREE.Mesh(roofGeo, materials.concrete);
-            roofPlane.receiveShadow = true;
-            roofPlane.castShadow = true;
-            
-            roofPlane.position.set(xCenterOffset, -0.075, zCenterOffset);
+
+            const fallbackPoints = [
+                { x: xMin, z: zMin },
+                { x: xMax, z: zMin },
+                { x: xMax, z: zMax },
+                { x: xMin, z: zMax }
+            ];
+
+            const getFallbackRoofY = (zVal) => {
+                if (siteType !== 'roof-slope') return 0;
+                if (pitchStyle === 'double') {
+                    return Math.max(0, Y_ridge - Math.abs(zVal - z_ridge) * Math.tan(roofTiltRad));
+                } else if (pitchStyle === 'double-v') {
+                    return Math.max(0, Math.abs(zVal - z_ridge) * Math.tan(roofTiltRad));
+                } else {
+                    return Math.max(0, (zVal - z_front) * Math.tan(roofTiltRad));
+                }
+            };
+
+            const bldgGeo = createBuilding3DGeometry(fallbackPoints, {
+                siteType,
+                pitchStyle,
+                isDoublePitch,
+                roofTiltRad,
+                roofH: params.roofH || 0,
+                zRidge: z_ridge,
+                yRidge: Y_ridge,
+                zFront: z_front,
+                zBack: z_back,
+                getBldgRoofY: getFallbackRoofY
+            });
+
+            if (bldgGeo) {
+                const roofMat = (siteType === 'roof-flat') ? materials.concrete : materials.roofTile;
+                const bldgMesh = new THREE.Mesh(bldgGeo, [roofMat, materials.building]);
+                bldgMesh.name = "Building_Main";
+                bldgMesh.receiveShadow = true;
+                bldgMesh.castShadow = true;
+                roofPlane.add(bldgMesh);
+            }
+
             localGroup.add(roofPlane);
-            
-            // Render building body walls under the flat roof
-            const roofH = params.roofH || 0;
-            if (roofH > 0.05) {
-                const buildingGeo = new THREE.BoxGeometry(arrayWidth + 3, roofH, systemLength + 3);
-                const buildingMesh = new THREE.Mesh(buildingGeo, materials.building);
-                buildingMesh.castShadow = true;
-                buildingMesh.receiveShadow = true;
-                buildingMesh.position.set(xCenterOffset, -roofH / 2, zCenterOffset);
-                localGroup.add(buildingMesh);
-            }
         }
     }
     
@@ -8739,6 +9688,7 @@ function updateViewer(params) {
     
     for (let g = 0; g < totalGroups; g++) {
         const blockZ = (g - (arrM - 1) / 2) * arrP;
+        const targetBldg = (subBuildings && subBuildings[g]) ? subBuildings[g] : null;
         
         if (pitchStyle === 'double') {
             // "雙斜" = Gable / 山型 (中間高、兩側低)
@@ -8748,22 +9698,20 @@ function updateViewer(params) {
                     const coord = layoutCoords[g]?.['neg']?.[r]?.[c] || { localX: 0, rowZ: 0 };
                     const localX = coord.localX;
                     const rowZ = coord.rowZ;
-                    if (!isModuleExcluded(localX, rowZ, params)) {
+                    if (!isModuleExcluded(localX, rowZ, params, targetBldg)) {
                         let panelY = 0;
                         let rotX = -totalTiltRad;
                         
                         if (siteType === 'roof-slope' && isFlatLaid) {
-                            const bldg = (subBuildings && subBuildings.length > 0)
-                                ? findSubBuildingForPoint(localX, rowZ, subBuildings)
-                                : null;
-                            const ridgeZ = bldg ? bldg.zRidge : z_ridge;
+                            const ridgeZ = targetBldg ? (targetBldg.baseZRidge !== undefined ? targetBldg.baseZRidge : targetBldg.zRidge) : z_ridge;
                             rotX = (rowZ < ridgeZ) ? -roofTiltRad : +roofTiltRad;
                             panelY = getRoofY(rowZ, localX) + 0.20;
                         } else if (siteType === 'roof-slope') {
-                            const curRidgeZ = -zOffset + blockZ;
+                            const curRidgeZ = targetBldg ? (targetBldg.baseZRidge !== undefined ? targetBldg.baseZRidge : targetBldg.zRidge) : (-zOffset + blockZ);
+                            const curYRidge = targetBldg ? (targetBldg.baseYRidge !== undefined ? targetBldg.baseYRidge : targetBldg.yRidge) : Y_ridge;
                             const s_actual = Math.abs(rowZ - curRidgeZ) / Math.cos(totalTiltRad);
                             rotX = (rowZ < curRidgeZ) ? -totalTiltRad : +totalTiltRad;
-                            const rowY = (Y_ridge + supportH) - s_actual * Math.sin(totalTiltRad);
+                            const rowY = (curYRidge + effSupportH) - s_actual * Math.sin(totalTiltRad);
                             panelY = rowY + 0.015 + panelOffset;
                         } else {
                             // Ground mount / Flat roof "雙斜" = Mountain/Gable (Center ridge is high, outer eaves low)
@@ -8785,22 +9733,20 @@ function updateViewer(params) {
                     const coord = layoutCoords[g]?.['pos']?.[r]?.[c] || { localX: 0, rowZ: 0 };
                     const localX = coord.localX;
                     const rowZ = coord.rowZ;
-                    if (!isModuleExcluded(localX, rowZ, params)) {
+                    if (!isModuleExcluded(localX, rowZ, params, targetBldg)) {
                         let panelY = 0;
                         let rotX = +totalTiltRad;
                         
                         if (siteType === 'roof-slope' && isFlatLaid) {
-                            const bldg = (subBuildings && subBuildings.length > 0)
-                                ? findSubBuildingForPoint(localX, rowZ, subBuildings)
-                                : null;
-                            const ridgeZ = bldg ? bldg.zRidge : z_ridge;
+                            const ridgeZ = targetBldg ? (targetBldg.baseZRidge !== undefined ? targetBldg.baseZRidge : targetBldg.zRidge) : z_ridge;
                             rotX = (rowZ < ridgeZ) ? -roofTiltRad : +roofTiltRad;
                             panelY = getRoofY(rowZ, localX) + 0.20;
                         } else if (siteType === 'roof-slope') {
-                            const curRidgeZ = -zOffset + blockZ;
+                            const curRidgeZ = targetBldg ? (targetBldg.baseZRidge !== undefined ? targetBldg.baseZRidge : targetBldg.zRidge) : (-zOffset + blockZ);
+                            const curYRidge = targetBldg ? (targetBldg.baseYRidge !== undefined ? targetBldg.baseYRidge : targetBldg.yRidge) : Y_ridge;
                             const s_actual = Math.abs(rowZ - curRidgeZ) / Math.cos(totalTiltRad);
                             rotX = (rowZ < curRidgeZ) ? -totalTiltRad : +totalTiltRad;
-                            const rowY = (Y_ridge + supportH) - s_actual * Math.sin(totalTiltRad);
+                            const rowY = (curYRidge + effSupportH) - s_actual * Math.sin(totalTiltRad);
                             panelY = rowY + 0.015 + panelOffset;
                         } else {
                             // Ground mount / Flat roof "雙斜" = Mountain/Gable (Center ridge is high, outer eaves low)
@@ -8827,15 +9773,12 @@ function updateViewer(params) {
                     const coord = layoutCoords[g]?.['neg']?.[r]?.[c] || { localX: 0, rowZ: 0 };
                     const localX = coord.localX;
                     const rowZ = coord.rowZ;
-                    if (!isModuleExcluded(localX, rowZ, params)) {
+                    if (!isModuleExcluded(localX, rowZ, params, targetBldg)) {
                         let panelY = 0;
                         let rotX = +totalTiltRad;
                         
                         if (siteType === 'roof-slope' && isFlatLaid) {
-                            const bldg = (subBuildings && subBuildings.length > 0)
-                                ? findSubBuildingForPoint(localX, rowZ, subBuildings)
-                                : null;
-                            const ridgeZ = bldg ? bldg.zRidge : z_ridge;
+                            const ridgeZ = targetBldg ? (targetBldg.baseZRidge !== undefined ? targetBldg.baseZRidge : targetBldg.zRidge) : z_ridge;
                             rotX = (rowZ < ridgeZ) ? +roofTiltRad : -roofTiltRad;
                             panelY = getRoofY(rowZ, localX) + 0.20;
                         } else {
@@ -8857,15 +9800,12 @@ function updateViewer(params) {
                     const coord = layoutCoords[g]?.['pos']?.[r]?.[c] || { localX: 0, rowZ: 0 };
                     const localX = coord.localX;
                     const rowZ = coord.rowZ;
-                    if (!isModuleExcluded(localX, rowZ, params)) {
+                    if (!isModuleExcluded(localX, rowZ, params, targetBldg)) {
                         let panelY = 0;
                         let rotX = -totalTiltRad;
                         
                         if (siteType === 'roof-slope' && isFlatLaid) {
-                            const bldg = (subBuildings && subBuildings.length > 0)
-                                ? findSubBuildingForPoint(localX, rowZ, subBuildings)
-                                : null;
-                            const ridgeZ = bldg ? bldg.zRidge : z_ridge;
+                            const ridgeZ = targetBldg ? (targetBldg.baseZRidge !== undefined ? targetBldg.baseZRidge : targetBldg.zRidge) : z_ridge;
                             rotX = (rowZ < ridgeZ) ? +roofTiltRad : -roofTiltRad;
                             panelY = getRoofY(rowZ, localX) + 0.20;
                         } else {
@@ -8888,7 +9828,7 @@ function updateViewer(params) {
                     const coord = layoutCoords[g]?.['single']?.[r]?.[c] || { localX: 0, rowZ: 0 };
                     const localX = coord.localX;
                     const rowZ = coord.rowZ;
-                    if (!isModuleExcluded(localX, rowZ, params)) {
+                    if (!isModuleExcluded(localX, rowZ, params, targetBldg)) {
                         let panelY = 0;
                         let rotX = -totalTiltRad;
                         
@@ -8977,11 +9917,15 @@ function updateViewer(params) {
     if (xPositions.length === 1 && (endX - startX > 0.5)) {
         xPositions.push(endX);
     }
-    
-    const rackBoxes = [];
+const rackBoxes = [];
     const concreteBoxes = [];
     const aluminumBoxes = [];
     const aluminumFeet = [];
+    const hFeetPortraitPos = [];
+    const hFeetPortraitNeg = [];
+    const hFeetLandscapePos = [];
+    const hFeetLandscapeNeg = [];
+    let hFeetDistNormal = 0.165;
     
     // ------------------------------------------
     // Purlin Generation (檁條 / 導軌 / C型鋼)
@@ -9081,21 +10025,24 @@ function updateViewer(params) {
                     const refB = rowB[0];
                     const rotXA = refA.rotX;
 
-                    const bottomDzA = +0.5 * pvW;
-                    const yBottomA = refA.y + dy_center * Math.cos(rotXA) - bottomDzA * Math.sin(rotXA);
-                    const zBottomA = refA.z + dy_center * Math.sin(rotXA) + bottomDzA * Math.cos(rotXA);
+                    const dzA = +0.5 * pvW;
+                    const yBottomA = refA.y + dy_center * Math.cos(rotXA) - dzA * Math.sin(rotXA);
+                    const zBottomA = refA.z + dy_center * Math.sin(rotXA) + dzA * Math.cos(rotXA);
 
-                    const topDzB = -0.5 * pvW;
-                    const yTopB = refB.y + dy_center * Math.cos(rotXA) - topDzB * Math.sin(rotXA);
-                    const zTopB = refB.z + dy_center * Math.sin(rotXA) + topDzB * Math.cos(rotXA);
+                    const dzB = -0.5 * pvW;
+                    const yTopB = refB.y + dy_center * Math.cos(rotXA) - dzB * Math.sin(rotXA);
+                    const zTopB = refB.z + dy_center * Math.sin(rotXA) + dzB * Math.cos(rotXA);
 
-                    const dist = Math.sqrt((yTopB - yBottomA) ** 2 + (zTopB - zBottomA) ** 2);
-                    const isAdjacent = (rNext === rCurr + 1) && (dist <= 0.25);
+                    const gapRow = Math.sqrt(Math.pow(yTopB - yBottomA, 2) + Math.pow(zTopB - zBottomA, 2));
 
-                    if (isAdjacent) {
-                        // Shared purlin at midpoint
+                    if (gapRow <= (params.spY / 1000 || 0.02) + 0.05) {
+                        // Merged single purlin
                         let minX = Infinity, maxX = -Infinity;
-                        rowA.concat(rowB).forEach(p => {
+                        rowA.forEach(p => {
+                            if (p.x < minX) minX = p.x;
+                            if (p.x > maxX) maxX = p.x;
+                        });
+                        rowB.forEach(p => {
                             if (p.x < minX) minX = p.x;
                             if (p.x > maxX) maxX = p.x;
                         });
@@ -9210,8 +10157,7 @@ function updateViewer(params) {
         if (isFlatLaid) {
             // 平鋪型 (Flat-Laid Slope Roof):
             // 檁條由第一片模組貫穿到最後一片模組，頭尾外突模組 10cm (0.10m)。
-            // 腳座為鋁擠件，截面沿平行檁條方向擠出 7cm (0.07m)，平均配置在檁條下，以間距 90cm 為原則 (餘數留於頭尾)，頭尾內縮檁條 5cm (0.05m)。
-            // 腳座呈 "h" 形狀，"h" 上面的 "|" 完美貼合檁條側邊。
+            // 腳座為單一 2D "h" 截面鋁擠型實體 (ExtrudeGeometry)，沿平行檁條方向擠出 4cm (0.04m)，平均配置在檁條下，以間距 90cm 為原則 (餘數留於頭尾)，頭尾內縮檁條 5cm (0.05m)。
             const pvLength = params.pvL / 1000;
             const pvWidth = params.pvW / 1000;
             const isPortrait = params.pvOrient === 'portrait';
@@ -9283,9 +10229,10 @@ function updateViewer(params) {
 
                             // 2 支檁條在 ds = ±0.3 * pvLength
                             const offsetDs = [-0.3 * pvLength, 0.3 * pvLength];
+                            const GAP = 0.0005; // 至少維持 0.1mm (0.5mm) 間隙，避免 3D 元件交集產生共面封閉面
                             offsetDs.forEach((ds, railIdx) => {
                                 const purlinZ = refP.z + ds * Math.cos(rotX);
-                                const purlinY = (refP.y - 0.015 - railH / 2) - ds * Math.sin(rotX);
+                                const purlinY = (refP.y - 0.015 - GAP - railH / 2) - ds * Math.sin(rotX);
 
                                 // 1. 檁條本體
                                 aluminumBoxes.push({
@@ -9300,37 +10247,21 @@ function updateViewer(params) {
                                     const numSpans = Math.max(1, Math.floor(feetSpan / 0.90));
                                     const rem = feetSpan - numSpans * 0.90;
                                     const firstX = startX + 0.05 + rem / 2;
-
-                                    // "|" of "h" side selection (facing outward for aesthetics)
                                     const sideSign = (railIdx === 0) ? -1 : 1;
-                                    const flangeOffsetZ = sideSign * (railW / 2 + 0.003) * Math.cos(rotX);
-                                    const flangeOffsetY = -sideSign * (railW / 2 + 0.003) * Math.sin(rotX);
 
                                     for (let k = 0; k <= numSpans; k++) {
                                         const footX = firstX + k * 0.90;
                                         const yRoof = getRoofY(purlinZ, footX);
-                                        const yRailBottom = purlinY - (railH / 2) * Math.cos(rotX);
-                                        const hFoot = yRailBottom - yRoof;
-                                        if (hFoot > 0.005) {
-                                            // 主支撐身 (平行檁條 X 軸擠出 7cm)
-                                            aluminumBoxes.push({
-                                                pos: [footX, yRoof + hFoot / 2, purlinZ],
-                                                rot: [0, 0, 0],
-                                                scale: [0.07, hFoot, 0.03]
-                                            });
-                                            // "h" 上方的 "|" 垂直側翼 (貼齊檁條側邊)
-                                            aluminumBoxes.push({
-                                                pos: [footX, purlinY + flangeOffsetY, purlinZ + flangeOffsetZ],
-                                                rot: [rotX, 0, 0],
-                                                scale: [0.07, railH, 0.006]
-                                            });
-                                            // 底部貼屋面基座底板
-                                            aluminumBoxes.push({
-                                                pos: [footX, yRoof + 0.003, purlinZ],
-                                                rot: [0, 0, 0],
-                                                scale: [0.07, 0.006, 0.05]
-                                            });
-                                        }
+                                        const distNormal = (purlinY - yRoof) * Math.cos(rotX);
+                                        hFeetDistNormal = distNormal;
+
+                                        // 單一 2D "h" 截面擠出實體腳座
+                                        const targetArr = (sideSign > 0) ? hFeetPortraitPos : hFeetPortraitNeg;
+                                        targetArr.push({
+                                            pos: [footX, purlinY, purlinZ],
+                                            rot: [rotX, 0, 0],
+                                            scale: [1, 1, 1]
+                                        });
                                     }
                                 }
                             });
@@ -9384,7 +10315,8 @@ function updateViewer(params) {
                             // 頭尾外突 10cm
                             const purlinLen = slopeSpan + 0.20;
                             const midZ = (minZ + maxZ) / 2;
-                            const midY = ((refFirst.y + refLast.y) / 2) - 0.015 - railH / 2;
+                            const GAP = 0.0005; // 至少維持 0.1mm (0.5mm) 間隙，避免 3D 元件交集產生共面封閉面
+                            const midY = ((refFirst.y + refLast.y) / 2) - 0.015 - GAP - railH / 2;
 
                             // 2 支檁條在 dx = ±0.3 * pvLength
                             const offsetDx = [-0.3 * pvLength, 0.3 * pvLength];
@@ -9404,39 +10336,23 @@ function updateViewer(params) {
                                     const numSpans = Math.max(1, Math.floor(feetSpan / 0.90));
                                     const rem = feetSpan - numSpans * 0.90;
                                     const firstS = -purlinLen / 2 + 0.05 + rem / 2;
-
-                                    // "|" of "h" side selection (facing outward along X)
                                     const sideSign = (railIdx === 0) ? -1 : 1;
-                                    const flangeX = railX + sideSign * (railW / 2 + 0.003);
 
                                     for (let k = 0; k <= numSpans; k++) {
                                         const curS = firstS + k * 0.90;
                                         const footZ = midZ + curS * Math.cos(rotX);
                                         const footY = midY - curS * Math.sin(rotX);
-                                        const yRailBottom = footY - (railH / 2) * Math.cos(rotX);
                                         const yRoof = getRoofY(footZ, railX);
-                                        const hFoot = yRailBottom - yRoof;
+                                        const distNormal = (footY - yRoof) * Math.cos(rotX);
+                                        hFeetDistNormal = distNormal;
 
-                                        if (hFoot > 0.005) {
-                                            // 主支撐身 (平行檁條 Z 軸擠出 7cm)
-                                            aluminumBoxes.push({
-                                                pos: [railX, yRoof + hFoot / 2, footZ],
-                                                rot: [0, 0, 0],
-                                                scale: [0.03, hFoot, 0.07]
-                                            });
-                                            // "h" 上方的 "|" 垂直側翼 (貼齊檁條側邊)
-                                            aluminumBoxes.push({
-                                                pos: [flangeX, footY, footZ],
-                                                rot: [rotX, 0, 0],
-                                                scale: [0.006, railH, 0.07]
-                                            });
-                                            // 底部貼屋面基座底板
-                                            aluminumBoxes.push({
-                                                pos: [railX, yRoof + 0.003, footZ],
-                                                rot: [0, 0, 0],
-                                                scale: [0.05, 0.006, 0.07]
-                                            });
-                                        }
+                                        // 單一 2D "h" 截面擠出實體腳座
+                                        const targetArr = (sideSign > 0) ? hFeetLandscapePos : hFeetLandscapeNeg;
+                                        targetArr.push({
+                                            pos: [railX, footY, footZ],
+                                            rot: [rotX, 0, 0],
+                                            scale: [1, 1, 1]
+                                        });
                                     }
                                 }
                             });
@@ -9531,10 +10447,11 @@ function updateViewer(params) {
                         
                         feet.forEach(f => {
                             if (f.h > 0.005 && hasPanelNear(xRack, f.z, xBayRad, 2.0)) {
+                                const gapH = Math.max(0.002, f.h - 2 * 0.0005);
                                 aluminumFeet.push({
-                                    pos: [xRack, f.y_base + f.h / 2, f.z],
+                                    pos: [xRack, f.y_base + 0.0005 + gapH / 2, f.z],
                                     rot: [0, 0, 0],
-                                    scale: [0.03, f.h, 0.03]
+                                    scale: [0.03, gapH, 0.03]
                                 });
                             }
                         });
@@ -9584,10 +10501,11 @@ function updateViewer(params) {
                             const yRoof = getRoofY(f.z);
                             const hFoot = f.y - yRoof;
                             if (hFoot > 0.005 && hasPanelNear(xRack, f.z, xBayRad, legRadZ)) {
+                                const gapH = Math.max(0.002, hFoot - 2 * 0.0005);
                                 aluminumFeet.push({
-                                    pos: [xRack, yRoof + hFoot / 2, f.z],
+                                    pos: [xRack, yRoof + 0.0005 + gapH / 2, f.z],
                                     rot: [0, 0, 0],
-                                    scale: [0.03, hFoot, 0.03]
+                                    scale: [0.03, gapH, 0.03]
                                 });
                             }
                         });
@@ -9652,6 +10570,11 @@ function updateViewer(params) {
                             concreteBoxes.push({ pos: [xRack, 0.2, ridgeZ], rot: [0, 0, 0], scale: [0.35, 0.4, 0.35] });
                             const colH = hCenter - 0.4;
                             if (colH > 0.05) rackBoxes.push({ pos: [xRack, 0.4 + colH / 2, ridgeZ], rot: [0, 0, 0], scale: [0.15, colH, 0.15] });
+                        } else if (siteType === 'roof-flat') {
+                            // Flat roof concrete pier: 40cm * 40cm * 20cm high
+                            concreteBoxes.push({ pos: [xRack, 0.10, ridgeZ], rot: [0, 0, 0], scale: [0.40, 0.20, 0.40] });
+                            const colH = hCenter - 0.20;
+                            if (colH > 0.05) rackBoxes.push({ pos: [xRack, 0.20 + colH / 2, ridgeZ], rot: [0, 0, 0], scale: [0.15, colH, 0.15] });
                         } else if (hCenter > 0.05) {
                             rackBoxes.push({ pos: [xRack, hCenter / 2, ridgeZ], rot: [0, 0, 0], scale: [0.15, hCenter, 0.15] });
                         }
@@ -9666,6 +10589,10 @@ function updateViewer(params) {
                                 concreteBoxes.push({ pos: [xRack, 0.2, legZ_neg], rot: [0, 0, 0], scale: [0.35, 0.4, 0.35] });
                                 const colH = hNeg - 0.4;
                                 if (colH > 0.05) rackBoxes.push({ pos: [xRack, 0.4 + colH / 2, legZ_neg], rot: [0, 0, 0], scale: [0.15, colH, 0.15] });
+                            } else if (siteType === 'roof-flat') {
+                                concreteBoxes.push({ pos: [xRack, 0.10, legZ_neg], rot: [0, 0, 0], scale: [0.40, 0.20, 0.40] });
+                                const colH = hNeg - 0.20;
+                                if (colH > 0.05) rackBoxes.push({ pos: [xRack, 0.20 + colH / 2, legZ_neg], rot: [0, 0, 0], scale: [0.15, colH, 0.15] });
                             } else if (hNeg > 0.05) {
                                 rackBoxes.push({ pos: [xRack, hNeg / 2, legZ_neg], rot: [0, 0, 0], scale: [0.15, hNeg, 0.15] });
                             }
@@ -9681,6 +10608,10 @@ function updateViewer(params) {
                                 concreteBoxes.push({ pos: [xRack, 0.2, legZ_pos], rot: [0, 0, 0], scale: [0.35, 0.4, 0.35] });
                                 const colH = hPos - 0.4;
                                 if (colH > 0.05) rackBoxes.push({ pos: [xRack, 0.4 + colH / 2, legZ_pos], rot: [0, 0, 0], scale: [0.15, colH, 0.15] });
+                            } else if (siteType === 'roof-flat') {
+                                concreteBoxes.push({ pos: [xRack, 0.10, legZ_pos], rot: [0, 0, 0], scale: [0.40, 0.20, 0.40] });
+                                const colH = hPos - 0.20;
+                                if (colH > 0.05) rackBoxes.push({ pos: [xRack, 0.20 + colH / 2, legZ_pos], rot: [0, 0, 0], scale: [0.15, colH, 0.15] });
                             } else if (hPos > 0.05) {
                                 rackBoxes.push({ pos: [xRack, hPos / 2, legZ_pos], rot: [0, 0, 0], scale: [0.15, hPos, 0.15] });
                             }
@@ -9741,8 +10672,29 @@ function updateViewer(params) {
                             concreteBoxes.push({ pos: [xRack, 0.2, legBackZ], rot: [0, 0, 0], scale: [0.35, 0.4, 0.35] });
                             const backLegH = backBeamBottomY - 0.4;
                             if (backLegH > 0.05) rackBoxes.push({ pos: [xRack, 0.4 + backLegH / 2, legBackZ], rot: [0, 0, 0], scale: [0.15, backLegH, 0.15] });
+                        } else if (siteType === 'roof-flat') {
+                            // Flat Roof Mount: Concrete Pier (40cm * 40cm * 20cm high) + Steel Leg Column
+                            const pierH = 0.20;
+                            const pierW = 0.40;
+                            
+                            // Front Concrete Pier & Leg
+                            concreteBoxes.push({ pos: [xRack, pierH / 2, legFrontZ], rot: [0, 0, 0], scale: [pierW, pierH, pierW] });
+                            const frontLegH = frontBeamBottomY - pierH;
+                            if (frontLegH > 0.05) rackBoxes.push({ pos: [xRack, pierH + frontLegH / 2, legFrontZ], rot: [0, 0, 0], scale: [0.15, frontLegH, 0.15] });
+                            
+                            // Middle Concrete Pier & Leg
+                            if (hasMiddleLeg) {
+                                concreteBoxes.push({ pos: [xRack, pierH / 2, legMiddleZ], rot: [0, 0, 0], scale: [pierW, pierH, pierW] });
+                                const middleLegH = middleBeamBottomY - pierH;
+                                if (middleLegH > 0.05) rackBoxes.push({ pos: [xRack, pierH + middleLegH / 2, legMiddleZ], rot: [0, 0, 0], scale: [0.15, middleLegH, 0.15] });
+                            }
+                            
+                            // Back Concrete Pier & Leg
+                            concreteBoxes.push({ pos: [xRack, pierH / 2, legBackZ], rot: [0, 0, 0], scale: [pierW, pierH, pierW] });
+                            const backLegH = backBeamBottomY - pierH;
+                            if (backLegH > 0.05) rackBoxes.push({ pos: [xRack, pierH + backLegH / 2, legBackZ], rot: [0, 0, 0], scale: [0.15, backLegH, 0.15] });
                         } else {
-                            // Flat Roof Mount: Direct Steel Leg Column to roof surface (y=0)
+                            // Slope Roof Mount (or other): Direct Steel Leg Column
                             if (frontBeamBottomY > 0.05) rackBoxes.push({ pos: [xRack, frontBeamBottomY / 2, legFrontZ], rot: [0, 0, 0], scale: [0.15, frontBeamBottomY, 0.15] });
                             if (hasMiddleLeg && middleBeamBottomY > 0.05) rackBoxes.push({ pos: [xRack, middleBeamBottomY / 2, legMiddleZ], rot: [0, 0, 0], scale: [0.15, middleBeamBottomY, 0.15] });
                             if (backBeamBottomY > 0.05) rackBoxes.push({ pos: [xRack, backBeamBottomY / 2, legBackZ], rot: [0, 0, 0], scale: [0.15, backBeamBottomY, 0.15] });
@@ -9802,6 +10754,97 @@ function updateViewer(params) {
         const instancedFeet = buildInstancedMesh(aluminumFeet, unitCylGeo, materials.aluminum, false, true);
         if (instancedFeet) supportGroup.add(instancedFeet);
     }
+
+    function createHFootGeometry(distNormal, sideSign = 1, isPortrait = true) {
+        const GAP = 0.0005;
+        const t = 0.005;
+        const hBase = 0.005;
+        const railW = 0.04;
+        const railH = 0.04;
+        const wFlange = 0.012; // 12mm 底板延伸翼
+        const depth = 0.04;    // 4cm 擠出長度
+
+        const v0 = GAP;
+        const v1 = GAP + hBase;
+        const seatH = 0.026; // 撐托面距浪板屋面固定 2.6cm
+        const v2 = seatH - t; // 2.1cm
+        const v3 = seatH;     // 2.6cm (撐托面)
+        const v4 = Math.max(v3 + 0.04, distNormal + railH / 2 - GAP); // 背部長側板延伸至檁條頂部
+
+        const u_spine_in = railW / 2 + GAP;
+        const u_spine_out = railW / 2 + GAP + t;
+        const wHalfSpine = u_spine_out + wFlange;
+        const u_front_in = railW / 2 + GAP - t;
+        const u_front_out = railW / 2 + GAP;
+        const wHalfFront = u_front_out + wFlange;
+
+        // 14 點封閉單一連通 2D "h" 截面輪廓 (無內部重疊面，完全水密單一實體)
+        let pts = [
+            [-wHalfFront, v0],
+            [-u_front_in, v0],
+            [-u_front_in, v2],
+            [u_spine_in, v2],
+            [u_spine_in, v0],
+            [wHalfSpine, v0],
+            [wHalfSpine, v1],
+            [u_spine_out, v1],
+            [u_spine_out, v4],
+            [u_spine_in, v4],
+            [u_spine_in, v3],
+            [-u_front_out, v3],
+            [-u_front_out, v1],
+            [-wHalfFront, v1]
+        ];
+
+        if (sideSign === -1) {
+            pts = pts.map(p => [-p[0], p[1]]).reverse();
+        }
+
+        const shape = new THREE.Shape();
+        shape.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) {
+            shape.lineTo(pts[i][0], pts[i][1]);
+        }
+        shape.closePath();
+
+        const extrudeSettings = {
+            depth: depth,
+            bevelEnabled: false
+        };
+        const ExtrudeGeoClass = THREE.ExtrudeGeometry || THREE.ExtrudeBufferGeometry;
+        const geo = new ExtrudeGeoClass(shape, extrudeSettings);
+        
+        // 將幾何體原點對齊至檁條中心法線原點，深度置中
+        geo.translate(0, -distNormal, -depth / 2);
+        
+        if (isPortrait) {
+            // 直放模式：檁條沿 X 軸，截面沿 slope Z 軸，旋轉 -Math.PI/2 使擠出深度對齊 X 軸
+            geo.rotateY(-Math.PI / 2);
+        }
+        geo.computeVertexNormals();
+        return geo;
+    }
+
+    if (hFeetPortraitPos.length > 0) {
+        const geo = createHFootGeometry(hFeetDistNormal, 1, true);
+        const instanced = buildInstancedMesh(hFeetPortraitPos, geo, materials.aluminum, false, true);
+        if (instanced) supportGroup.add(instanced);
+    }
+    if (hFeetPortraitNeg.length > 0) {
+        const geo = createHFootGeometry(hFeetDistNormal, -1, true);
+        const instanced = buildInstancedMesh(hFeetPortraitNeg, geo, materials.aluminum, false, true);
+        if (instanced) supportGroup.add(instanced);
+    }
+    if (hFeetLandscapePos.length > 0) {
+        const geo = createHFootGeometry(hFeetDistNormal, 1, false);
+        const instanced = buildInstancedMesh(hFeetLandscapePos, geo, materials.aluminum, false, true);
+        if (instanced) supportGroup.add(instanced);
+    }
+    if (hFeetLandscapeNeg.length > 0) {
+        const geo = createHFootGeometry(hFeetDistNormal, -1, false);
+        const instanced = buildInstancedMesh(hFeetLandscapeNeg, geo, materials.aluminum, false, true);
+        if (instanced) supportGroup.add(instanced);
+    }
     
     const showSupports = params && params.showSupports !== undefined ? params.showSupports : state.showSupports;
     supportGroup.visible = (showSupports !== false);
@@ -9827,7 +10870,7 @@ function updateViewer(params) {
             if (obj.geometry) obj.geometry.dispose();
         }
         
-        obstaclePolygons.forEach(poly => {
+        obstaclePolygons.forEach((poly, idx) => {
             const latlngs = getOuterRingLatLngs(poly) || [];
             if (latlngs.length < 3) return;
             
@@ -9856,6 +10899,7 @@ function updateViewer(params) {
             });
             
             const mesh = new THREE.Mesh(geom, obsMat);
+            mesh.name = (poly && poly.name) ? poly.name : `Obstacle_${idx + 1}`;
             mesh.castShadow = true;
             mesh.receiveShadow = true;
             mesh.renderOrder = 2;
@@ -9866,14 +10910,14 @@ function updateViewer(params) {
                 side: THREE.DoubleSide
             });
             
-            // Add crisp structural outline edges
+            // Add crisp structural outline edges (separated from mesh to ensure 1 clean solid Mesh object)
             const edgeGeo = new THREE.EdgesGeometry(geom);
             const edgeMat = new THREE.LineBasicMaterial({ color: 0x991b1b, linewidth: 2 });
             const edgeLines = new THREE.LineSegments(edgeGeo, edgeMat);
             edgeLines.renderOrder = 3;
-            mesh.add(edgeLines);
             
             obstacleGroup.add(mesh);
+            obstacleGroup.add(edgeLines);
         });
     }
 
@@ -10481,10 +11525,11 @@ function getModuleWorldBottomY(localX, rowZ, params) {
     return worldBottomY;
 }
 
-function isModuleExcluded(localX, rowZ, params) {
-    if (exclusionPolygons.length === 0 && obstaclePolygons.length === 0 && !customSiteBoundary) return false;
-    
+function isModuleExcluded(localX, rowZ, params, targetSubBuilding) {
     const config = params || state;
+    const bldg = targetSubBuilding || (config ? config.targetSubBuilding : null);
+    if (exclusionPolygons.length === 0 && obstaclePolygons.length === 0 && !customSiteBoundary && !bldg) return false;
+    
     const pvOrient = config.pvOrient !== undefined ? config.pvOrient : state.pvOrient;
     const pvL = config.pvL !== undefined ? config.pvL : state.pvL;
     const pvW = config.pvW !== undefined ? config.pvW : state.pvW;
@@ -10517,8 +11562,14 @@ function isModuleExcluded(localX, rowZ, params) {
     const latRad = (lat * Math.PI) / 180;
     const metersPerLngDegree = metersPerLatDegree * Math.cos(latRad);
     
-    // A. Check Site Boundary (if customSiteBoundary exists, module must be INSIDE it!)
-    if (customSiteBoundary) {
+    // A. Check Sub-building boundary OR Site Boundary
+    if (bldg && bldg.points && bldg.points.length >= 3) {
+        for (let i = 0; i < testPoints.length; i++) {
+            if (!isPointInPolygon2D(testPoints[i], bldg.points)) {
+                return true; // Excluded! (Outside this sub-building)
+            }
+        }
+    } else if (customSiteBoundary) {
         const boundaryLatLngs = getOuterRingLatLngs(customSiteBoundary);
         let allInside = true;
         for (const pt of testPoints) {
@@ -11681,9 +12732,33 @@ function getShiftedLayoutCoords(params) {
 
     const pvW_z = pvW * Math.cos(totalTiltRad);
     
+    let bound_z_center = 0;
+    let bound_x_center = 0;
+    let hasCustomBoundZ = false;
+    if (customSiteBoundary) {
+        const latlngs = getOuterRingLatLngs(customSiteBoundary);
+        if (latlngs && latlngs.length >= 3) {
+            let minZ_b = Infinity, maxZ_b = -Infinity, minX_b = Infinity, maxX_b = -Infinity;
+            for (let i = 0; i < latlngs.length; i++) {
+                const pt = latLngToLocal(latlngs[i], refLat, refLng, azimuth);
+                minZ_b = Math.min(minZ_b, pt.z);
+                maxZ_b = Math.max(maxZ_b, pt.z);
+                minX_b = Math.min(minX_b, pt.x);
+                maxX_b = Math.max(maxX_b, pt.x);
+            }
+            if (minZ_b !== Infinity && maxZ_b !== -Infinity) {
+                bound_z_center = (minZ_b + maxZ_b) / 2;
+                hasCustomBoundZ = true;
+            }
+            if (minX_b !== Infinity && maxX_b !== -Infinity) {
+                bound_x_center = (minX_b + maxX_b) / 2;
+            }
+        }
+    }
+
     // Precalculate unshifted normal X coordinates per column c
     const normalX_coords = [];
-    let curX_normal = -arrayWidth / 2 + pvL / 2;
+    let curX_normal = bound_x_center - arrayWidth / 2 + pvL / 2;
     normalX_coords[0] = curX_normal;
     for (let c = 1; c < arrI; c++) {
         const gapX = (isSpecialRoofSlopeFlatLandscape && c % 20 === 0) ? 0.75 : spX;
@@ -11691,20 +12766,77 @@ function getShiftedLayoutCoords(params) {
         normalX_coords[c] = curX_normal;
     }
 
-    let bound_z_center = 0;
-    let hasCustomBoundZ = false;
-    if (customSiteBoundary) {
-        const latlngs = getOuterRingLatLngs(customSiteBoundary);
-        if (latlngs && latlngs.length >= 3) {
-            let minZ_b = Infinity, maxZ_b = -Infinity;
-            for (let i = 0; i < latlngs.length; i++) {
-                const pt = latLngToLocal(latlngs[i], refLat, refLng, azimuth);
-                minZ_b = Math.min(minZ_b, pt.z);
-                maxZ_b = Math.max(maxZ_b, pt.z);
+    // For each sub-building when hasSubBuildings is true, determine max capacity and rows
+    const bldgRowConfigs = [];
+    if (hasSubBuildings) {
+        let totalCap = 0;
+        for (let g = 0; g < m; g++) {
+            const bldg = subBuildings[g];
+            if (isDoublePitch) {
+                const bldgRidgeZ = bldg.baseZRidge !== undefined ? bldg.baseZRidge : bldg.zRidge;
+                const bldgMinZ = bldg.baseMinZ !== undefined ? bldg.baseMinZ : bldg.minZ;
+                const bldgMaxZ = bldg.baseMaxZ !== undefined ? bldg.baseMaxZ : bldg.maxZ;
+                const halfSpanZ_neg_g = Math.max(0, bldgRidgeZ - bldgMinZ);
+                const halfSpanZ_pos_g = Math.max(0, bldgMaxZ - bldgRidgeZ);
+                let countNeg_g = 0;
+                let curZ_neg = (ridgeSp / 2 + pvW / 2);
+                while (countNeg_g < 150) {
+                    if (countNeg_g > 0) {
+                        const gapY = (isSpecialRoofSlopeFlatLandscape && countNeg_g % 10 === 0) ? 0.6 : spY;
+                        curZ_neg += (pvW + gapY);
+                    }
+                    const edgeZ = curZ_neg * Math.cos(totalTiltRad) + pvW_z / 2;
+                    if (edgeZ <= halfSpanZ_neg_g + 0.05) countNeg_g++;
+                    else break;
+                }
+                let countPos_g = 0;
+                let curZ_pos = (ridgeSp / 2 + pvW / 2);
+                while (countPos_g < 150) {
+                    if (countPos_g > 0) {
+                        const gapY = (isSpecialRoofSlopeFlatLandscape && countPos_g % 10 === 0) ? 0.6 : spY;
+                        curZ_pos += (pvW + gapY);
+                    }
+                    const edgeZ = curZ_pos * Math.cos(totalTiltRad) + pvW_z / 2;
+                    if (edgeZ <= halfSpanZ_pos_g + 0.05) countPos_g++;
+                    else break;
+                }
+                const cap_g = Math.max(1, countNeg_g + countPos_g);
+                bldgRowConfigs[g] = { countNeg_g, countPos_g, cap_g };
+                totalCap += cap_g;
+            } else {
+                const bldgMinZ = bldg.baseMinZ !== undefined ? bldg.baseMinZ : bldg.minZ;
+                const bldgMaxZ = bldg.baseMaxZ !== undefined ? bldg.baseMaxZ : bldg.maxZ;
+                const spanZ_g = Math.max(0.1, bldgMaxZ - bldgMinZ);
+                let count_g = 0;
+                let curZ = pvW_z / 2;
+                while (count_g < 300) {
+                    if (count_g > 0) {
+                        const gapY = (isSpecialRoofSlopeFlatLandscape && count_g % 10 === 0) ? 0.6 : spY;
+                        curZ += (pvW + gapY) * Math.cos(totalTiltRad);
+                    }
+                    if (curZ + pvW_z / 2 <= spanZ_g + 0.05) count_g++;
+                    else break;
+                }
+                const cap_g = Math.max(1, count_g);
+                bldgRowConfigs[g] = { count_g, cap_g };
+                totalCap += cap_g;
             }
-            if (minZ_b !== Infinity && maxZ_b !== -Infinity) {
-                bound_z_center = (minZ_b + maxZ_b) / 2;
-                hasCustomBoundZ = true;
+        }
+
+        // Allocate rows to each building based on arrJ (arrJ represents rows for a single building)
+        for (let g = 0; g < m; g++) {
+            const cfg = bldgRowConfigs[g];
+            const rowsForBldg = Math.max(1, arrJ);
+            if (isDoublePitch) {
+                const numSouth_g = (rowsForBldg % 2 !== 0) ? (rowsForBldg + 1) / 2 : rowsForBldg / 2;
+                const numNorth_g = rowsForBldg - numSouth_g;
+                const numNeg_g = isSouthSlopeZNeg ? numSouth_g : numNorth_g;
+                const numPos_g = isSouthSlopeZNeg ? numNorth_g : numSouth_g;
+                cfg.numNeg_g = numNeg_g;
+                cfg.numPos_g = numPos_g;
+                cfg.rowsForBldg = rowsForBldg;
+            } else {
+                cfg.rowsForBldg = rowsForBldg;
             }
         }
     }
@@ -11713,104 +12845,241 @@ function getShiftedLayoutCoords(params) {
     for (let c = 0; c < arrI; c++) {
         const localX_normal = normalX_coords[c];
         
-        const moduleSequence = [];
-        if (isDoublePitch) {
+        if (hasSubBuildings) {
             for (let g = 0; g < m; g++) {
-                const ridgeZ = hasSubBuildings ? subBuildings[g].zRidge : ((siteType === 'roof-slope' && hasCustomBoundZ) ? bound_z_center : (-zOffset + (g - (m - 1) / 2) * arrP));
-                const rowsForBldg = hasSubBuildings ? (Math.floor(arrJ / m) + (g < (arrJ % m) ? 1 : 0)) : arrJ;
-                const numSouth_g = hasSubBuildings ? ((rowsForBldg % 2 !== 0) ? (rowsForBldg + 1) / 2 : rowsForBldg / 2) : numSouth;
-                const numNorth_g = hasSubBuildings ? (rowsForBldg - numSouth_g) : numNorth;
-                const numNeg_g = hasSubBuildings ? (isSouthSlopeZNeg ? numSouth_g : numNorth_g) : numNeg;
-                const numPos_g = hasSubBuildings ? (isSouthSlopeZNeg ? numNorth_g : numSouth_g) : numPos;
+                const bldg = subBuildings[g];
+                const cfg = bldgRowConfigs[g];
+                const ridgeZ = bldg.baseZRidge !== undefined ? bldg.baseZRidge : bldg.zRidge;
 
-                let currentZ_neg = -(ridgeSp / 2 + pvW / 2);
-                for (let r = 0; r < numNeg_g; r++) {
-                    if (r > 0) {
-                        const gapY = (isSpecialRoofSlopeFlatLandscape && r % 10 === 0) ? 0.6 : spY;
-                        currentZ_neg -= (pvW + gapY);
+                if (isDoublePitch) {
+                    // Negative slope: spreading outward from ridgeZ towards -Z
+                    let currentZ_neg = -(ridgeSp / 2 + pvW / 2);
+                    let prevActualZ_neg = null;
+                    for (let r = 0; r < cfg.numNeg_g; r++) {
+                        const gapY = (r > 0) ? ((isSpecialRoofSlopeFlatLandscape && r % 10 === 0) ? 0.6 : spY) : 0;
+                        if (r > 0) currentZ_neg -= (pvW + gapY);
+                        const rowZ_normal = ridgeZ + currentZ_neg * Math.cos(totalTiltRad);
+                        let actualZ = rowZ_normal;
+
+                        if (r === 0) {
+                            actualZ = rowZ_normal;
+                        } else {
+                            const step_normal = (pvW + gapY) * Math.cos(totalTiltRad);
+                            let step_actual = step_normal;
+                            const prevTopEdgeZ = prevActualZ_neg - pvW_z / 2;
+                            const currentTopEdgeZ = prevActualZ_neg - step_normal - pvW_z / 2;
+                            let hasCrossing = false;
+                            let crossingWidth = 0.5;
+                            for (const w of activeWalkways) {
+                                if (w.isXAligned && localX_normal >= w.minX && localX_normal <= w.maxX) {
+                                    const denom = (w.B.x - w.A.x) || 1e-6;
+                                    const z_intersect = w.A.z + (localX_normal - w.A.x) * (w.B.z - w.A.z) / denom;
+                                    if (z_intersect <= prevTopEdgeZ && z_intersect >= currentTopEdgeZ) {
+                                        hasCrossing = true;
+                                        crossingWidth = w.width;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (hasCrossing) {
+                                step_actual += (crossingWidth - gapY) * Math.cos(totalTiltRad);
+                            }
+                            actualZ = prevActualZ_neg - step_actual;
+                        }
+                        prevActualZ_neg = actualZ;
+
+                        if (!coords[g]) coords[g] = {};
+                        if (!coords[g]['neg']) coords[g]['neg'] = [];
+                        if (!coords[g]['neg'][r]) coords[g]['neg'][r] = [];
+                        if (!coords[g]['neg'][r][c]) coords[g]['neg'][r][c] = {};
+                        coords[g]['neg'][r][c].rowZ = actualZ;
                     }
-                    const s = currentZ_neg;
-                    const rowZ_normal = ridgeZ + s * Math.cos(totalTiltRad);
-                    moduleSequence.push({ g, isNeg: true, r, z_normal: rowZ_normal });
-                }
-                let currentZ_pos = +(ridgeSp / 2 + pvW / 2);
-                for (let r = 0; r < numPos_g; r++) {
-                    if (r > 0) {
-                        const gapY = (isSpecialRoofSlopeFlatLandscape && r % 10 === 0) ? 0.6 : spY;
-                        currentZ_pos += (pvW + gapY);
+
+                    // Positive slope: spreading outward from ridgeZ towards +Z
+                    let currentZ_pos = +(ridgeSp / 2 + pvW / 2);
+                    let prevActualZ_pos = null;
+                    for (let r = 0; r < cfg.numPos_g; r++) {
+                        const gapY = (r > 0) ? ((isSpecialRoofSlopeFlatLandscape && r % 10 === 0) ? 0.6 : spY) : 0;
+                        if (r > 0) currentZ_pos += (pvW + gapY);
+                        const rowZ_normal = ridgeZ + currentZ_pos * Math.cos(totalTiltRad);
+                        let actualZ = rowZ_normal;
+
+                        if (r === 0) {
+                            actualZ = rowZ_normal;
+                        } else {
+                            const step_normal = (pvW + gapY) * Math.cos(totalTiltRad);
+                            let step_actual = step_normal;
+                            const prevTopEdgeZ = prevActualZ_pos + pvW_z / 2;
+                            const currentTopEdgeZ = prevActualZ_pos + step_normal + pvW_z / 2;
+                            let hasCrossing = false;
+                            let crossingWidth = 0.5;
+                            for (const w of activeWalkways) {
+                                if (w.isXAligned && localX_normal >= w.minX && localX_normal <= w.maxX) {
+                                    const denom = (w.B.x - w.A.x) || 1e-6;
+                                    const z_intersect = w.A.z + (localX_normal - w.A.x) * (w.B.z - w.A.z) / denom;
+                                    if (z_intersect >= prevTopEdgeZ && z_intersect <= currentTopEdgeZ) {
+                                        hasCrossing = true;
+                                        crossingWidth = w.width;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (hasCrossing) {
+                                step_actual += (crossingWidth - gapY) * Math.cos(totalTiltRad);
+                            }
+                            actualZ = prevActualZ_pos + step_actual;
+                        }
+                        prevActualZ_pos = actualZ;
+
+                        if (!coords[g]) coords[g] = {};
+                        if (!coords[g]['pos']) coords[g]['pos'] = [];
+                        if (!coords[g]['pos'][r]) coords[g]['pos'][r] = [];
+                        if (!coords[g]['pos'][r][c]) coords[g]['pos'][r][c] = {};
+                        coords[g]['pos'][r][c].rowZ = actualZ;
                     }
-                    const s = currentZ_pos;
-                    const rowZ_normal = ridgeZ + s * Math.cos(totalTiltRad);
-                    moduleSequence.push({ g, isNeg: false, r, z_normal: rowZ_normal });
+                } else {
+                    // Single pitch sub-building
+                    let currentZ = (bldg.baseMinZ !== undefined ? bldg.baseMinZ : bldg.minZ) + pvW_z / 2;
+                    let prevActualZ = null;
+                    for (let r = 0; r < cfg.rowsForBldg; r++) {
+                        const gapY = (r > 0) ? ((isSpecialRoofSlopeFlatLandscape && r % 10 === 0) ? 0.6 : spY) : 0;
+                        if (r > 0) currentZ += (pvW + gapY) * Math.cos(totalTiltRad);
+                        let actualZ = currentZ;
+                        if (r === 0) {
+                            actualZ = currentZ;
+                        } else {
+                            const step_normal = (pvW + gapY) * Math.cos(totalTiltRad);
+                            let step_actual = step_normal;
+                            const prevTopEdgeZ = prevActualZ + pvW_z / 2;
+                            const currentTopEdgeZ = prevActualZ + step_normal + pvW_z / 2;
+                            let hasCrossing = false;
+                            let crossingWidth = 0.5;
+                            for (const w of activeWalkways) {
+                                if (w.isXAligned && localX_normal >= w.minX && localX_normal <= w.maxX) {
+                                    const denom = (w.B.x - w.A.x) || 1e-6;
+                                    const z_intersect = w.A.z + (localX_normal - w.A.x) * (w.B.z - w.A.z) / denom;
+                                    if (z_intersect >= prevTopEdgeZ && z_intersect <= currentTopEdgeZ) {
+                                        hasCrossing = true;
+                                        crossingWidth = w.width;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (hasCrossing) {
+                                step_actual += (crossingWidth - gapY) * Math.cos(totalTiltRad);
+                            }
+                            actualZ = prevActualZ + step_actual;
+                        }
+                        prevActualZ = actualZ;
+
+                        if (!coords[g]) coords[g] = {};
+                        if (!coords[g]['single']) coords[g]['single'] = [];
+                        if (!coords[g]['single'][r]) coords[g]['single'][r] = [];
+                        if (!coords[g]['single'][r][c]) coords[g]['single'][r][c] = {};
+                        coords[g]['single'][r][c].rowZ = actualZ;
+                    }
                 }
             }
         } else {
-            for (let g = 0; g < m; g++) {
-                const centerZ = hasSubBuildings ? ((subBuildings[g].minZ + subBuildings[g].maxZ) / 2) : ((siteType === 'roof-slope' && hasCustomBoundZ) ? bound_z_center : ((g - (m - 1) / 2) * arrP));
-                const rowsForBldg = hasSubBuildings ? (Math.floor(arrJ / m) + (g < (arrJ % m) ? 1 : 0)) : arrJ;
-                let currentLocalZ = -halfLen + pvW / 2;
-                for (let r = 0; r < rowsForBldg; r++) {
-                    if (r > 0) {
-                        const gapY = (isSpecialRoofSlopeFlatLandscape && r % 10 === 0) ? 0.6 : spY;
-                        currentLocalZ += (pvW + gapY);
+            const moduleSequence = [];
+            if (isDoublePitch) {
+                for (let g = 0; g < m; g++) {
+                    const ridgeZ = ((siteType === 'roof-slope' && hasCustomBoundZ) ? bound_z_center : (-zOffset + (g - (m - 1) / 2) * arrP));
+                    const rowsForBldg = arrJ;
+                    const numSouth_g = numSouth;
+                    const numNorth_g = numNorth;
+                    const numNeg_g = numNeg;
+                    const numPos_g = numPos;
+
+                    let currentZ_neg = -(ridgeSp / 2 + pvW / 2);
+                    for (let r = 0; r < numNeg_g; r++) {
+                        if (r > 0) {
+                            const gapY = (isSpecialRoofSlopeFlatLandscape && r % 10 === 0) ? 0.6 : spY;
+                            currentZ_neg -= (pvW + gapY);
+                        }
+                        const s = currentZ_neg;
+                        const rowZ_normal = ridgeZ + s * Math.cos(totalTiltRad);
+                        moduleSequence.push({ g, isNeg: true, r, z_normal: rowZ_normal });
                     }
-                    const rowZ_normal = centerZ + currentLocalZ * Math.cos(totalTiltRad);
-                    moduleSequence.push({ g, isNeg: false, r, z_normal: rowZ_normal });
+                    let currentZ_pos = +(ridgeSp / 2 + pvW / 2);
+                    for (let r = 0; r < numPos_g; r++) {
+                        if (r > 0) {
+                            const gapY = (isSpecialRoofSlopeFlatLandscape && r % 10 === 0) ? 0.6 : spY;
+                            currentZ_pos += (pvW + gapY);
+                        }
+                        const s = currentZ_pos;
+                        const rowZ_normal = ridgeZ + s * Math.cos(totalTiltRad);
+                        moduleSequence.push({ g, isNeg: false, r, z_normal: rowZ_normal });
+                    }
+                }
+            } else {
+                for (let g = 0; g < m; g++) {
+                    const centerZ = ((siteType === 'roof-slope' && hasCustomBoundZ) ? bound_z_center : ((g - (m - 1) / 2) * arrP));
+                    const rowsForBldg = arrJ;
+                    let currentLocalZ = -halfLen + pvW / 2;
+                    for (let r = 0; r < rowsForBldg; r++) {
+                        if (r > 0) {
+                            const gapY = (isSpecialRoofSlopeFlatLandscape && r % 10 === 0) ? 0.6 : spY;
+                            currentLocalZ += (pvW + gapY);
+                        }
+                        const rowZ_normal = centerZ + currentLocalZ * Math.cos(totalTiltRad);
+                        moduleSequence.push({ g, isNeg: false, r, z_normal: rowZ_normal });
+                    }
                 }
             }
-        }
-        
-        moduleSequence.sort((a, b) => a.z_normal - b.z_normal);
-        
-        let prevActualZ = null;
-        
-        for (let i = 0; i < moduleSequence.length; i++) {
-            const mod = moduleSequence[i];
-            const z_normal = mod.z_normal;
             
-            if (i === 0) {
-                mod.z_actual = z_normal;
-            } else {
-                const step_normal = z_normal - moduleSequence[i - 1].z_normal;
-                let step_actual = step_normal;
+            moduleSequence.sort((a, b) => a.z_normal - b.z_normal);
+            
+            let prevActualZ = null;
+            
+            for (let i = 0; i < moduleSequence.length; i++) {
+                const mod = moduleSequence[i];
+                const z_normal = mod.z_normal;
                 
-                const prevTopEdgeZ = prevActualZ + pvW_z / 2;
-                const currentTopEdgeZ = prevActualZ + step_normal + pvW_z / 2;
-                
-                let hasCrossing = false;
-                let crossingWidth = 0.5;
-                for (const w of activeWalkways) {
-                    if (w.isXAligned) {
-                        if (localX_normal >= w.minX && localX_normal <= w.maxX) {
-                            const z_intersect = w.A.z + (localX_normal - w.A.x) * (w.B.z - w.A.z) / (w.B.x - w.A.x);
-                            if (z_intersect > prevTopEdgeZ && z_intersect <= currentTopEdgeZ) {
-                                hasCrossing = true;
-                                crossingWidth = w.width;
-                                break;
+                if (i === 0) {
+                    mod.z_actual = z_normal;
+                } else {
+                    const step_normal = z_normal - moduleSequence[i - 1].z_normal;
+                    let step_actual = step_normal;
+                    
+                    const prevTopEdgeZ = prevActualZ + pvW_z / 2;
+                    const currentTopEdgeZ = prevActualZ + step_normal + pvW_z / 2;
+                    
+                    let hasCrossing = false;
+                    let crossingWidth = 0.5;
+                    for (const w of activeWalkways) {
+                        if (w.isXAligned) {
+                            if (localX_normal >= w.minX && localX_normal <= w.maxX) {
+                                const z_intersect = w.A.z + (localX_normal - w.A.x) * (w.B.z - w.A.z) / (w.B.x - w.A.x);
+                                if (z_intersect > prevTopEdgeZ && z_intersect <= currentTopEdgeZ) {
+                                    hasCrossing = true;
+                                    crossingWidth = w.width;
+                                    break;
+                                }
                             }
                         }
                     }
+                    
+                    if (hasCrossing) {
+                        const normalGap = (isSpecialRoofSlopeFlatLandscape && (mod.r % 10 === 0)) ? 0.6 : spY;
+                        step_actual += (crossingWidth - normalGap) * Math.cos(totalTiltRad);
+                    }
+                    
+                    mod.z_actual = prevActualZ + step_actual;
                 }
                 
-                if (hasCrossing) {
-                    const normalGap = (isSpecialRoofSlopeFlatLandscape && (mod.r % 10 === 0)) ? 0.6 : spY;
-                    step_actual += (crossingWidth - normalGap) * Math.cos(totalTiltRad);
-                }
-                
-                mod.z_actual = prevActualZ + step_actual;
+                prevActualZ = mod.z_actual;
             }
             
-            prevActualZ = mod.z_actual;
-        }
-        
-        for (const mod of moduleSequence) {
-            const { g, isNeg, r } = mod;
-            const key = isDoublePitch ? (isNeg ? 'neg' : 'pos') : 'single';
-            if (!coords[g]) coords[g] = {};
-            if (!coords[g][key]) coords[g][key] = [];
-            if (!coords[g][key][r]) coords[g][key][r] = [];
-            if (!coords[g][key][r][c]) coords[g][key][r][c] = {};
-            coords[g][key][r][c].rowZ = mod.z_actual;
+            for (const mod of moduleSequence) {
+                const { g, isNeg, r } = mod;
+                const key = isDoublePitch ? (isNeg ? 'neg' : 'pos') : 'single';
+                if (!coords[g]) coords[g] = {};
+                if (!coords[g][key]) coords[g][key] = [];
+                if (!coords[g][key][r]) coords[g][key][r] = [];
+                if (!coords[g][key][r][c]) coords[g][key][r][c] = {};
+                coords[g][key][r][c].rowZ = mod.z_actual;
+            }
         }
     }
 
@@ -12058,27 +13327,39 @@ function getMaxPossibleArrJ() {
             : null;
 
         if (subBuildings && subBuildings.length > 1) {
-            let totalRows = 0;
+            let maxSingleBldgRows = 0;
             for (const bldg of subBuildings) {
-                const lengthY = Math.max(0.1, bldg.maxZ - bldg.minZ);
+                const bldgRidgeZ = bldg.baseZRidge !== undefined ? bldg.baseZRidge : bldg.zRidge;
+                const bldgMinZ = bldg.baseMinZ !== undefined ? bldg.baseMinZ : bldg.minZ;
+                const bldgMaxZ = bldg.baseMaxZ !== undefined ? bldg.baseMaxZ : bldg.maxZ;
                 if (isDoublePitch) {
-                    const halfLen = lengthY / 2;
-                    let countSide = 0;
-                    let curZ = (ridgeSp / 2 + pvW_m / 2);
-                    while (countSide < 150) {
-                        if (countSide > 0) {
-                            const gapY = (isSpecialRoofSlopeFlatLandscape && countSide % 10 === 0) ? 0.6 : spY_m;
-                            curZ += (pvW_m + gapY);
+                    const spanNeg = Math.max(0, bldgRidgeZ - bldgMinZ);
+                    const spanPos = Math.max(0, bldgMaxZ - bldgRidgeZ);
+                    let countNeg = 0;
+                    let curZ_neg = (ridgeSp / 2 + pvW_m / 2);
+                    while (countNeg < 150) {
+                        if (countNeg > 0) {
+                            const gapY = (isSpecialRoofSlopeFlatLandscape && countNeg % 10 === 0) ? 0.6 : spY_m;
+                            curZ_neg += (pvW_m + gapY);
                         }
-                        const edgeZ = curZ * Math.cos(totalTiltRad) + pvW_z / 2;
-                        if (edgeZ <= halfLen + 0.02) {
-                            countSide++;
-                        } else {
-                            break;
-                        }
+                        const edgeZ = curZ_neg * Math.cos(totalTiltRad) + pvW_z / 2;
+                        if (edgeZ <= spanNeg + 0.05) countNeg++;
+                        else break;
                     }
-                    totalRows += countSide * 2;
+                    let countPos = 0;
+                    let curZ_pos = (ridgeSp / 2 + pvW_m / 2);
+                    while (countPos < 150) {
+                        if (countPos > 0) {
+                            const gapY = (isSpecialRoofSlopeFlatLandscape && countPos % 10 === 0) ? 0.6 : spY_m;
+                            curZ_pos += (pvW_m + gapY);
+                        }
+                        const edgeZ = curZ_pos * Math.cos(totalTiltRad) + pvW_z / 2;
+                        if (edgeZ <= spanPos + 0.05) countPos++;
+                        else break;
+                    }
+                    maxSingleBldgRows = Math.max(maxSingleBldgRows, countNeg + countPos);
                 } else {
+                    const lengthY = Math.max(0.1, bldgMaxZ - bldgMinZ);
                     let count = 0;
                     let curZ = pvW_z / 2;
                     while (count < 300) {
@@ -12086,16 +13367,16 @@ function getMaxPossibleArrJ() {
                             const gapY = (isSpecialRoofSlopeFlatLandscape && count % 10 === 0) ? 0.6 : spY_m;
                             curZ += (pvW_m + gapY) * Math.cos(totalTiltRad);
                         }
-                        if (curZ + pvW_z / 2 <= lengthY + 0.02) {
+                        if (curZ + pvW_z / 2 <= lengthY + 0.05) {
                             count++;
                         } else {
                             break;
                         }
                     }
-                    totalRows += count;
+                    maxSingleBldgRows = Math.max(maxSingleBldgRows, count);
                 }
             }
-            return Math.max(1, totalRows);
+            return Math.max(1, maxSingleBldgRows);
         }
 
         const latlngs = getOuterRingLatLngs(customSiteBoundary);
@@ -12225,12 +13506,13 @@ function calculateOutputs() {
     if (layoutCoords && layoutCoords.length > 0) {
         const coordsGroupCount = layoutCoords.length;
         for (let g = 0; g < coordsGroupCount; g++) {
+            const targetBldg = (subBuildings && subBuildings[g]) ? subBuildings[g] : null;
             if (isDoublePitch) {
                 const negRows = layoutCoords[g]?.['neg'] || [];
                 for (let r = 0; r < negRows.length; r++) {
                     for (let c = 0; c < state.arrI; c++) {
                         const coord = negRows[r]?.[c];
-                        if (coord && !isModuleExcluded(coord.localX, coord.rowZ, state)) {
+                        if (coord && !isModuleExcluded(coord.localX, coord.rowZ, state, targetBldg)) {
                             validCount++;
                         }
                     }
@@ -12239,7 +13521,7 @@ function calculateOutputs() {
                 for (let r = 0; r < posRows.length; r++) {
                     for (let c = 0; c < state.arrI; c++) {
                         const coord = posRows[r]?.[c];
-                        if (coord && !isModuleExcluded(coord.localX, coord.rowZ, state)) {
+                        if (coord && !isModuleExcluded(coord.localX, coord.rowZ, state, targetBldg)) {
                             validCount++;
                         }
                     }
@@ -12249,7 +13531,7 @@ function calculateOutputs() {
                 for (let r = 0; r < singleRows.length; r++) {
                     for (let c = 0; c < state.arrI; c++) {
                         const coord = singleRows[r]?.[c];
-                        if (coord && !isModuleExcluded(coord.localX, coord.rowZ, state)) {
+                        if (coord && !isModuleExcluded(coord.localX, coord.rowZ, state, targetBldg)) {
                             validCount++;
                         }
                     }
@@ -13255,6 +14537,8 @@ function hideLoadingOverlay() {
         const polygonsData = {
             customSiteBoundary: customSiteBoundary ? getOuterRingLatLngs(customSiteBoundary).map(p => ({ lat: p.lat, lng: p.lng })) : null,
             customSiteBoundaryDivisions: customSiteBoundary ? (customSiteBoundary.buildingDivisions || null) : null,
+            customSiteBoundarySegmentOffsets: customSiteBoundary ? (customSiteBoundary.segmentOffsets || null) : null,
+            customSiteBoundaryBaseLatLngs: (customSiteBoundary && customSiteBoundary.baseLatLngs) ? customSiteBoundary.baseLatLngs.map(p => ({ lat: p.lat, lng: p.lng })) : null,
             exclusionPolygons: exclusionPolygons.map(poly => ({
                 latlngs: getOuterRingLatLngs(poly).map(p => ({ lat: p.lat, lng: p.lng })),
                 isWalkway: !!poly.isWalkway,
@@ -13365,6 +14649,15 @@ function hideLoadingOverlay() {
             }).addTo(map);
             if (polygons.customSiteBoundaryDivisions) {
                 customSiteBoundary.buildingDivisions = polygons.customSiteBoundaryDivisions;
+                if (polygons.customSiteBoundarySegmentOffsets) {
+                    customSiteBoundary.segmentOffsets = polygons.customSiteBoundarySegmentOffsets;
+                }
+                if (polygons.customSiteBoundaryBaseLatLngs) {
+                    customSiteBoundary.baseLatLngs = polygons.customSiteBoundaryBaseLatLngs.map(pt => L.latLng(pt.lat, pt.lng));
+                    if (typeof rebuildSteppedBoundaryLatLngs === 'function') {
+                        rebuildSteppedBoundaryLatLngs(customSiteBoundary);
+                    }
+                }
                 updateSiteDivisionLines(customSiteBoundary);
             }
             makePolygonDraggable(customSiteBoundary);
@@ -14201,6 +15494,13 @@ function hideLoadingOverlay() {
     setupExclusionToolEvents();
 }
 
+function fetchWithTimeout(url, options = {}, timeoutMs = 4000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { ...options, signal: controller.signal })
+        .finally(() => clearTimeout(timeoutId));
+}
+
 async function performAddressSearch() {
     const query = elements.mapSearchInput ? elements.mapSearchInput.value.trim() : "";
     if (!query) return;
@@ -14250,30 +15550,31 @@ async function performAddressSearch() {
     
     let resultLat = null, resultLng = null, displayName = "";
     
-    // 2. Engine 1: Photon Geocoding API (Fast, CORS friendly, high rate-limit)
+    // 2. Engine 1: OpenStreetMap Nominatim API (Primary - Taiwan Focus, fast & reliable)
     try {
-        const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=1`;
-        const res = await fetch(photonUrl);
+        const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=tw&accept-language=zh-TW`;
+        const res = await fetchWithTimeout(nomUrl, {
+            headers: { 'Accept': 'application/json' }
+        }, 4000);
         if (res.ok) {
             const data = await res.json();
-            if (data && data.features && data.features.length > 0) {
-                const feat = data.features[0];
-                const coords = feat.geometry.coordinates; // [lng, lat]
-                resultLng = parseFloat(coords[0]);
-                resultLat = parseFloat(coords[1]);
-                const p = feat.properties || {};
-                displayName = [p.name, p.district, p.city, p.state, p.country].filter(Boolean).join(', ') || query;
+            if (data && data.length > 0) {
+                resultLat = parseFloat(data[0].lat);
+                resultLng = parseFloat(data[0].lon);
+                displayName = data[0].display_name;
             }
         }
     } catch (e) {
-        console.warn("Photon geocode fallback: ", e);
+        console.warn("Nominatim (Taiwan) geocode fallback: ", e);
     }
     
-    // 3. Engine 2: OpenStreetMap Nominatim API (Fallback)
+    // 3. Engine 2: OpenStreetMap Nominatim API (Global Fallback)
     if (resultLat === null || resultLng === null) {
         try {
-            const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=tw&accept-language=zh-TW`;
-            const res = await fetch(nomUrl);
+            const nomGlobalUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&accept-language=zh-TW`;
+            const res = await fetchWithTimeout(nomGlobalUrl, {
+                headers: { 'Accept': 'application/json' }
+            }, 4000);
             if (res.ok) {
                 const data = await res.json();
                 if (data && data.length > 0) {
@@ -14283,7 +15584,28 @@ async function performAddressSearch() {
                 }
             }
         } catch (e) {
-            console.warn("Nominatim geocode fallback: ", e);
+            console.warn("Nominatim (Global) geocode fallback: ", e);
+        }
+    }
+    
+    // 4. Engine 3: Photon Geocoding API (Fallback with strict 2.5s timeout)
+    if (resultLat === null || resultLng === null) {
+        try {
+            const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=1`;
+            const res = await fetchWithTimeout(photonUrl, {}, 2500);
+            if (res.ok) {
+                const data = await res.json();
+                if (data && data.features && data.features.length > 0) {
+                    const feat = data.features[0];
+                    const coords = feat.geometry.coordinates; // [lng, lat]
+                    resultLng = parseFloat(coords[0]);
+                    resultLat = parseFloat(coords[1]);
+                    const p = feat.properties || {};
+                    displayName = [p.name, p.district, p.city, p.state, p.country].filter(Boolean).join(', ') || query;
+                }
+            }
+        } catch (e) {
+            console.warn("Photon geocode fallback: ", e);
         }
     }
     
@@ -15343,7 +16665,8 @@ function snapToPreviousSegmentRightAngle(pointsArray, currentLatLng) {
                         opacity: 1,
                         pane: 'guidePane',
                         renderer: guideSvgRenderer,
-                        interactive: false
+                        interactive: false,
+                        noClip: true
                     }).addTo(map);
                 }
             }
@@ -15437,7 +16760,8 @@ function snapToPreviousSegmentRightAngle(pointsArray, currentLatLng) {
                             opacity: 1,
                             pane: 'guidePane',
                             renderer: guideSvgRenderer,
-                            interactive: false
+                            interactive: false,
+                            noClip: true
                         }).addTo(map);
                     }
                 }
@@ -15495,7 +16819,8 @@ function snapToPreviousSegmentRightAngle(pointsArray, currentLatLng) {
                         opacity: 1,
                         pane: 'guidePane',
                         renderer: guideSvgRenderer,
-                        interactive: false
+                        interactive: false,
+                        noClip: true
                     }).addTo(map);
                 }
                 
@@ -16229,14 +17554,19 @@ async function capture3DViewsForPresentation(mode = 'auto') {
             if (node.isMesh || node.isInstancedMesh) {
                 savedSideMaterials.set(node, node.material);
                 
-                if (isBreakView && (node.material === materials.building)) {
+                const isBldgMat = (node.material === materials.building) ||
+                    (Array.isArray(node.material) && node.material.includes(materials.building));
+                const isRoofMat = (node.material === materials.roofTile) || (node.material === materials.concrete) ||
+                    (Array.isArray(node.material) && (node.material.includes(materials.roofTile) || node.material.includes(materials.concrete)));
+
+                if (isBreakView && isBldgMat && !isRoofMat) {
                     savedMeshVisibilities.set(node, node.visible);
                     node.visible = false;
                 } else if (node.parent && (node.parent.name === 'supportGroup' || (typeof supportGroup !== 'undefined' && node.parent === supportGroup))) {
-                    node.material = sideMatSupport;
+                    node.material = (node.material === materials.concretePier) ? sideMatBuilding : sideMatSupport;
                 } else if (node.material === materials.panelFace || node.material === materials.frame) {
                     node.material = sideMatPanel;
-                } else if (node.material === materials.roofTile) {
+                } else if (isRoofMat || isBldgMat) {
                     node.material = sideMatBuilding;
                 } else if (node === ground) {
                     node.material = sideMatGround;
@@ -17074,9 +18404,9 @@ async function exportSlideshowPDF() {
         // 3. Try OSM Nominatim Reverse Geocoding with zoom=14 (Township level)
         if (!shortAddressStr) {
             try {
-                const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${state.lat}&lon=${state.lng}&accept-language=zh-TW&zoom=14`, {
+                const revRes = await fetchWithTimeout(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${state.lat}&lon=${state.lng}&accept-language=zh-TW&zoom=14`, {
                     headers: { 'User-Agent': 'PV-Super-Solar-Planner/1.0' }
-                });
+                }, 4000);
                 if (revRes.ok) {
                     const revData = await revRes.json();
                     if (revData && revData.address) {
@@ -17102,7 +18432,7 @@ async function exportSlideshowPDF() {
         if (!shortAddressStr) {
             try {
                 if (title) title.innerText = '正在獲取案場行政區位置...';
-                const photonRes = await fetch(`https://photon.komoot.io/reverse?lat=${state.lat}&lon=${state.lng}`);
+                const photonRes = await fetchWithTimeout(`https://photon.komoot.io/reverse?lat=${state.lat}&lon=${state.lng}`, {}, 2500);
                 if (photonRes.ok) {
                     const data = await photonRes.json();
                     if (data && data.features && data.features.length > 0) {
@@ -17149,8 +18479,6 @@ async function exportSlideshowPDF() {
             azimuthDisplay = `${a1}/${a2}°`;
         }
         gridItems.push(addItem('9', '方位角 (Azimuth)', azimuthDisplay));
-        gridItems.push(addItem('10', '橫向排列片數 (i)', `${state.arrI} 片`));
-        gridItems.push(addItem('11', '縱向排列片數 (j)', `${state.arrJ} 片`));
         
         if (state.siteType === 'ground' || (state.siteType === 'roof-flat' && state.arrM > 1)) {
             gridItems.push(addItem('12', '組列數量 (m)', `${state.arrM} 組`));
