@@ -810,12 +810,16 @@
                     <div id="exclusion-tool-panel" class="floating-toolbox tool-panel-exclusion">
                         <h3 id="exclusion-tool-header" class="tool-panel-header">
                             <span><img src="images/exclude.svg" class="btn-icon" /> 排除工具</span>
-                            <span class="tool-panel-grip">⋮⋮</span>
+                            <span class="tool-panel-grip">⋮</span>
                         </h3>
                         <div class="toolbox-btn-group">
                             <button class="ex-tool-btn toolbox-btn-item toolbox-btn-active" id="btn-ex-polygon">
                                 <img src="images/draw_pencil.svg" class="btn-icon" />手繪多邊形</button>
                             <button id="btn-ex-cancel" class="toolbox-btn-cancel">結束返回</button>
+                        </div>
+                        <div style="margin-top: 10px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #cbd5e1;">
+                            <input type="checkbox" id="chk-non-building" style="margin-right: 6px; transform: scale(1.1); cursor: pointer;">
+                            <label for="chk-non-building" style="cursor: pointer; user-select: none;">非建物區 (自案場範圍扣除)</label>
                         </div>
                     </div>
 

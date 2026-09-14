@@ -1,17 +1,17 @@
 /**
- * PV Super - 太陽光電 3D 快速排板與評估系統
- * Copyright (c) 2026 曜昇綠能股份有限公司 (Eco Glisten Co., Ltd.)
- * All Rights Reserved. 版權所有 ‧ 保留一切權利
+ * PV Super - ?�芷???��??3D ?��?��??�??�蓥?��?餌�?
+ * Copyright (c) 2026 ?�??��?�??�遢?????�虬 (Eco Glisten Co., Ltd.)
+ * All Rights Reserved. ?�??�?????��???��?�???
  *
  * PROPRIETARY AND CONFIDENTIAL.
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 
 /**
- * 繪製多邊形完成後之 (確定保留 / 刪除) 浮動確認對話框
- * @param {string} typeName - 物件類型名稱 (如 '案場邊界', '排除區域', '障礙物')
- * @param {Function} onKeep - 確定保留點擊回呼
- * @param {Function} onDiscard - 刪除點擊回呼
+ * ?�芾??��???�Ｗ??𣂼???(?????��?? / ??��?) ?��???????�滩店獢?
+ * @param {string} typeName - ??�辣?��??滨�? (??'?��??�?', '??��??�??, '?𦦵???)
+ * @param {Function} onKeep - ?????��???����??𧼮??
+ * @param {Function} onDiscard - ??��??����??𧼮??
  */
 function promptPolygonKeepOrDiscard(typeName, onKeep, onDiscard, polygon) {
     const oldModal = document.getElementById('polygon-confirm-modal');
@@ -33,8 +33,8 @@ function promptPolygonKeepOrDiscard(typeName, onKeep, onDiscard, polygon) {
     modal.style.cssText = 'position: absolute; z-index: 1050; background: rgba(15, 23, 42, 0.96); backdrop-filter: blur(12px); border: 1.5px solid rgba(56, 189, 248, 1); border-radius: 6px; padding: 3px 5px; box-shadow: 0 4px 16px rgba(0,0,0,0.6), 0 0 10px rgba(56, 189, 248, 0.35); color: #ffffff; font-family: var(--font-ui); pointer-events: auto; display: flex; align-items: center; gap: 4px; white-space: nowrap; width: fit-content; height: auto; bottom: auto; transform: translate(-50%, -100%); transition: top 0.1s ease, left 0.1s ease;';
 
     modal.innerHTML = `
-        <button id="btn-modal-keep" style="padding: 4px 10px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 4px; color: #ffffff; font-size: 0.75rem; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4); transition: all 0.2s;">確定保留</button>
-        <button id="btn-modal-discard" style="padding: 4px 8px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 4px; color: #fca5a5; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">刪除</button>
+        <button id="btn-modal-keep" style="padding: 4px 10px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 4px; color: #ffffff; font-size: 0.75rem; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4); transition: all 0.2s;">?????��??</button>
+        <button id="btn-modal-discard" style="padding: 4px 8px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 4px; color: #fca5a5; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">??��?</button>
     `;
 
     container.appendChild(modal);
@@ -214,13 +214,13 @@ const EARTH_RADIUS = 6378137;
  * Initialize Leaflet Map with Esri World Imagery (Satellite)
  */
 /* ==========================================================================
-   2. Leaflet 地圖模組與控制器 (Leaflet Map Initialization & Controls)
+   2. Leaflet ????��???��???�膥 (Leaflet Map Initialization & Controls)
    ========================================================================== */
 /**
- * 初始化 Leaflet 地圖模組
- * @param {number} lat - 緯度
- * @param {number} lng - 經度
- * @param {Function} onMarkerDrag - 拖曳標記回呼函式
+ * ?????Leaflet ????��??
+ * @param {number} lat - ?�臬�?
+ * @param {number} lng - ?��?�?
+ * @param {Function} onMarkerDrag - ?�????�躰??𧼮??�?
  */
 function getActiveMapDoc() {
     if (popoutMapWindow && !popoutMapWindow.closed) {
@@ -390,7 +390,7 @@ function initMap(lat, lng, onMarkerDrag) {
 
     // Taiwan NLSC Orthophoto (Taiwan local sub-meter aerial survey - ultra high resolution locally)
     const nlscPhoto = L.tileLayer('https://wmts.nlsc.gov.tw/wmts/PHOTO2/default/GoogleMapsCompatible/{z}/{y}/{x}', {
-        attribution: '&copy; 內政部國土測繪中心',
+        attribution: '&copy; ??��?????�葫?�芯?�敹?,
         maxNativeZoom: 20,
         maxZoom: 24,
         crossOrigin: 'anonymous'
@@ -414,7 +414,7 @@ function initMap(lat, lng, onMarkerDrag) {
 
     // NLSC Electronic Map (Taiwan Local Street Map)
     const nlscEmap = L.tileLayer('https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}', {
-        attribution: '&copy; 內政部國土測繪中心',
+        attribution: '&copy; ??��?????�葫?�芯?�敹?,
         maxNativeZoom: 20,
         maxZoom: 24,
         crossOrigin: 'anonymous'
@@ -432,11 +432,11 @@ function initMap(lat, lng, onMarkerDrag) {
 
     // 4. Register Base Layers and add Layer Control to top-right
     const baseLayers = {
-        "Google 衛星混合圖 (推薦)": googleHybrid,
-        "國土測繪航照圖 (超高解析度)": nlscPhoto,
-        "Esri 衛星地圖": esriGroup,
-        "國土測繪電子地圖": nlscEmap,
-        "OpenStreetMap 道路圖": osmRoad
+        "Google ?��???��????(??�㵽)": googleHybrid,
+        "?�??��?�??��??(?��??????": nlscPhoto,
+        "Esri ?��?????": esriGroup,
+        "?�??��?�?�????": nlscEmap,
+        "OpenStreetMap ??��???: osmRoad
     };
     L.control.layers(baseLayers, null, { position: 'bottomright' }).addTo(map);
 
@@ -444,7 +444,7 @@ function initMap(lat, lng, onMarkerDrag) {
     marker = L.marker([lat, lng], {
         draggable: true,
         zIndexOffset: 2500,
-        title: "案場中心位置 (拖曳可單獨移動案場中心點)"
+        title: "?��?��????�滨??(?�?????��???��?????港�??��?)"
     }).addTo(map);
 
     attachSiteCenterPinDragListeners(marker);
@@ -550,12 +550,12 @@ function initMap(lat, lng, onMarkerDrag) {
         if (el) L.DomEvent.disableClickPropagation(el);
     });
     
-    // 地圖右鍵點擊事件（若在繪製中則取消吸附／顯示選單）
+    // ?????�枤?����??�衤�??��???��??�賭??�??��𢙺?�??��???詨�???
     map.on('contextmenu', (e) => {
         if (e.originalEvent) {
             e.originalEvent.preventDefault();
             
-            // 若正處於直角吸附中，右鍵點擊可取消吸附並切換為自由線段
+            // ?交迤??�䲰?�??�??�哨???�枤?����?????��𢙺?��??�??箄�??�???
             if (isRightAngleSnapActive || isRectangleSnapActive) {
                 isRightAngleSnapBypassed = true;
                 isRightAngleSnapActive = false;
@@ -596,7 +596,7 @@ function initMap(lat, lng, onMarkerDrag) {
 }
 
 // ==========================================
-// Street View Pegman (街景小人) Management
+// Street View Pegman (?��??��?譍�?) Management
 // ==========================================
 let pegmanMarker = null;
 let isPegmanMode = false;
@@ -624,7 +624,7 @@ function showStreetView(lat, lng) {
         className: 'pegman-map-marker',
         html: `
             <div class="pegman-marker-pulse"></div>
-            <div class="pegman-marker-icon" title="拖曳以更換街景位置">
+            <div class="pegman-marker-icon" title="?�????�交??�???????>
                 <img src="images/man.svg" />
             </div>
         `,
@@ -664,14 +664,14 @@ function updateStreetViewPopup(lat, lng) {
 
     const popupHtml = `
         <div class="streetview-popup-box" style="width: ${streetViewPopupW}px; height: ${streetViewPopupH}px;">
-            <div class="streetview-popup-bar" title="按住可拖曳移動視窗位置">
+            <div class="streetview-popup-bar" title="?????�???��?????�𦯀???>
                 <div class="streetview-bar-title">
-                    <span class="streetview-drag-handle-dots">⋮⋮</span>
+                    <span class="streetview-drag-handle-dots">??��??/span>
                     <img src="images/man.svg" class="streetview-bar-icon" />
-                    <span>360° 實景街景</span>
+                    <span>360�??��??�銵?�艶</span>
                 </div>
-                <a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat.toFixed(6)},${lng.toFixed(6)}" target="_blank" rel="noopener noreferrer" class="streetview-external-link" title="在 Google Maps 開啟全螢幕街景">
-                    <span>另開全螢幕 ↗</span>
+                <a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat.toFixed(6)},${lng.toFixed(6)}" target="_blank" rel="noopener noreferrer" class="streetview-external-link" title="??Google Maps ?�???��??��????>
+                    <span>?????��?????/span>
                 </a>
             </div>
             <div class="streetview-iframe-container">
@@ -687,8 +687,8 @@ function updateStreetViewPopup(lat, lng) {
                     <span>${lat.toFixed(6)}, ${lng.toFixed(6)}</span>
                 </div>
                 <div class="streetview-footer-actions">
-                    <button type="button" class="streetview-remove-btn" onclick="removePegmanMarker()">關閉街景</button>
-                    <div class="streetview-resize-handle" title="按住拖曳等比例縮放視窗">
+                    <button type="button" class="streetview-remove-btn" onclick="removePegmanMarker()">?𣈯??��???/button>
+                    <div class="streetview-resize-handle" title="????�????��???��???????>
                         <svg viewBox="0 0 12 12" width="12" height="12">
                             <path d="M10 2 L2 10 M11 6 L6 11 M11 10 L10 11" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
                         </svg>
@@ -731,7 +731,7 @@ function clampStreetViewPopupInBounds(popupEl) {
     const parentRect = parentEl.getBoundingClientRect();
     const popupRect = popupEl.getBoundingClientRect();
 
-    const minTop = mapRect.top + 45; // 避開地圖頂部標題列
+    const minTop = mapRect.top + 45; // ?�?????��?�䠷???
     const maxBottom = mapRect.bottom - 10;
     const minLeft = mapRect.left + 10;
     const maxRight = mapRect.right - 10;
@@ -864,7 +864,7 @@ function setupStreetViewResize(popupEl) {
         const mapEl = map.getContainer();
         const mapRect = mapEl.getBoundingClientRect();
 
-        // 確保視窗右側與底側不會超出地圖可見邊界
+        // ?????��????��?�??�??�??箏�??硋虾?��????
         const maxWByRight = mapRect.right - currentPopupLeft - 15;
         const maxWByBottom = (mapRect.bottom - currentPopupTop - 15) * aspectRatio;
         const maxLimit = Math.max(260, Math.min(window.innerWidth * 0.92, maxWByRight, maxWByBottom));
@@ -906,7 +906,7 @@ function setupStreetViewResize(popupEl) {
 
         isInteractingWithStreetView = true;
 
-        // 鎖定左上角座標：將 Leaflet 的 transform 轉換為絕對 left 與 top 定位，確保左上角完全固定不動
+        // ?�??�虫??�鍦�??�???Leaflet ??transform ?��???�???left ??top ?��???�𣬚Ⅱ?�嘥椰�?�???���?�??��??
         const rect = popupEl.getBoundingClientRect();
         currentPopupLeft = rect.left;
         currentPopupTop = rect.top;
@@ -1561,10 +1561,10 @@ let snappedPoint = null;
 let isNormalMode = false;
 
 /* ==========================================================================
-   3. Three.js 3D 視圖與太陽光影模擬模組 (Three.js 3D Scene & Sun Simulation)
+   3. Three.js 3D ?��???��??�??��???祆�???(Three.js 3D Scene & Sun Simulation)
    ========================================================================== */
 /**
- * 初始化 Three.js 3D 視圖與日照模擬
+ * ?????Three.js 3D ?��???��??��???
  */
 function initViewer(canvasId) {
     const canvas = document.getElementById(canvasId);
@@ -1695,31 +1695,31 @@ function initViewer(canvasId) {
     scene.add(obstacleGroup);
     
     // ------------------------------------------
-    // 3D Compass & North Arrow (HUD 羅盤，固定於視窗左上方)
+    // 3D Compass & North Arrow (HUD ?��𥿢?���??��?�䲰?��???�虫???
     // ------------------------------------------
     compassGroup = new THREE.Group();
-    compassGroup.scale.set(0.15, 0.15, 0.15); // 縮放羅盤 HUD 尺寸
-    window.superScene.add(camera); // 將相機加入 superScene 場景中以容納 HUD 子物件，並保持在世界座標系
-    camera.add(compassGroup); // 綁定至相機
+    compassGroup.scale.set(0.15, 0.15, 0.15); // ?�格𦆮?��𥿢 HUD ?��?�?
+    window.superScene.add(camera); // ?��㮾�?�???superScene ?湔艶?��?誑摰�? HUD ?��?��?�??�虫??��??��???�扳???
+    camera.add(compassGroup); // ?��???�㮾??
     
-    // 1. Compass Flat Ring (羅盤外環圓盤)
+    // 1. Compass Flat Ring (?��𥿢?��?��??梶�?
     const ringGeo = new THREE.RingGeometry(1.8, 2.0, 32);
     const ringMat = new THREE.MeshStandardMaterial({ color: 0x475569, side: THREE.DoubleSide, depthTest: false, depthWrite: false });
     const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.rotation.x = 0; // 躺在 XY 平面 (地平面)
+    ring.rotation.x = 0; // ?��???XY ?�喲𢒰 (??????
     compassGroup.add(ring);
     
-    // 2. North Pointer (紅色指南針)
+    // 2. North Pointer (?��?��?�???
     const coneNorthGeo = new THREE.CylinderGeometry(0, 0.18, 0.5, 16);
     const coneNorthMat = new THREE.MeshStandardMaterial({ color: 0xef4444, depthTest: false, depthWrite: false });
     const coneNorth = new THREE.Mesh(coneNorthGeo, coneNorthMat);
-    coneNorth.position.set(0, 0.8, 0.08); // +Y 為北
+    coneNorth.position.set(0, 0.8, 0.08); // +Y ?�?
     compassGroup.add(coneNorth);
     
-    // 3. South Pointer (白色指北針) - 依照使用者要求移除
-    // (已移除)
+    // 3. South Pointer (?質�?�??? - ?��?�雿輻�??�??���??
+    // (?�脩�??
     
-    // 4. 立體文字 "N" (正北方向)
+    // 4. ?��???�? "N" (????�?)
     const nLetterGroup = new THREE.Group();
     nLetterGroup.position.set(0, 2.6, 0.08);
     compassGroup.add(nLetterGroup);
@@ -1741,18 +1741,18 @@ function initViewer(canvasId) {
     // Diagonal bar of "N"
     const diagBarGeo = new THREE.BoxGeometry(0.1, 0.85, 0.16);
     const diagBar = new THREE.Mesh(diagBarGeo, nMat);
-    diagBar.rotation.z = 0.55; // 正值旋轉，使其從左上連到右下 (Top-Left to Bottom-Right)
+    diagBar.rotation.z = 0.55; // ??�潭??��???�踹�敺𧼮椰�?�?�?�??? (Top-Left to Bottom-Right)
     diagBar.position.set(0, 0, 0);
     nLetterGroup.add(diagBar);
 
-    // 強制設定所有 HUD 網格之渲染順序 (RenderOrder)，讓其永遠顯示在最上層
+    // ?��?�閮???�??HUD ?�脫?��?𧢲??�???(RenderOrder)?�諹???�偶?�?＊蝷箏�??��??��??
     compassGroup.traverse((child) => {
         if (child.isMesh) {
             child.renderOrder = 9999;
         }
     });
     
-    // Snapping indicator box (直角吸附半透明綠色 Box + 邊線 outline)
+    // Snapping indicator box (?�??�??�?��??��??�� Box + ?�? outline)
     const indicatorGeo = new THREE.BoxGeometry(0.24, 0.24, 0.24);
     const indicatorMat = new THREE.MeshBasicMaterial({
         color: 0x22c55e,
@@ -1825,16 +1825,16 @@ function showContextMenu(x, y) {
         menu.className = 'context-menu';
         menu.innerHTML = `
             <div class="context-menu-item" id="menu-capture-3d">
-                <span class="menu-icon">📷</span>
-                <span class="menu-text">擷取3D圖片 (PNG)</span>
+                <span class="menu-icon">?𣊭</span>
+                <span class="menu-text">???3D?�?? (PNG)</span>
             </div>
             <div class="context-menu-item" id="menu-export-svg">
-                <span class="menu-icon">📐</span>
-                <span class="menu-text">匯出向量圖 (SVG)</span>
+                <span class="menu-icon">??</span>
+                <span class="menu-text">??��??????(SVG)</span>
             </div>
             <div class="context-menu-item" id="menu-export-glb">
-                <span class="menu-icon">📦</span>
-                <span class="menu-text">匯出 3D 模型 (.glb)</span>
+                <span class="menu-icon">?�?</span>
+                <span class="menu-text">??��? 3D ?�∪? (.glb)</span>
             </div>
         `;
         doc.body.appendChild(menu);
@@ -1945,38 +1945,38 @@ async function saveFileWithPicker(content, defaultFilename, mimeType) {
         try {
             const pickerOptions = {
                 suggestedName: defaultFilename,
-                id: 'pv-super-export-dir', // 目錄記憶 ID，讓使用者在匯出 PDF、JSON、圖片時記住同一資料夾路徑
+                id: 'pv-super-export-dir', // ?�??�䀹� ID?�諹??�輻??��???��? PDF?�SON?�??�??��?????��??��?楝敺?
                 types: []
             };
             
             if (mimeType === 'application/json' || defaultFilename.endsWith('.pvs') || defaultFilename.endsWith('.json')) {
                 pickerOptions.types.push({
-                    description: 'PV Super 專案檔案 (*.pvs, *.json)',
+                    description: 'PV Super ?��??��?? (*.pvs, *.json)',
                     accept: { 'application/json': ['.pvs', '.json'] }
                 });
             } else if (mimeType === 'application/pdf') {
                 pickerOptions.types.push({
-                    description: 'PDF 專案報告書 (*.pdf)',
+                    description: 'PDF ?��??????(*.pdf)',
                     accept: { 'application/pdf': ['.pdf'] }
                 });
             } else if (mimeType === 'image/png') {
                 pickerOptions.types.push({
-                    description: 'PNG 影像圖檔 (*.png)',
+                    description: 'PNG ?��???�?? (*.png)',
                     accept: { 'image/png': ['.png'] }
                 });
             } else if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
                 pickerOptions.types.push({
-                    description: 'JPEG 影像圖檔 (*.jpg, *.jpeg)',
+                    description: 'JPEG ?��???�?? (*.jpg, *.jpeg)',
                     accept: { 'image/jpeg': ['.jpg', '.jpeg'] }
                 });
             } else if (mimeType === 'image/svg+xml') {
                 pickerOptions.types.push({
-                    description: 'SVG 向量圖檔 (*.svg)',
+                    description: 'SVG ????�?? (*.svg)',
                     accept: { 'image/svg+xml': ['.svg'] }
                 });
             } else if (mimeType === 'model/gltf-binary' || defaultFilename.endsWith('.glb')) {
                 pickerOptions.types.push({
-                    description: '3D 模型檔案 (*.glb)',
+                    description: '3D ?�∪??��?? (*.glb)',
                     accept: { 'model/gltf-binary': ['.glb'] }
                 });
             }
@@ -1992,11 +1992,11 @@ async function saveFileWithPicker(content, defaultFilename, mimeType) {
             if (err.name === 'AbortError') {
                 return 'aborted';
             }
-            console.warn('showSaveFilePicker 失敗，切換為傳統下載方式', err);
+            console.warn('showSaveFilePicker ?��???��??𤤿�??��??��???�?', err);
         }
     }
 
-    // 傳統相容模式：透過 <a> 標籤下載
+    // ??��??詨�??�∪??��?���? <a> ?�嗵?��?�?
     const downloadAnchor = document.createElement('a');
     const url = isBlob ? URL.createObjectURL(blob) : `data:${mimeType};charset=utf-8,` + encodeURIComponent(content);
     downloadAnchor.href = url;
@@ -2010,7 +2010,7 @@ async function saveFileWithPicker(content, defaultFilename, mimeType) {
     return 'fallback';
 }
 
-function showExportLoading(text = '正在處理並匯出，請稍候...', doc = null) {
+function showExportLoading(text = '???????��?𥲤?�??��????..', doc = null) {
     const targetDoc = doc || getActive3DDoc();
     let overlay = targetDoc.getElementById('export-loading-overlay');
     if (!overlay) {
@@ -2019,7 +2019,7 @@ function showExportLoading(text = '正在處理並匯出，請稍候...', doc = 
         overlay.className = 'export-loading-overlay';
         overlay.innerHTML = `
             <div class="export-spinner-box">
-                <div class="export-hourglass-anim">⏳</div>
+                <div class="export-hourglass-anim">??/div>
                 <div class="export-loading-text">${text}</div>
             </div>
         `;
@@ -2051,26 +2051,26 @@ function hideExportLoading(doc = null) {
 async function capture3DImage() {
     if (!renderer || !scene || !camera) return;
     const doc = getActive3DDoc();
-    showExportLoading('正在擷取 3D 高解析圖片 (PNG)...', doc);
+    showExportLoading('?????? 3D ?��???𣂼???(PNG)...', doc);
     
     await new Promise(r => setTimeout(r, 50));
     
     try {
-        // 1. 記錄原始視窗大小與像素比
+        // 1. ?��???�??��???�批??�??�䭾?
         const originalWidth = renderer.domElement.clientWidth;
         const originalHeight = renderer.domElement.clientHeight;
         const originalPixelRatio = renderer.getPixelRatio();
         
-        // 2. 設定高解析度目標像素 (4K 寬度 3840px，輸出超清晰 PNG 圖片)
+        // 2. ?��???��???𣂼�????�? (4K ?��?�?3840px?�諹??�??��??PNG ?�??)
         const targetWidth = 3840;
         const targetHeight = Math.round(targetWidth * (originalHeight / originalWidth));
         
-        // 3. 暫時調整渲染器與相機 aspect
+        // 3. ????�踵?��???????�? aspect
         renderer.setSize(targetWidth, targetHeight, false);
         camera.aspect = targetWidth / targetHeight;
         camera.updateProjectionMatrix();
         
-        // 4. 暫時調整 HUD 羅盤位置以符合高解析度長寬比 (位於 3D 預覽標題標籤下方，避免重疊)
+        // 4. ????�踵??HUD ?��𥿢?�滨?��?亦泵?�?????�阡�??��?? (?�齿�?3D ??��??�䠷??�嗵?��?𧢲䲮�?屸�?�???
         if (compassGroup) {
             const aspect = targetWidth / targetHeight;
             const distance = 5.0;
@@ -2084,13 +2084,13 @@ async function capture3DImage() {
             );
         }
         
-        // 5. 執行高解析度渲染
+        // 5. ????��???𣂼漲�???
         renderer.render(scene, camera);
         
-        // 6. 導出為 PNG 影像
+        // 6. ?�𤾸�???PNG ?��??
         const dataUrl = renderer.domElement.toDataURL('image/png');
         
-        // 7. 復原原始相機與渲染器設定
+        // 7. ?��???�??�??�葡??�膥?��??
         renderer.setSize(originalWidth, originalHeight, false);
         renderer.setPixelRatio(originalPixelRatio);
         camera.aspect = originalWidth / originalHeight;
@@ -2108,14 +2108,14 @@ async function capture3DImage() {
             );
         }
         
-        // 8. 建立預設檔案名稱
-        const siteName = (state && state.siteName) ? state.siteName.trim().replace(/[\\/:*?"<>|]/g, '_') : '曜昇綠能_1號場';
+        // 8. ?��????�身?��???滨�?
+        const siteName = (state && state.siteName) ? state.siteName.trim().replace(/[\\/:*?"<>|]/g, '_') : '?�??��?�_1?笔聦';
         const now = new Date();
         const yyyymmdd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
         const hhmmss = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
         const fileName = `${siteName}_${yyyymmdd}_${hhmmss}.png`;
         
-        // 9. 儲存影像並交由使用者選擇路徑
+        // 9. ????��???�虫�??��???����?��???
         const response = await fetch(dataUrl);
         const blob = await response.blob();
         await saveFileWithPicker(blob, fileName, 'image/png');
@@ -2129,12 +2129,12 @@ async function capture3DImage() {
 async function exportSVG() {
     if (!renderer || !scene || !camera) return;
     const doc = getActive3DDoc();
-    showExportLoading('正在計算並匯出 3D 向量圖 (SVG)...', doc);
+    showExportLoading('???�閮�??��?𥲤??3D ?????(SVG)...', doc);
     
     await new Promise(r => setTimeout(r, 50));
     
     try {
-        // 1920x1080 規格輸出
+        // 1920x1080 ?�𤩺聢?�詨??
         const width = 1920;
         const height = 1080;
         const svgElements = [];
@@ -2229,7 +2229,7 @@ async function exportSVG() {
         });
         
         if (svgElements.length === 0) {
-            alert("目前 3D 視角中無可匯出的光電結構線條！");
+            alert("?桀? 3D ?��??��?�??��?�???��?�蝯???��????);
             return;
         }
         
@@ -2242,7 +2242,7 @@ async function exportSVG() {
         
         const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
         
-        const siteName = (state && state.siteName) ? state.siteName.trim().replace(/[\\/:*?"<>|]/g, '_') : '曜昇綠能_1號場';
+        const siteName = (state && state.siteName) ? state.siteName.trim().replace(/[\\/:*?"<>|]/g, '_') : '?�??��?�_1?笔聦';
         const now = new Date();
         const yyyymmdd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
         const hhmmss = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
@@ -2258,18 +2258,18 @@ async function exportSVG() {
 
 async function export3DGLB() {
     if (!scene || !pvGroup) {
-        alert('3D 場景尚未就緒，無法匯出。');
+        alert('3D ?湔艶?��?��?��?�??�𣬚�?�訫𥲤?箝�?);
         return;
     }
 
     const doc = getActive3DDoc();
-    showExportLoading('正在建構並打包 3D 模型 (.glb)...', doc);
+    showExportLoading('???�撱�??��????3D ?�∪? (.glb)...', doc);
 
     await new Promise(r => setTimeout(r, 50));
 
     try {
         if (typeof THREE.GLTFExporter === 'undefined') {
-            alert('正在載入 3D 匯出模組，請稍候重試...');
+            alert('???��??�� 3D ??��??��???�諹??��?�䠷???..');
             return;
         }
 
@@ -2277,10 +2277,10 @@ async function export3DGLB() {
         const cleanSiteName = (state && state.siteName) ? state.siteName.trim().replace(/[\\/:*?"<>|]/g, '_') : 'PV_Super_Project';
         exportRoot.name = `${cleanSiteName}_SiteModel`;
 
-        // 嵌入完整工程元數據 (UserData Metadata for Future Three.js / BIM Integration)
+        // ?���摰峕㟲?�亦??��???(UserData Metadata for Future Three.js / BIM Integration)
         exportRoot.userData = {
             generator: "PV Super Solar Planner",
-            siteName: state.siteName || "未命名案場",
+            siteName: state.siteName || "??��?�???,
             siteType: state.siteType,
             pitchStyle: state.pitchStyle,
             pvOrient: state.pvOrient,
@@ -2305,70 +2305,70 @@ async function export3DGLB() {
             exportedAt: new Date().toISOString()
         };
 
-        // 標準 PBR 純幾何無光影材質 (使用飽和對比、真實 PBR 色系材質，防止在 3D 軟體中出現死白過曝或泛白)
+        // ?�蹱? PBR ?�𥪜嗾?�閧�??�蔣??�釭 (?�輻?��?�??�齿??�???PBR ??��???�釭?�屸俈�?Ｗ�? 3D ?�罸??��????��??�?????�𤤿蒾)
         const exportMats = {
             panelFace: new THREE.MeshStandardMaterial({
-                color: 0x0f172a, // 深沉單晶矽深藍 (Deep Photovoltaic Navy Blue)
+                color: 0x0f172a, // ?��????��??�????(Deep Photovoltaic Navy Blue)
                 roughness: 0.25,
                 metalness: 0.30,
                 side: THREE.DoubleSide
             }),
             frame: new THREE.MeshStandardMaterial({
-                color: 0x64748b, // 陽極氧化銀灰鋁框 (Anodized Aluminum Frame)
+                color: 0x64748b, // ?�???�批??�?????(Anodized Aluminum Frame)
                 roughness: 0.45,
                 metalness: 0.65,
                 side: THREE.DoubleSide
             }),
             rack: new THREE.MeshStandardMaterial({
-                color: 0x475569, // 熱浸鍍鋅支架鋼構 (Galvanized Steel)
+                color: 0x475569, // ??�絡?�???��?�? (Galvanized Steel)
                 roughness: 0.45,
                 metalness: 0.70,
                 side: THREE.DoubleSide
             }),
             aluminum: new THREE.MeshStandardMaterial({
-                color: 0x94a3b8, // 輕量鋁合金導軌 (Aluminum Rail)
+                color: 0x94a3b8, // ?��???�??�???(Aluminum Rail)
                 roughness: 0.35,
                 metalness: 0.75,
                 side: THREE.DoubleSide
             }),
             concrete: new THREE.MeshStandardMaterial({
-                color: 0x64748b, // 啞光結構混凝土 (Concrete)
+                color: 0x64748b, // ?𧼮??��???��????(Concrete)
                 roughness: 0.90,
                 metalness: 0.05,
                 side: THREE.DoubleSide
             }),
             concretePier: new THREE.MeshStandardMaterial({
-                color: 0x475569, // 水泥基墩 (Concrete Pier)
+                color: 0x475569, // ?��???箏◣ (Concrete Pier)
                 roughness: 0.90,
                 metalness: 0.05,
                 side: THREE.DoubleSide
             }),
             roofTile: new THREE.MeshStandardMaterial({
-                color: 0x94a3b8, // 沉穩工程金屬浪板/屋面 (Roof Surface)
+                color: 0x94a3b8, // ?�厩帘�?�??穃�??�芣�??��?𢒰 (Roof Surface)
                 roughness: 0.75,
                 metalness: 0.10,
                 side: THREE.DoubleSide
             }),
             building: new THREE.MeshStandardMaterial({
-                color: 0xdde3ea, // 主建物牆面/外觀立面淺灰 (Main Architectural Facade)
+                color: 0xdde3ea, // ?��????????��??��?𢒰?��?�?(Main Architectural Facade)
                 roughness: 0.85,
                 metalness: 0.05,
                 side: THREE.DoubleSide
             }),
             surroundBuilding: new THREE.MeshStandardMaterial({
-                color: 0xc8d1dc, // 周邊建物中性建築灰 (Surrounding Building Facade)
+                color: 0xc8d1dc, // ????��?��??��?�遣?�厩�?(Surrounding Building Facade)
                 roughness: 0.88,
                 metalness: 0.05,
                 side: THREE.DoubleSide
             }),
             surroundRoof: new THREE.MeshStandardMaterial({
-                color: 0x8a99ad, // 周邊建物屋面灰 (Surrounding Roof)
+                color: 0x8a99ad, // ????��?��??��???(Surrounding Roof)
                 roughness: 0.80,
                 metalness: 0.08,
                 side: THREE.DoubleSide
             }),
             outlineEdge: new THREE.LineBasicMaterial({
-                color: 0x334155, // 沉穩外框輪廓深色邊線
+                color: 0x334155, // ?�厩帘憭�???�芸??�梯?��?�?
                 linewidth: 1
             })
         };
@@ -2398,7 +2398,7 @@ async function export3DGLB() {
         if (pvGroup) pvGroup.updateMatrixWorld(true);
         if (obstacleGroup) obstacleGroup.updateMatrixWorld(true);
 
-        // 判斷主建物（屋面有鋪設太陽能板的建物）及周邊建物，並將中脊線、天溝線等輔助圖形剔除，僅保留表達外型的簡潔外框線與外表實體
+        // ??��?��?餃遣????��?𢒰??��?�閮?��??質�?�??��?��???????��?��??��??��??�??��??��???��??????�Ｗ??�??�??躰�?�???�??�⊥??��???��???�𤥁”�???
         const targetSolarGroup = new THREE.Group();
         targetSolarGroup.name = "Solar_Array_And_Panels";
 
@@ -2411,22 +2411,22 @@ async function export3DGLB() {
         const targetSurroundBuildingGroup = new THREE.Group();
         targetSurroundBuildingGroup.name = "Surrounding_Buildings";
 
-        // 1. 處理 pvGroup 內的太陽能模組、鋼構支架、腳座、導軌與主建物
+        // 1. ??? pvGroup ????�芷??�???����𣄽?�𧢲�???����?�扼��??�諹??��????
         if (pvGroup) {
             pvGroup.traverse((child) => {
                 if (!child.visible) return;
 
-                // 剔除中脊線、天溝線、平屋頂分棟色帶標記與對齊輔助線
+                // ?娪�??��???�𠾼���??��???��??��???�??????�躰??�????????
                 if (child.isLine || child.isLineSegments) return;
                 if (child === ground || child === snapIndicator) return;
                 if (child.material && child.material.depthWrite === false && child.material.transparent) {
-                    // 天溝線與分棟線之半透明色帶 (Gutter/Division Color Strip)
+                    // ?��???��???�??��???�?��????? (Gutter/Division Color Strip)
                     return;
                 }
 
-                // 判斷是否為中脊線或天溝線加粗圓管 (createThick3DLine 生成之 CylinderGeometry)
+                // ??��???��??箔�??�??硋�??��??????梶恣 (createThick3DLine ?�???CylinderGeometry)
                 if (child.isMesh && child.geometry && child.geometry.type === 'CylinderGeometry') {
-                    // 若父節點為 featureGroup 或 divGroup，或材質帶天溝/中脊顏色則予以濾除
+                    // ?亦�?��?�䂿�?featureGroup ??divGroup?��????�釭???予�???��???��??��?�??�交???
                     const p = child.parent;
                     if (p && (p.name === 'Buildings_Group' || p.children.some(c => c.isMesh && c.geometry && c.geometry.type === 'PlaneGeometry' && c.material && c.material.depthWrite === false))) {
                         return;
@@ -2458,7 +2458,7 @@ async function export3DGLB() {
                     } else if (child.material === materials.rack) {
                         subName = "Steel_Structure_Beam";
                     } else if (child.material === materials.aluminum) {
-                        // 判斷是導軌還是腳座
+                        // ??��?????�屸???��??
                         const isFoot = (child.geometry && child.geometry.type !== 'BoxGeometry');
                         subName = isFoot ? "Mounting_Foot" : "Aluminum_Purlin_Rail";
                     } else if (child.material === materials.concrete || child.material === materials.concretePier) {
@@ -2485,7 +2485,7 @@ async function export3DGLB() {
                         targetStructureGroup.add(subGroup);
                     }
                 } else if (child.isMesh && !child.isInstancedMesh) {
-                    // 主建物 Mesh (Building_Main, Building_1, etc.)
+                    // ?��????Mesh (Building_Main, Building_1, etc.)
                     const geo = child.geometry ? child.geometry.clone() : null;
                     if (!geo) return;
 
@@ -2504,7 +2504,7 @@ async function export3DGLB() {
                         mesh.applyMatrix4(child.matrixWorld.clone());
                         targetMainBuildingGroup.add(mesh);
                     } else {
-                        // 其他一般結構網格
+                        // ????��?�??��????
                         const cleanMat = Array.isArray(child.material)
                             ? child.material.map(m => getCleanMat(m, false))
                             : getCleanMat(child.material, false);
@@ -2519,19 +2519,19 @@ async function export3DGLB() {
             });
         }
 
-        // 2. 處理 obstacleGroup（障礙區域／周邊建物：屋面無太陽能板者皆視為周邊建物）
+        // 2. ??? obstacleGroup?��??��???�?????��?��?�???Ｙ�?�芷??�???�??��?��????��?��??
         if (obstacleGroup) {
             let surroundIdx = 1;
             obstacleGroup.traverse((child) => {
                 if (!child.visible) return;
-                // 去除所有內部線條、中脊線、標記線或舊有的厚線條
+                // ?駁�??�??��????��?��??�??�??�条??�??????𡁶???
                 if (child.isLine || child.isLineSegments) return;
 
                 if (child.isMesh && !child.isInstancedMesh) {
                     const geo = child.geometry ? child.geometry.clone() : null;
                     if (!geo) return;
 
-                    // 使用優雅沉穩的周邊建物材質，取代刺眼的鮮紅色
+                    // ?�輻?????�厩�?��???��?????��???碶誨?箇�??��??��?��
                     const bldgName = `Surrounding_Building_${surroundIdx++}`;
                     const mesh = new THREE.Mesh(geo, exportMats.surroundBuilding);
                     mesh.name = bldgName;
@@ -2543,7 +2543,7 @@ async function export3DGLB() {
             });
         }
 
-        // 依序加入根節點，階層分類清楚嚴謹
+        // ?�嘥???��?�??�痹??𤾸??�??��??渲牲
         if (targetSolarGroup.children.length > 0) exportRoot.add(targetSolarGroup);
         if (targetStructureGroup.children.length > 0) exportRoot.add(targetStructureGroup);
         if (targetMainBuildingGroup.children.length > 0) exportRoot.add(targetMainBuildingGroup);
@@ -2563,7 +2563,7 @@ async function export3DGLB() {
                             blob = new Blob([output], { type: 'model/gltf+json' });
                         }
 
-                        const siteName = (state && state.siteName) ? state.siteName.trim().replace(/[\\/:*?"<>|]/g, '_') : '曜昇綠能_1號場';
+                        const siteName = (state && state.siteName) ? state.siteName.trim().replace(/[\\/:*?"<>|]/g, '_') : '?�??��?�_1?笔聦';
                         const kw = (state && state.totalKW) ? `${state.totalKW.toFixed(1)}kW` : '';
                         const now = new Date();
                         const yyyymmdd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
@@ -2581,7 +2581,7 @@ async function export3DGLB() {
         });
     } catch (err) {
         console.error('export3DGLB error:', err);
-        alert('匯出 3D 模型失敗：' + (err.message || err));
+        alert('??��? 3D ?�∪??��???? + (err.message || err));
     } finally {
         hideExportLoading(doc);
     }
@@ -2596,8 +2596,8 @@ function showMapContextMenu(x, y) {
         menu.className = 'context-menu';
         menu.innerHTML = `
             <div class="context-menu-item" id="menu-map-capture">
-                <span class="menu-icon">📷</span>
-                <span class="menu-text">截取地圖 (PNG)</span>
+                <span class="menu-icon">?𣊭</span>
+                <span class="menu-text">?????? (PNG)</span>
             </div>
         `;
         activeDoc.body.appendChild(menu);
@@ -2625,7 +2625,7 @@ async function captureMapImage() {
     const mapElement = activeDoc.getElementById('leaflet-map');
     if (!mapElement) return;
     
-    showExportLoading('正在截取衛星地圖高畫質影像 (PNG)...', activeDoc);
+    showExportLoading('???????��??????�条�??�芸???(PNG)...', activeDoc);
     await new Promise(r => setTimeout(r, 50));
     
     try {
@@ -2638,17 +2638,17 @@ async function captureMapImage() {
         
         const dataUrl = mapCanvas.toDataURL('image/png');
         
-        const siteName = (state && state.siteName) ? state.siteName.trim().replace(/[\\/:*?"<>|]/g, '_') : '曜昇綠能_1號場';
+        const siteName = (state && state.siteName) ? state.siteName.trim().replace(/[\\/:*?"<>|]/g, '_') : '?�??��?�_1?笔聦';
         const now = new Date();
         const yyyymmdd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
         const hhmmss = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
-        const fileName = `${siteName}_地圖_${yyyymmdd}_${hhmmss}.png`;
+        const fileName = `${siteName}_???_${yyyymmdd}_${hhmmss}.png`;
         
         const response = await fetch(dataUrl);
         const blob = await response.blob();
         await saveFileWithPicker(blob, fileName, 'image/png');
     } catch (err) {
-        alert("截取地圖影像失敗，可能是衛星圖圖磚受到跨網域 (CORS) 安全性限制。");
+        alert("???????��???��???��??�???��???�??��????��??�脣? (CORS) ?�匧�?????��?);
         console.error(err);
     } finally {
         hideExportLoading(activeDoc);
@@ -2667,19 +2667,19 @@ function updateSunPosition(lat, lng, month, hour) {
     const monthDays = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
     const N = monthDays[month - 1] + 21; // 21st of the month
     
-    // Declination angle delta (韏斤楝)
+    // Declination angle delta (?𤩺𣶸??
     const declination = 23.45 * Math.sin((360 / 365) * (284 + N) * Math.PI / 180);
     const decRad = (declination * Math.PI) / 180;
     
-    // Hour angle H (時角)
+    // Hour angle H (?�?)
     const hourAngle = (hour - 12) * 15;
     const hourAngleRad = (hourAngle * Math.PI) / 180;
     
-    // Solar Altitude alpha (高度角)
+    // Solar Altitude alpha (?��?漲閫?
     const sinAltitude = Math.sin(latRad) * Math.sin(decRad) + Math.cos(latRad) * Math.cos(decRad) * Math.cos(hourAngleRad);
     const altitudeRad = Math.asin(Math.max(-1.0, Math.min(1.0, sinAltitude)));
     
-    // Solar Azimuth (太陽方位角)
+    // Solar Azimuth (?�芷??�???
     let cosAzimuth = (Math.sin(decRad) - Math.sin(latRad) * Math.sin(altitudeRad)) / (Math.cos(latRad) * Math.cos(altitudeRad));
     cosAzimuth = Math.max(-1.0, Math.min(1.0, cosAzimuth));
     let azimuthRad = Math.acos(cosAzimuth);
@@ -3257,7 +3257,7 @@ function handleMeasurePointClick(point) {
             const doc = getActive3DDoc();
             activeMeasureLabel = doc.createElement('div');
             activeMeasureLabel.className = 'measure-label';
-            activeMeasureLabel.innerHTML = `📍 0.00 m`;
+            activeMeasureLabel.innerHTML = `?? 0.00 m`;
             const overlay = doc.getElementById('measure-labels-overlay');
             if (overlay) overlay.appendChild(activeMeasureLabel);
             
@@ -3267,7 +3267,7 @@ function handleMeasurePointClick(point) {
             const startPoint = measurePoints[0];
             const endPoint = applyAxisLock(startPoint, point);
             const distance = startPoint.distanceTo(endPoint);
-            const labelText = `📍 ${distance.toFixed(2)} m`;
+            const labelText = `?? ${distance.toFixed(2)} m`;
             const doc = getActive3DDoc();
             
             // Remove temporary rubberband line and temporary start markers
@@ -3369,7 +3369,7 @@ function handleMeasureFaceClick(planeInfo) {
             const doc = getActive3DDoc();
             activeMeasureLabel = doc.createElement('div');
             activeMeasureLabel.className = 'measure-label';
-            activeMeasureLabel.innerHTML = `<img src="images/length.svg" class="map-measure-icon" alt="" />面到面: 0.00 m`;
+            activeMeasureLabel.innerHTML = `<img src="images/length.svg" class="map-measure-icon" alt="" />?Ｗ�?? 0.00 m`;
             const overlay = doc.getElementById('measure-labels-overlay');
             if (overlay) overlay.appendChild(activeMeasureLabel);
         } else {
@@ -3430,7 +3430,7 @@ function handleMeasureFaceClick(planeInfo) {
             // Permanent label DOM element
             const labelDom = activeMeasureLabel || doc.createElement('div');
             labelDom.className = 'measure-label';
-            labelDom.innerHTML = `<img src="images/length.svg" class="map-measure-icon" alt="" />面到面: ${perpDist.toFixed(2)} m`;
+            labelDom.innerHTML = `<img src="images/length.svg" class="map-measure-icon" alt="" />?Ｗ�?? ${perpDist.toFixed(2)} m`;
             const overlay = doc.getElementById('measure-labels-overlay');
             if (!activeMeasureLabel && overlay) {
                 overlay.appendChild(labelDom);
@@ -3499,7 +3499,7 @@ function handleMeasurePointToFaceClick(pointOrPlane) {
             const doc = getActive3DDoc();
             activeMeasureLabel = doc.createElement('div');
             activeMeasureLabel.className = 'measure-label';
-            activeMeasureLabel.innerHTML = `<img src="images/length.svg" class="map-measure-icon" alt="" />點到面: 0.00 m`;
+            activeMeasureLabel.innerHTML = `<img src="images/length.svg" class="map-measure-icon" alt="" />?�𧼮�?? 0.00 m`;
             const overlay = doc.getElementById('measure-labels-overlay');
             if (overlay) overlay.appendChild(activeMeasureLabel);
             
@@ -3562,7 +3562,7 @@ function handleMeasurePointToFaceClick(pointOrPlane) {
             // Permanent label DOM element
             const labelDom = activeMeasureLabel || doc.createElement('div');
             labelDom.className = 'measure-label';
-            labelDom.innerHTML = `<img src="images/length.svg" class="map-measure-icon" alt="" />點到面: ${perpDist.toFixed(2)} m`;
+            labelDom.innerHTML = `<img src="images/length.svg" class="map-measure-icon" alt="" />?�𧼮�?? ${perpDist.toFixed(2)} m`;
             const overlay = doc.getElementById('measure-labels-overlay');
             if (!activeMeasureLabel && overlay) {
                 overlay.appendChild(labelDom);
@@ -3679,7 +3679,7 @@ function exitMeasureMode() {
 }
 
 /* ==========================================================================
-   8. 3D 距離量測尺規工具 (Measuring Tape Tool)
+   8. 3D ?�嗪𣪧?𤩺?��?�??��?�?(Measuring Tape Tool)
    ========================================================================== */
 function toggleMeasureMode() {
     const doc = getActive3DDoc();
@@ -3704,11 +3704,11 @@ function toggleMeasureMode() {
 }
 
 /* ==========================================================================
-   衛星地圖聚合線連續量測系統 (Continuous Polyline Measurement & Adaptive Ticks)
+   ?��??????�???��?��???𤩺?��?餌�? (Continuous Polyline Measurement & Adaptive Ticks)
    ========================================================================== */
 
 /* ==========================================================================
-   衛星地圖聚合線連續量測系統 (Continuous Polyline Measurement & Adaptive Ticks)
+   ?��??????�???��?��???𤩺?��?餌�? (Continuous Polyline Measurement & Adaptive Ticks)
    ========================================================================== */
 
 function getClosestPointOnSegment(p, a, b) {
@@ -3862,17 +3862,17 @@ function clearAllCompletedMapMeasures() {
 
 function toggleMapMeasureMode() {
     if (isMapMeasureMode) {
-        // 再度點選量測圖標時：清空所有量測並結束
+        // ?滚漲?��?�?𤩺??�???�??���?�????��??�蝯??
         exitMapMeasureMode(false);
     } else {
-        // 再度點選量測圖標時：先清空舊的量測聚合線，再開啟全新量測
+        // ?滚漲?��?�?𤩺??�???�??�??��???�??��???�??��??�???�鰵?𤩺??
         clearAllCompletedMapMeasures();
         enterMapMeasureMode();
     }
 }
 
 function enterMapMeasureMode() {
-    // 1. 自動將三大規劃工具全部切換到「鎖定」狀態
+    // 1. ????��??�扯??�極??��????𥕦�?�??�𠾼��???
     if (siteBoundaryState === 'edit') setPlanningModeState('site', 'locked');
     if (exclusionState === 'edit') setPlanningModeState('exclusion', 'locked');
     if (obstacleState === 'edit') setPlanningModeState('obstacle', 'locked');
@@ -3942,7 +3942,7 @@ function handleMapMeasureClick(latlng) {
     mapMeasureActiveMarkers.push(pinMarker);
     
     // Node Label
-    const labelDistText = isStart ? '起點 (0.00m)' : `P${index + 1} (${totalDistSoFar.toFixed(2)}m)`;
+    const labelDistText = isStart ? '?�琿? (0.00m)' : `P${index + 1} (${totalDistSoFar.toFixed(2)}m)`;
     const labelIcon = L.divIcon({
         className: 'map-measure-node-label-container',
         html: `<div class="map-measure-node-label">${labelDistText}</div>`,
@@ -4000,7 +4000,7 @@ function handleMapMeasureMouseMove(event) {
     }
     const liveTotal = prevTotal + segDist;
     
-    // 1. Rubberband line from last point to cursor (亮綠色虛線)
+    // 1. Rubberband line from last point to cursor (?��???????
     if (mapMeasureRubberband && map.hasLayer(mapMeasureRubberband)) {
         mapMeasureRubberband.setLatLngs([lastPt, currentLatLng]);
     } else {
@@ -4021,15 +4021,15 @@ function handleMapMeasureMouseMove(event) {
     }
     try { mapMeasureRubberband.bringToFront(); } catch (err) {}
     
-    // 2. Real-time floating distance tooltip badge (亮綠色數值)
+    // 2. Real-time floating distance tooltip badge (?��????��???
     const segText = segDist >= 1000 ? (segDist / 1000).toFixed(2) + ' km' : segDist.toFixed(2) + ' m';
     const totalText = liveTotal >= 1000 ? (liveTotal / 1000).toFixed(2) + ' km' : liveTotal.toFixed(2) + ' m';
     
     const badgeHtml = `
         <div class="map-measure-live-badge">
             <span class="live-seg-dist">${segText}</span>
-            ${mapMeasurePoints.length > 1 ? `<span class="live-total-dist">總長: ${totalText}</span>` : ''}
-            <span class="live-tip">點擊加點 · ESC 結束</span>
+            ${mapMeasurePoints.length > 1 ? `<span class="live-total-dist">?�賡�?: ${totalText}</span>` : ''}
+            <span class="live-tip">?����??�?? �?ESC ?��??</span>
         </div>
     `;
     
@@ -4073,7 +4073,7 @@ function finishMapMeasurePolyline() {
     let totalLength = 0;
     const labels = [];
     
-    // Segment badges at midpoints (亮綠色分段數值)
+    // Segment badges at midpoints (?��??????��?�??
     for (let i = 0; i < points.length - 1; i++) {
         const p1 = points[i];
         const p2 = points[i + 1];
@@ -4097,12 +4097,12 @@ function finishMapMeasurePolyline() {
         labels.push(segMarker);
     }
     
-    // Final End Summary Badge (亮綠色總長度數值)
+    // Final End Summary Badge (?��????��???�漲?詨�?
     const lastPoint = points[points.length - 1];
     const totalText = totalLength >= 1000 ? (totalLength / 1000).toFixed(2) + ' km' : totalLength.toFixed(2) + ' m';
     const sumBadgeIcon = L.divIcon({
         className: 'map-measure-summary-badge-container',
-        html: `<div class="map-measure-summary-badge">🏁 總長: ${totalText} (${points.length}點)</div>`,
+        html: `<div class="map-measure-summary-badge">?? ?�賡�?: ${totalText} (${points.length}??</div>`,
         iconSize: [140, 30],
         iconAnchor: [70, 15]
     });
@@ -4349,7 +4349,7 @@ function snapPolygonMovement(poly, rawLatLngs, startCenterPos, curMouseLatLng) {
     exclusionPolygons.forEach(collectTargets);
     obstaclePolygons.forEach(collectTargets);
 
-    // Check corner snapping (角點鎖點)
+    // Check corner snapping (?�㘾????)
     let bestSnap = null;
     let minPix = 16;
 
@@ -4380,7 +4380,7 @@ function snapPolygonMovement(poly, rawLatLngs, startCenterPos, curMouseLatLng) {
         return { latlngs: snappedLatLngs, snapped: true };
     }
 
-    // 2. Check parallel line alignment / axial snapping (平行線吸附)
+    // 2. Check parallel line alignment / axial snapping (?�唾??��?��???
     const azimuthRad = ((state.azimuth || 180) * Math.PI) / 180;
     const dirX = Math.sin(azimuthRad);
     const dirY = Math.cos(azimuthRad);
@@ -4636,7 +4636,7 @@ function updatePolygonVertexHandles(poly) {
         const center = getPolygonCenter(poly);
         const moveIcon = L.divIcon({
             className: 'poly-center-move-icon-container',
-            html: `<div class="poly-move-badge" title="拖曳可移動多邊形；按住 Ctrl / Cmd 或連點兩下拖曳可直接複製另一份">
+            html: `<div class="poly-move-badge" title="?�?????��??�???��?��?�????Ctrl / Cmd ??��??????�?????��??�??�賢�??��??>
                 <svg viewBox="0 0 24 24"><path d="M10 9h4V6h3l-5-5-5 5h3v3zm-1 1H6V7l-5 5 5 5v-3h3v-4zm14 2l-5-5v3h-3v4h3v3l5-5zm-9 3h-4v3H7l5 5 5-5h-3v-3z"/></svg>
             </div>`,
             iconSize: [32, 32],
@@ -4704,7 +4704,7 @@ function updatePolygonVertexHandles(poly) {
             
             const rawLatLngs = startCenterLatLngs.map(pt => L.latLng(pt.lat + dLat, pt.lng + dLng));
             
-            // 執行角點鎖點與平行線吸附
+            // ????�㘾?????��??��??�?
             const snapRes = snapPolygonMovement(poly, rawLatLngs, startCenterPos, curPos);
             const newLatLngs = snapRes.latlngs;
             
@@ -5057,7 +5057,7 @@ function clearActiveDrawingTouchState() {
 }
 
 /* ==========================================================================
-   6. 繪圖工具核心 (Drawing Tools: Site, Exclusion & Obstacle)
+   6. ?�芸??��?�?�? (Drawing Tools: Site, Exclusion & Obstacle)
    ========================================================================== */
 function enterSiteBoundaryDrawMode() {
     updateSiteBoundaryDrawState();
@@ -5127,7 +5127,7 @@ function handleSiteBoundaryMapClick(latlng) {
         }).addTo(map);
         
         clearSiteBoundaryDrawingState();
-        promptPolygonKeepOrDiscard("案場範圍", () => {
+        promptPolygonKeepOrDiscard("?��?�蝭�?", () => {
             customSiteBoundary = tempPoly;
             makePolygonDraggable(customSiteBoundary);
             makePolygonSelectable(customSiteBoundary);
@@ -5268,9 +5268,9 @@ function localToLatLng(localX, localZ, referenceLat, referenceLng, azimuth) {
 }
 
 /**
- * 計算案場中心：
- * 尋找一對夾角為 90 度的鄰邊（例如底邊與垂直邊），取其兩邊中垂線的幾何交點當案場中心。
- * 確保縱向、橫向片數增加時，上、下、左、右同步觸及案場邊界。
+ * ?��??��?��?????
+ * ?�𧢲�?��?��?滚�??��?�?90 ?�衣?????��??��??�???��???��??��???��??��??�??�嗾?�蓥漱暺?��??��?��?????
+ * ?????��???��??𤑳??�??�??�䔶??�??�椰?��?峕�??�詨??��??�???
  */
 function computeSiteCenterFromPrincipalEdges(polygon) {
     if (!polygon) return null;
@@ -5319,7 +5319,7 @@ function computeSiteCenterFromPrincipalEdges(polygon) {
 
     if (edges.length < 2) return null;
 
-    // 搜尋所有夾角為 90 度的鄰邊對
+    // ?𨅯??�??��??��?�?90 ?�衣??????
     let bestCenter = null;
     let bestScore = -Infinity;
 
@@ -5327,15 +5327,15 @@ function computeSiteCenterFromPrincipalEdges(polygon) {
         const e1 = edges[i];
         const e2 = edges[(i + 1) % edges.length];
         
-        // 點積 dot: 越接近 0 表示夾角越接近 90 度
+        // ?�䂿? dot: ?��?�𦻖�??0 ?�函?�憭???��?�𦻖�??90 ??
         const dot = Math.abs(e1.ux * e2.ux + e1.uy * e2.uy);
-        if (dot > 0.38) continue; // 夾角偏離 90 度超過 22 度則略過
+        if (dot > 0.38) continue; // ?��???誯�?90 ?�西???22 ?��???�?
 
-        const perpScore = 1.0 - dot; // 1.0 為完美 90 度
+        const perpScore = 1.0 - dot; // 1.0 ?�???90 ??
         const combinedLen = e1.len + e2.len;
         const score = (perpScore * 20.0) + combinedLen;
 
-        // 計算兩鄰邊中垂線的幾何交點
+        // ?��???��??��??�??�嗾?�蓥漱暺?
         // Line 1: M1 + t * N1
         // Line 2: M2 + s * N2
         const M1 = e1.mid;
@@ -5364,7 +5364,7 @@ function computeSiteCenterFromPrincipalEdges(polygon) {
         return L.latLng(centerLat, centerLng);
     }
 
-    // 若無嚴格 90 度鄰邊，取最長邊與其最垂直的鄰邊
+    // ?亦�?湔聢 90 ?�阡�??��??�??????��?�?��??��??
     let longestEdge = edges[0];
     for (const e of edges) {
         if (e.len > longestEdge.len) longestEdge = e;
@@ -5429,18 +5429,18 @@ function inferParametersFromSiteBoundary(polygon, keepCurrentAzimuth = false) {
         : getOuterRingLatLngs(polygon);
     if (!latlngs || latlngs.length < 3) return;
 
-    // 1. 更新案場中心經緯度
+    // 1. ?湔鰵?��?��????�梶楝摨?
     updateSiteCenterFromBoundary(polygon);
 
     const refLat = state.lat;
     const refLng = state.lng;
 
-    // 2. 推算方位角 (Azimuth)
+    // 2. ????�???(Azimuth)
     let inferredAzimuth = parseFloat(state.azimuth) || 180;
     
     if (!keepCurrentAzimuth) {
         if (state.siteType === 'roof-slope') {
-            // 斜屋頂模式依最長邊幾何推算方位角
+            // ?𨅯??��??��???�????��??????�???
             let maxDist = 0;
             let bestAngle = inferredAzimuth;
             const metersPerLatDegree = 111320;
@@ -5462,14 +5462,14 @@ function inferParametersFromSiteBoundary(polygon, keepCurrentAzimuth = false) {
             }
             inferredAzimuth = Math.round(bestAngle * 2) / 2;
         } else {
-            // 地面與平屋頂預設朝南 180°
+            // ??��??��??��????�身??? 180�?
             if (state.azimuth === undefined) {
                 inferredAzimuth = 180;
             }
         }
     }
 
-    // 3. 計算案場邊界在該方位角下的投影寬度 X 與長度 Y (米)
+    // 3. ?��??��??�???��??�??�雴??�??��?祝摨?X ?��?�摨?Y (??
     let minX = Infinity, maxX = -Infinity;
     let minZ = Infinity, maxZ = -Infinity;
     for (const pt of latlngs) {
@@ -5482,30 +5482,30 @@ function inferParametersFromSiteBoundary(polygon, keepCurrentAzimuth = false) {
     const widthX = Math.max(0.1, maxX - minX);
     const lengthY = Math.max(0.1, maxZ - minZ);
 
-    // 4. 計算單片模組在當前排布方向下的尺寸 (米)
+    // 4. ?��??�??��????��??�???���????��???(??
     const isPortrait = state.pvOrient === 'portrait';
-    // X 軸方向尺寸: 直向(portrait)為短邊 (pvW)，橫向(landscape)為長邊 (pvL)
+    // X ?�豢�?穃�??? ?�?(portrait)?箇�??(pvW)?��?�??landscape)?粹�???(pvL)
     const pvW_m = (isPortrait ? state.pvW : state.pvL) / 1000;
-    // Y 軸方向尺寸: 直向(portrait)為長邊 (pvL)，橫向(landscape)為短邊 (pvW)
+    // Y ?�豢�?穃�??? ?�?(portrait)?粹�???(pvL)?��?�??landscape)?箇�??(pvW)
     const pvL_m = (isPortrait ? state.pvL : state.pvW) / 1000;
     const spX_m = (parseFloat(state.spX) || 20) / 1000;
     const spY_m = (parseFloat(state.spY) || 20) / 1000;
     const arrP_m = parseFloat(state.arrP) || 1.0;
 
-    // 5. 自動推算 arrI, arrJ, arrM
+    // 5. ?????? arrI, arrJ, arrM
     let inferredI = getMaxPossibleArrI();
     let inferredJ = 4;
     let inferredM = 1;
 
     if (state.siteType === 'roof-slope') {
-        // 斜屋頂模式 arrM 固定為 1，由 arrJ 填滿長度 Y
+        // ?𨅯??��???arrM ?�???1?�𣬚�? arrJ ?�急�???�漲 Y
         inferredM = 1;
         inferredJ = getMaxPossibleArrJ();
     } else {
-        // 地面與平屋頂 arrJ 固定為 4，以 arrM 增加總列數
+        // ??��??��??��?? arrJ ?�???4?�䔶�?arrM ?��??�賢???
         inferredJ = 4;
 
-        // 計算單桌 4 片之高度
+        // ?��???? 4 ?�??��?�?
         const tableHeight = 4 * pvL_m + 3 * spY_m;
         if (lengthY >= tableHeight) {
             inferredM = 1 + Math.ceil((lengthY - tableHeight) / arrP_m);
@@ -5515,7 +5515,7 @@ function inferParametersFromSiteBoundary(polygon, keepCurrentAzimuth = false) {
         inferredM = Math.max(1, Math.min(50, inferredM));
     }
 
-    // 6. 更新 UI 輸入框與 Slider 數值
+    // 6. ?湔鰵 UI ?�詨�獢�? Slider ?詨�?
     if (elements.arrI && !lockedParams['arrI']) {
         elements.arrI.value = inferredI;
         if (elements.arrISlider) elements.arrISlider.value = inferredI;
@@ -5761,7 +5761,7 @@ function finishObstaclePolygon(points) {
     }).addTo(map);
 
     clearObstacleDrawingState();
-    promptPolygonKeepOrDiscard("障礙區域", () => {
+    promptPolygonKeepOrDiscard("?𦦵??�??, () => {
         poly.isObstacle = true;
         poly.obstacleHeight = h;
         const onRoofChk = document.getElementById('chk-obs-on-roof');
@@ -5979,7 +5979,37 @@ function handleExclusionMapClick(latlng) {
             }).addTo(map);
             
             clearExclusionDrawingState();
-            promptPolygonKeepOrDiscard("排除區域", () => {
+            promptPolygonKeepOrDiscard("??��??�??, () => {
+                const chk = document.getElementById('chk-non-building');
+                if (chk && chk.checked && customSiteBoundary && window.turf) {
+                    try {
+                        const siteGeo = customSiteBoundary.toGeoJSON();
+                        const exGeo = poly.toGeoJSON();
+                        const diffGeo = turf.difference(siteGeo, exGeo);
+                        if (diffGeo) {
+                            map.removeLayer(customSiteBoundary);
+                            const newLatLngs = L.GeoJSON.coordsToLatLngs(diffGeo.geometry.coordinates, diffGeo.geometry.type === 'Polygon' ? 1 : 2);
+                            customSiteBoundary = L.polygon(newLatLngs, {
+                                color: 'rgba(56, 189, 248, 1)',
+                                weight: 2.5,
+                                interactive: true
+                            }).addTo(map);
+                            makePolygonDraggable(customSiteBoundary);
+                            makePolygonSelectable(customSiteBoundary);
+                            inferParametersFromSiteBoundary(customSiteBoundary);
+                            updateSiteBoundaryDrawState();
+                            
+                            map.removeLayer(poly);
+                            exitExclusionDrawMode();
+                            calculateOutputs();
+                            updateAllVisuals(true);
+                            return;
+                        }
+                    } catch (e) {
+                        console.error("Turf difference failed:", e);
+                    }
+                }
+                
                 exclusionPolygons.push(poly);
                 makePolygonDraggable(poly);
                 makePolygonSelectable(poly);
@@ -7618,7 +7648,7 @@ function updateSiteDivisionLines(poly) {
                                     activeSelectedDivision.edgeIndex === edgeIdx && 
                                     activeSelectedDivision.divisionIndex === k);
 
-                // 1. Visible styled division line (預設亮藍色虛線 #38bdf8)
+                // 1. Visible styled division line (??�身?�株??????#38bdf8)
                 const lineLayer = L.polyline([startLatLng, endLatLng], {
                     color: isSelected ? '#ec4899' : 'rgba(56, 189, 248, 1)',
                     weight: isSelected ? 4.5 : 3,
@@ -7712,17 +7742,17 @@ function updateToolboxPopupEdgeUI() {
         const divList = getNormalizedBuildingDivisions(activeSelectedPolygon, edgeIdx);
         const count = divList.length;
 
-        if (lbl) lbl.innerHTML = `已選取分棟線 (邊線 #${edgeIdx + 1}-第${divIdx + 1}條)`;
+        if (lbl) lbl.innerHTML = `?�脤�?�??�毺? (?�? #${edgeIdx + 1}-??{divIdx + 1}??`;
         if (btnIn) {
             btnIn.disabled = false;
-            btnIn.title = "將分棟線往範圍中心內縮 0.5m";
+            btnIn.title = "?��??�毺??��?��??��????�葬 0.5m";
         }
         if (btnOut) {
             btnOut.disabled = false;
-            btnOut.title = "將分棟線往範圍外側平移 0.5m";
+            btnOut.title = "?��??�毺??��?��??��?��??��? 0.5m";
         }
 
-        if (lblBuilding) lblBuilding.innerHTML = `分棟設定 (邊線 #${edgeIdx + 1}: ${count} 條)`;
+        if (lblBuilding) lblBuilding.innerHTML = `?�??��?? (?�? #${edgeIdx + 1}: ${count} ??`;
         if (btnBuildingAdd) btnBuildingAdd.disabled = false;
         if (btnBuildingSub) btnBuildingSub.disabled = (count <= 0);
     } else if (activeSelectedEdgeIndex !== -1) {
@@ -7732,13 +7762,13 @@ function updateToolboxPopupEdgeUI() {
                                 activeSelectedPolygon.segmentOffsets[activeSelectedEdgeIndex] && 
                                 activeSelectedPolygon.segmentOffsets[activeSelectedEdgeIndex][activeSelectedSegmentIndex]) || 0;
                 const sign = curOff > 0 ? '+' : '';
-                lbl.innerHTML = `已選取邊線 #${activeSelectedEdgeIndex + 1} (棟 ${activeSelectedSegmentIndex + 1}) [${sign}${curOff}m]`;
-                if (btnIn) btnIn.title = `將棟別 ${activeSelectedSegmentIndex + 1} 邊線向內平移 0.5m`;
-                if (btnOut) btnOut.title = `將棟別 ${activeSelectedSegmentIndex + 1} 邊線向外平移 0.5m`;
+                lbl.innerHTML = `?�脤�?????#${activeSelectedEdgeIndex + 1} (??${activeSelectedSegmentIndex + 1}) [${sign}${curOff}m]`;
+                if (btnIn) btnIn.title = `?��???${activeSelectedSegmentIndex + 1} ?�??穃�?��?�?0.5m`;
+                if (btnOut) btnOut.title = `?��???${activeSelectedSegmentIndex + 1} ?�??�??��?�?0.5m`;
             } else {
-                lbl.innerHTML = `已選取邊線 #${activeSelectedEdgeIndex + 1}`;
-                if (btnIn) btnIn.title = "將邊線向內平移 0.5m";
-                if (btnOut) btnOut.title = "將邊線向外平移 0.5m";
+                lbl.innerHTML = `?�脤�?????#${activeSelectedEdgeIndex + 1}`;
+                if (btnIn) btnIn.title = "?��??��????��???0.5m";
+                if (btnOut) btnOut.title = "?��??��???��??��??0.5m";
             }
         }
         if (btnIn) btnIn.disabled = false;
@@ -7747,16 +7777,16 @@ function updateToolboxPopupEdgeUI() {
         if (activeSelectedPolygon && activeSelectedPolygon === customSiteBoundary) {
             const divList = getNormalizedBuildingDivisions(activeSelectedPolygon, activeSelectedEdgeIndex);
             const count = divList.length;
-            if (lblBuilding) lblBuilding.innerHTML = `分棟設定 (邊線 #${activeSelectedEdgeIndex + 1}: ${count} 條)`;
+            if (lblBuilding) lblBuilding.innerHTML = `?�??��?? (?�? #${activeSelectedEdgeIndex + 1}: ${count} ??`;
             if (btnBuildingAdd) btnBuildingAdd.disabled = false;
             if (btnBuildingSub) btnBuildingSub.disabled = (count <= 0);
         }
     } else {
-        if (lbl) lbl.innerHTML = `點擊邊線微調偏移`;
+        if (lbl) lbl.innerHTML = `?����??�??�株??讐�?`;
         if (btnIn) btnIn.disabled = true;
         if (btnOut) btnOut.disabled = true;
 
-        if (lblBuilding) lblBuilding.innerHTML = `點擊邊線設定分棟`;
+        if (lblBuilding) lblBuilding.innerHTML = `?����??�??��???�?`;
         if (btnBuildingAdd) btnBuildingAdd.disabled = true;
         if (btnBuildingSub) btnBuildingSub.disabled = true;
     }
@@ -7837,41 +7867,41 @@ function showPolygonToolboxPanel(poly) {
     let panel = doc.getElementById('polygon-toolbox-panel');
     if (!panel) return;
     
-    let title = "排除區域";
+    let title = "??��??�??;
     if (poly.isWalkway) {
-        title = "維修走道區域";
+        title = "?��??��????�??;
     } else if (poly === customSiteBoundary) {
-        title = "案場邊界";
+        title = "?��??�?";
     } else if (poly.isObstacle) {
-        const onRoofLabel = (poly.isOnRoof !== false && state.siteType !== 'ground') ? ' [建物上]' : '';
-        title = `障礙物 (${poly.obstacleHeight || 5.0}m)${onRoofLabel}`;
+        const onRoofLabel = (poly.isOnRoof !== false && state.siteType !== 'ground') ? ' [?��?��???' : '';
+        title = `?𦦵???(${poly.obstacleHeight || 5.0}m)${onRoofLabel}`;
         const onRoofChk = document.getElementById('chk-obs-on-roof');
         if (onRoofChk) onRoofChk.checked = (poly.isOnRoof !== false);
     } else {
-        if (poly.isSubstation) title = "升壓站";
-        else if (poly.isPathway) title = `${poly.pathwayWidth}m 走道`;
+        if (poly.isSubstation) title = "?�???;
+        else if (poly.isPathway) title = `${poly.pathwayWidth}m ?��??`;
     }
     
     let heightControlsHtml = '';
     if (poly.isObstacle) {
         heightControlsHtml = `
             <div style="display: flex; gap: 4px; justify-content: center; margin-bottom: 4px;">
-                <button id="btn-toolbox-height-down" class="toolbox-btn" style="flex: 1;">降低</button>
-                <button id="btn-toolbox-height-up" class="toolbox-btn" style="flex: 1;">升高</button>
+                <button id="btn-toolbox-height-down" class="toolbox-btn" style="flex: 1;">?�?</button>
+                <button id="btn-toolbox-height-up" class="toolbox-btn" style="flex: 1;">?�?</button>
             </div>
         `;
     }
 
-    let edgeLabelText = '點擊邊線微調偏移';
+    let edgeLabelText = '?����??�??�株??讐�?';
     let isOffsetBtnDisabled = true;
     if (activeSelectedDivision && poly === customSiteBoundary) {
-        edgeLabelText = `已選取分棟線 (邊線 #${activeSelectedDivision.edgeIndex + 1}-第${activeSelectedDivision.divisionIndex + 1}條)`;
+        edgeLabelText = `?�脤�?�??�毺? (?�? #${activeSelectedDivision.edgeIndex + 1}-??{activeSelectedDivision.divisionIndex + 1}??`;
         isOffsetBtnDisabled = false;
     } else if (activeSelectedEdgeIndex !== -1) {
         if (activeSelectedSegmentIndex !== -1 && poly === customSiteBoundary) {
-            edgeLabelText = `已選取邊線 #${activeSelectedEdgeIndex + 1} (棟 ${activeSelectedSegmentIndex + 1})`;
+            edgeLabelText = `?�脤�?????#${activeSelectedEdgeIndex + 1} (??${activeSelectedSegmentIndex + 1})`;
         } else {
-            edgeLabelText = `已選取邊線 #${activeSelectedEdgeIndex + 1}`;
+            edgeLabelText = `?�脤�?????#${activeSelectedEdgeIndex + 1}`;
         }
         isOffsetBtnDisabled = false;
     }
@@ -7882,8 +7912,8 @@ function showPolygonToolboxPanel(poly) {
                 ${edgeLabelText}
             </div>
             <div style="display: flex; gap: 4px; justify-content: center;">
-                <button id="btn-toolbox-edge-in" class="toolbox-btn" style="flex: 1;" title="${activeSelectedDivision ? '將分棟線往範圍中心內縮 0.5m' : '將邊線向內平移 0.5m'}" ${isOffsetBtnDisabled ? 'disabled' : ''}>內縮</button>
-                <button id="btn-toolbox-edge-out" class="toolbox-btn" style="flex: 1;" title="${activeSelectedDivision ? '將分棟線往範圍外側平移 0.5m' : '將邊線向外平移 0.5m'}" ${isOffsetBtnDisabled ? 'disabled' : ''}>外推</button>
+                <button id="btn-toolbox-edge-in" class="toolbox-btn" style="flex: 1;" title="${activeSelectedDivision ? '?��??�毺??��?��??��????�葬 0.5m' : '?��??��????��???0.5m'}" ${isOffsetBtnDisabled ? 'disabled' : ''}>??�葬</button>
+                <button id="btn-toolbox-edge-out" class="toolbox-btn" style="flex: 1;" title="${activeSelectedDivision ? '?��??�毺??��?��??��?��??��? 0.5m' : '?��??��???��??��??0.5m'}" ${isOffsetBtnDisabled ? 'disabled' : ''}>?��?�綫</button>
             </div>
         </div>
     `;
@@ -7898,11 +7928,11 @@ function showPolygonToolboxPanel(poly) {
         buildingDivisionHtml = `
             <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; padding: 4px; margin-bottom: 4px;">
                 <div id="toolbox-building-label" style="font-size: 0.65rem; color: #ffffff; margin-bottom: 3px; text-align: center; font-weight: bold;">
-                    ${hasSelection ? `分棟設定 (邊線 #${targetEdgeIdx + 1}: ${curDivCount} 條)` : '點擊邊線設定分棟'}
+                    ${hasSelection ? `?�??��?? (?�? #${targetEdgeIdx + 1}: ${curDivCount} ??` : '?����??�??��???�?'}
                 </div>
                 <div style="display: flex; gap: 4px; justify-content: center;">
-                    <button id="btn-toolbox-building-add" class="toolbox-btn" style="flex: 1;" title="沿此邊線垂直方向增加分棟線" ${!hasSelection ? 'disabled' : ''}>增棟</button>
-                    <button id="btn-toolbox-building-sub" class="toolbox-btn" style="flex: 1;" title="減少此邊線分棟線" ${(!hasSelection || curDivCount === 0) ? 'disabled' : ''}>減棟</button>
+                    <button id="btn-toolbox-building-add" class="toolbox-btn" style="flex: 1;" title="?�踵�?�??��??�??��??�??? ${!hasSelection ? 'disabled' : ''}>?����?</button>
+                    <button id="btn-toolbox-building-sub" class="toolbox-btn" style="flex: 1;" title="?��???�日??��???�毺?" ${(!hasSelection || curDivCount === 0) ? 'disabled' : ''}>?��??</button>
                 </div>
             </div>
         `;
@@ -7915,8 +7945,8 @@ function showPolygonToolboxPanel(poly) {
             ${buildingDivisionHtml}
             ${heightControlsHtml}
             <div style="display: flex; gap: 4px; justify-content: center;">
-                <button id="btn-toolbox-delete" class="toolbox-btn" style="flex: 1;">刪除</button>
-                <button id="btn-toolbox-cancel" class="toolbox-btn" style="flex: 1;">返回</button>
+                <button id="btn-toolbox-delete" class="toolbox-btn" style="flex: 1;">??��?</button>
+                <button id="btn-toolbox-cancel" class="toolbox-btn" style="flex: 1;">餈�?</button>
             </div>
         </div>
     `;
@@ -8053,10 +8083,10 @@ function showPolygonToolboxPanel(poly) {
         btnHeightDown.addEventListener('click', (e) => {
             if (e) e.stopPropagation();
             poly.obstacleHeight = Math.max(0.5, (poly.obstacleHeight || 5.0) - 0.5);
-            const onRoofLabel = (poly.isOnRoof !== false && state.siteType !== 'ground') ? ' [建物上]' : '';
+            const onRoofLabel = (poly.isOnRoof !== false && state.siteType !== 'ground') ? ' [?��?��???' : '';
             const handle = panel.querySelector('.toolbox-drag-handle');
             if (handle) {
-                handle.innerHTML = `障礙物 (${poly.obstacleHeight.toFixed(1)}m)${onRoofLabel}`;
+                handle.innerHTML = `?𦦵???(${poly.obstacleHeight.toFixed(1)}m)${onRoofLabel}`;
             }
             const hInput = doc.getElementById('val-obs-h');
             const hSlider = doc.getElementById('val-obs-h-slider');
@@ -8075,10 +8105,10 @@ function showPolygonToolboxPanel(poly) {
         btnHeightUp.addEventListener('click', (e) => {
             if (e) e.stopPropagation();
             poly.obstacleHeight = (poly.obstacleHeight || 5.0) + 0.5;
-            const onRoofLabel = (poly.isOnRoof !== false && state.siteType !== 'ground') ? ' [建物上]' : '';
+            const onRoofLabel = (poly.isOnRoof !== false && state.siteType !== 'ground') ? ' [?��?��???' : '';
             const handle = panel.querySelector('.toolbox-drag-handle');
             if (handle) {
-                handle.innerHTML = `障礙物 (${poly.obstacleHeight.toFixed(1)}m)${onRoofLabel}`;
+                handle.innerHTML = `?𦦵???(${poly.obstacleHeight.toFixed(1)}m)${onRoofLabel}`;
             }
             const hInput = doc.getElementById('val-obs-h');
             const hSlider = doc.getElementById('val-obs-h-slider');
@@ -8156,7 +8186,7 @@ function duplicatePolygon(sourcePolygon, offsetLat = 0, offsetLng = 0) {
     return newPoly;
 }
 
-function triggerPolygonCloneEffect(poly, message = "已複製多邊形") {
+function triggerPolygonCloneEffect(poly, message = "?�脰??�賢???��??) {
     if (!poly) return;
     try {
         const el = poly._path || (poly.getElement ? poly.getElement() : null);
@@ -8181,7 +8211,7 @@ function showCloneToast(message) {
         toast.className = 'clone-toast-notification';
         document.body.appendChild(toast);
     }
-    toast.innerHTML = `<span style="font-size: 1.1rem; filter: drop-shadow(0 0 6px rgba(56,189,248,0.8));">✨</span> <span>${message}</span>`;
+    toast.innerHTML = `<span style="font-size: 1.1rem; filter: drop-shadow(0 0 6px rgba(56,189,248,0.8));">??/span> <span>${message}</span>`;
     toast.classList.add('active');
     
     if (cloneToastTimeout) clearTimeout(cloneToastTimeout);
@@ -8291,7 +8321,7 @@ function makePolygonDraggable(polygon) {
         if (isModifierDown && polygon !== customSiteBoundary) {
             const cloned = duplicatePolygon(polygon, 0, 0);
             if (cloned) {
-                triggerPolygonCloneEffect(cloned, "✨ 已複製多邊形 (Ctrl+拖曳)");
+                triggerPolygonCloneEffect(cloned, "???�脰??�賢???��??(Ctrl+?�???)");
                 activeDragPoly = cloned;
             }
         }
@@ -8467,7 +8497,7 @@ function makePolygonDraggable(polygon) {
                             const offsetLng = 0.00004;
                             const cloned = duplicatePolygon(polygon, offsetLat, offsetLng);
                             if (cloned) {
-                                triggerPolygonCloneEffect(cloned, "✨ 已複製多邊形 (連點二次)");
+                                triggerPolygonCloneEffect(cloned, "???�脰??�賢???��??(????��?�?");
                                 activeSelectedPolygon = cloned;
                                 showPolygonToolboxPanel(cloned);
                                 calculateOutputs();
@@ -9044,6 +9074,11 @@ function clipPolygonByZ(points, zCut, isLessOrEqual) {
     return out;
 }
 
+function parseLeafletPolygon(poly) {
+    let latlngs = poly.getLatLngs();
+    let polygons = []; // Array of { outer: [], holes: [] }
+    if (!latlngs || latlngs.length === 0) return polygons;
+    
 function updateViewer(params) {
     if (!scene) return;
     
@@ -9386,7 +9421,7 @@ function updateViewer(params) {
                     }
                 };
 
-                const makeSafeExtrudedMesh = (pts, extrudeDepth, yFunc, material) => {
+                const makeSafeExtrudedMesh = (pts, extrudeDepth, yFunc, material, holesPts = []) => {
                     const cleaned = cleanPolygon2D(pts);
                     if (!cleaned || cleaned.length < 3) return null;
 
@@ -9479,11 +9514,11 @@ function updateViewer(params) {
 
                 localGroup.add(roofPlane);
 
-                // Slope roof 3D Ridge Lines (中脊線加粗) and Gutter / Valley Lines (天溝線加粗)
+                // Slope roof 3D Ridge Lines (?��???��???? and Gutter / Valley Lines (?��???��????
                 if (siteType === 'roof-slope') {
                     const featureGroup = new THREE.Group();
                     
-                    // 1. 中脊線 (Ridge Lines) - Bold amber/gold line (加粗表現)
+                    // 1. ?��????(Ridge Lines) - Bold amber/gold line (????�函𣶹)
                     if (isDoublePitch) {
                         buildingsToRender.forEach(bldg => {
                             const bldgZRidge = bldg.baseZRidge !== undefined ? bldg.baseZRidge : (bldg.zRidge !== undefined ? bldg.zRidge : z_ridge);
@@ -9501,7 +9536,7 @@ function updateViewer(params) {
                     localGroup.add(featureGroup);
                 }
 
-                // Flat roof 3D division line display (平屋頂分棟線 3D 視覺渲染)
+                // Flat roof 3D division line display (?�喳??�??�毺? 3D ?�𤥁死?�脫?)
                 if (siteType === 'roof-flat' && customSiteBoundary && customSiteBoundary.buildingDivisions) {
                     const divSegments = getSiteDivisionLineSegments(customSiteBoundary);
                     if (divSegments && divSegments.length > 0) {
@@ -9638,10 +9673,10 @@ function updateViewer(params) {
     if (siteType === 'roof-slope') {
         if (pitchStyle === 'double') {
             if (isFlatLaid) {
-                // 平鋪時: 模組底面離屋脊 200mm (0.2m)
+                // ?�喲𪊽?? ?��???��?𢒰?�???200mm (0.2m)
                 ridgeY = Y_ridge + 0.20;
             } else {
-                // 架高時: 19 的支架高度 (supportH) 為最高點 (屋脊) 支架高度
+                // ????? 19 ?��??????(supportH) ?�??��?? (?��??) ??�沲�??�漲
                 const nominalRidgeY = Y_ridge + supportH;
                 
                 const s_leg_neg = (numNeg > 0) ? s_outer_neg * 0.8 : -ridgeSp / 2;
@@ -9657,13 +9692,13 @@ function updateViewer(params) {
                 ridgeY = nominalRidgeY + lift;
             }
         } else if (pitchStyle === 'double-v') {
-            // 雙斜V: 最高點在兩側屋簷 (s_outer_neg / s_outer_pos)
+            // ?�?V: ?��?????��?�???(s_outer_neg / s_outer_pos)
             const s_max = Math.max(Math.abs(s_outer_neg), s_outer_pos);
             const y_roof_eave = s_max * Math.tan(roofTiltRad);
             if (isFlatLaid) {
                 doubleVHighY = y_roof_eave + 0.20;
             } else {
-                // 支架高度一樣都定義最高點
+                // ??�沲�??�漲?��??�摰𡁶??��???
                 const nominalHighY = y_roof_eave + supportH;
                 const centerModY = nominalHighY - s_max * Math.sin(totalTiltRad);
                 const centerClearance = centerModY - 0; // roof valley is at Y=0
@@ -9671,17 +9706,17 @@ function updateViewer(params) {
                 doubleVHighY = nominalHighY + lift;
             }
         } else {
-            // 單斜: 最高點在後端 (z_back_arr)
+            // ???: ?��????????(z_back_arr)
             const z_back_arr = zCenterOffset + halfLen * Math.cos(totalTiltRad);
             const z_front_arr = zCenterOffset - halfLen * Math.cos(totalTiltRad);
             const y_roof_back = getRoofY(z_back_arr);
             const y_roof_front = getRoofY(z_front_arr);
             
             if (isFlatLaid) {
-                // 平鋪時: 模組底面離屋面固定 200mm (0.2m)
+                // ?�喲𪊽?? ?��???��?𢒰?�??Ｗ�?�摰?200mm (0.2m)
                 singleHighY = y_roof_back + 0.20;
             } else {
-                // 架高時: 19 的支架高度 (supportH) 為最高點 (後端) 支架高度
+                // ????? 19 ?��??????(supportH) ?�??��?? (?�𣬚垢) ??�沲�??�漲
                 const nominalHighY = y_roof_back + supportH;
                 const mod_front_Y = nominalHighY - 2 * halfLen * Math.sin(totalTiltRad);
                 const clearance_front = mod_front_Y - y_roof_front;
@@ -9704,7 +9739,7 @@ function updateViewer(params) {
         const targetBldg = (subBuildings && subBuildings[g]) ? subBuildings[g] : null;
         
         if (pitchStyle === 'double') {
-            // "雙斜" = Gable / 山型 (中間高、兩側低)
+            // "?�?" = Gable / ?��?? (?��???�塩���?�?)
             const numRowsNeg = (layoutCoords[g]?.['neg'] || []).length || numNeg;
             for (let r = 0; r < numRowsNeg; r++) {
                 for (let c = 0; c < arrI; c++) {
@@ -9727,7 +9762,7 @@ function updateViewer(params) {
                             const rowY = (curYRidge + effSupportH) - s_actual * Math.sin(totalTiltRad);
                             panelY = rowY + 0.015 + panelOffset;
                         } else {
-                            // Ground mount / Flat roof "雙斜" = Mountain/Gable (Center ridge is high, outer eaves low)
+                            // Ground mount / Flat roof "?�?" = Mountain/Gable (Center ridge is high, outer eaves low)
                             const curRidgeZ = -zOffset + blockZ;
                             const s_actual = Math.abs(rowZ - curRidgeZ) / Math.cos(totalTiltRad);
                             rotX = -totalTiltRad;
@@ -9762,7 +9797,7 @@ function updateViewer(params) {
                             const rowY = (curYRidge + effSupportH) - s_actual * Math.sin(totalTiltRad);
                             panelY = rowY + 0.015 + panelOffset;
                         } else {
-                            // Ground mount / Flat roof "雙斜" = Mountain/Gable (Center ridge is high, outer eaves low)
+                            // Ground mount / Flat roof "?�?" = Mountain/Gable (Center ridge is high, outer eaves low)
                             const curRidgeZ = -zOffset + blockZ;
                             const s_actual = Math.abs(rowZ - curRidgeZ) / Math.cos(totalTiltRad);
                             rotX = +totalTiltRad;
@@ -9774,7 +9809,7 @@ function updateViewer(params) {
                 }
             }
         } else if (pitchStyle === 'double-v') {
-            // "雙斜V" = V-shape / 谷型 (中間下凹、兩側高)
+            // "?�?V" = V-shape / ?��?? (?��???��?�?��?�?)
             const s_max_neg = Math.abs(s_outer_neg);
             const s_max_pos = s_outer_pos;
             const highY_neg = (siteType === 'roof-slope') ? doubleVHighY : supportH;
@@ -9795,7 +9830,7 @@ function updateViewer(params) {
                             rotX = (rowZ < ridgeZ) ? +roofTiltRad : -roofTiltRad;
                             panelY = getRoofY(rowZ, localX) + 0.20;
                         } else {
-                            // Ground mount / Flat roof "雙斜V" = V-shape (Center low, outer eaves high)
+                            // Ground mount / Flat roof "?�?V" = V-shape (Center low, outer eaves high)
                             const curRidgeZ = -zOffset + blockZ;
                             const s_actual = Math.abs(rowZ - curRidgeZ) / Math.cos(totalTiltRad);
                             rotX = +totalTiltRad;
@@ -9822,7 +9857,7 @@ function updateViewer(params) {
                             rotX = (rowZ < ridgeZ) ? +roofTiltRad : -roofTiltRad;
                             panelY = getRoofY(rowZ, localX) + 0.20;
                         } else {
-                            // Ground mount / Flat roof "雙斜V" = V-shape (Center low, outer eaves high)
+                            // Ground mount / Flat roof "?�?V" = V-shape (Center low, outer eaves high)
                             const curRidgeZ = -zOffset + blockZ;
                             const s_actual = Math.abs(rowZ - curRidgeZ) / Math.cos(totalTiltRad);
                             rotX = -totalTiltRad;
@@ -9941,7 +9976,7 @@ const rackBoxes = [];
     let hFeetDistNormal = 0.165;
     
     // ------------------------------------------
-    // Purlin Generation (檁條 / 導軌 / C型鋼)
+    // Purlin Generation (?��? / ?��?? / C??��??
     // ------------------------------------------
     const shouldGenPurlins = (siteType === 'ground' || siteType === 'roof-flat' || (siteType === 'roof-slope' && !isFlatLaid));
     if (shouldGenPurlins && panelsToDraw.length > 0) {
@@ -9982,7 +10017,7 @@ const rackBoxes = [];
             if (sortedRowKeys.length === 0) return;
 
             if (isPortrait) {
-                // 長向傾斜 (直放): Purlin 與模組長向垂直 (沿 X 軸)，每排放兩支，位於兩側短邊往內 1/5 長度 (dz = ±0.3 * pvW)
+                // ?????? (?湔�??: Purlin ?��??���??�???(??X ???��????��???��?��????澆�?渡�??��???1/5 ??�漲 (dz = �?.3 * pvW)
                 sortedRowKeys.forEach(rKey => {
                     const rowPanels = rowMap.get(rKey);
                     if (!rowPanels || rowPanels.length === 0) return;
@@ -10009,7 +10044,7 @@ const rackBoxes = [];
                     });
                 });
             } else {
-                // 短向傾斜 (橫放): Purlin 與模組長向平行 (沿 X 軸)，放於兩側長邊正下方 (dz = ±0.5 * pvW)，相鄰模組共用一根 purlin
+                // ?????? (?�急�??: Purlin ?��??���??穃�???(??X ???��?𦆮?澆�?湧�??�?迤�?𧢲�?(dz = �?.5 * pvW)?�𣬚㮾??��??���?????purlin
                 // 1. First row top edge
                 const firstRow = rowMap.get(sortedRowKeys[0]);
                 let minX0 = Infinity, maxX0 = -Infinity;
@@ -10168,14 +10203,14 @@ const rackBoxes = [];
 
     if (siteType === 'roof-slope') {
         if (isFlatLaid) {
-            // 平鋪型 (Flat-Laid Slope Roof):
-            // 檁條由第一片模組貫穿到最後一片模組，頭尾外突模組 10cm (0.10m)。
-            // 腳座為單一 2D "h" 截面鋁擠型實體 (ExtrudeGeometry)，沿平行檁條方向擠出 4cm (0.04m)，平均配置在檁條下，以間距 90cm 為原則 (餘數留於頭尾)，頭尾內縮檁條 5cm (0.05m)。
+            // ?�喲𪊽??(Flat-Laid Slope Roof):
+            // ?��??梁洵?��?��??��?��?踹�?�敺???��??��???��??��???��?? 10cm (0.10m)??
+            // ??�漣?箏�??�� 2D "h" ??��??�??见�???(ExtrudeGeometry)?��?窒�????��??�???��? 4cm (0.04m)?��??�??��??�瑼�??�页??�仿???90cm ?�???(?�䀹�??蹱䲰??��?)?�屸��??��?�格???5cm (0.05m)??
             const pvLength = params.pvL / 1000;
             const pvWidth = params.pvW / 1000;
             const isPortrait = params.pvOrient === 'portrait';
-            const railW = 0.04; // 鋁導軌截面寬 40mm
-            const railH = 0.04; // 鋁導軌截面高 40mm
+            const railW = 0.04; // ?�??��???Ｗ�? 40mm
+            const railH = 0.04; // ?�??��???�? 40mm
 
             // Group panels by sub-building and slope facet (rotX sign) so purlins never bridge across ridges or valleys
             const groupsMap = new Map();
@@ -10195,8 +10230,8 @@ const rackBoxes = [];
                 if (groupPanels.length === 0) return;
 
                 if (isPortrait) {
-                    // Portrait (直放): PV 長度 L (pvLength) 沿斜坡 Z 軸，寬度 W (pvWidth) 沿 X 軸
-                    // 檁條沿水平 X 軸貫穿，每排模組下方放 2 支，位於兩側短邊往內 1/5 L 處 (ds = ±0.3 * pvLength)
+                    // Portrait (?湔�??: PV ??�漲 L (pvLength) ?�踵???Z ?��???��?�?W (pvWidth) ??X ??
+                    // ?��??�踵?��??X ?��??��????��??��???�𧢲䲮??2 ????�齿�??��????��??1/5 L ??(ds = �?.3 * pvLength)
                     const rowMap = new Map();
                     groupPanels.forEach(p => {
                         const rKey = p.r !== undefined ? p.r : 0;
@@ -10232,7 +10267,7 @@ const rackBoxes = [];
                         runs.forEach(run => {
                             const minX = run[0].x - pvWidth / 2;
                             const maxX = run[run.length - 1].x + pvWidth / 2;
-                            // 頭尾外突 10cm
+                            // ??��??��?? 10cm
                             const startX = minX - 0.10;
                             const endX = maxX + 0.10;
                             const purlinLen = endX - startX;
@@ -10240,22 +10275,22 @@ const rackBoxes = [];
                             const refP = run[0];
                             const rotX = refP.rotX;
 
-                            // 2 支檁條在 ds = ±0.3 * pvLength
+                            // 2 ??�??�嘥??ds = �?.3 * pvLength
                             const offsetDs = [-0.3 * pvLength, 0.3 * pvLength];
-                            const GAP = 0.0005; // 至少維持 0.1mm (0.5mm) 間隙，避免 3D 元件交集產生共面封閉面
+                            const GAP = 0.0005; // ????��?? 0.1mm (0.5mm) ?�??�屸�??3D ?�辣?�日??�??梢�?��?�???
                             offsetDs.forEach((ds, railIdx) => {
                                 const purlinZ = refP.z + ds * Math.cos(rotX);
                                 const purlinY = (refP.y - 0.015 - GAP - railH / 2) - ds * Math.sin(rotX);
 
-                                // 1. 檁條本體
+                                // 1. ?��??�?
                                 aluminumBoxes.push({
                                     pos: [midX, purlinY, purlinZ],
                                     rot: [rotX, 0, 0],
                                     scale: [purlinLen, railH, railW]
                                 });
 
-                                // 2. "h" 腳座配置: 沿檁條 X 方向以 90cm 為原則分佈，頭尾內縮 5cm
-                                const feetSpan = purlinLen - 0.10; // 頭尾各內縮 5cm
+                                // 2. "h" ??�漣?滨蔭: ?�踵???X ?�???90cm ?�??�??��???��???�葬 5cm
+                                const feetSpan = purlinLen - 0.10; // ??��??��??5cm
                                 if (feetSpan > 0) {
                                     const numSpans = Math.max(1, Math.floor(feetSpan / 0.90));
                                     const rem = feetSpan - numSpans * 0.90;
@@ -10268,7 +10303,7 @@ const rackBoxes = [];
                                         const distNormal = (purlinY - yRoof) * Math.cos(rotX);
                                         hFeetDistNormal = distNormal;
 
-                                        // 單一 2D "h" 截面擠出實體腳座
+                                        // ?�? 2D "h" ??��???��??�阡???�漣
                                         const targetArr = (sideSign > 0) ? hFeetPortraitPos : hFeetPortraitNeg;
                                         targetArr.push({
                                             pos: [footX, purlinY, purlinZ],
@@ -10281,8 +10316,8 @@ const rackBoxes = [];
                         });
                     });
                 } else {
-                    // Landscape (橫放): PV 長度 L (pvLength) 沿 X 軸，寬度 W (pvWidth) 沿斜坡 Z 軸
-                    // 檁條沿斜坡 Z 軸貫穿，每列模組底下放 2 支，位於長度方向離兩側 1/5 L 處 (dx = ±0.3 * pvLength)
+                    // Landscape (?�急�??: PV ??�漲 L (pvLength) ??X ?��???��?�?W (pvWidth) ?�踵???Z ??
+                    // ?��??�踵???Z ?��??��????�誩??��???�蓥???2 ????�齿�??�漲?�??Ｗ�??1/5 L ??(dx = �?.3 * pvLength)
                     const colMap = new Map();
                     groupPanels.forEach(p => {
                         const cKey = p.c !== undefined ? p.c : 0;
@@ -10325,25 +10360,25 @@ const rackBoxes = [];
                             const maxZ = refLast.z + (pvWidth / 2) * Math.cos(rotX);
                             const slopeSpan = (maxZ - minZ) / (Math.cos(rotX) || 1);
 
-                            // 頭尾外突 10cm
+                            // ??��??��?? 10cm
                             const purlinLen = slopeSpan + 0.20;
                             const midZ = (minZ + maxZ) / 2;
-                            const GAP = 0.0005; // 至少維持 0.1mm (0.5mm) 間隙，避免 3D 元件交集產生共面封閉面
+                            const GAP = 0.0005; // ????��?? 0.1mm (0.5mm) ?�??�屸�??3D ?�辣?�日??�??梢�?��?�???
                             const midY = ((refFirst.y + refLast.y) / 2) - 0.015 - GAP - railH / 2;
 
-                            // 2 支檁條在 dx = ±0.3 * pvLength
+                            // 2 ??�??�嘥??dx = �?.3 * pvLength
                             const offsetDx = [-0.3 * pvLength, 0.3 * pvLength];
                             offsetDx.forEach((dx, railIdx) => {
                                 const railX = refFirst.x + dx;
 
-                                // 1. 檁條本體 (沿斜坡 Z 軸貫穿)
+                                // 1. ?��??�? (?�踵???Z ?��??��??
                                 aluminumBoxes.push({
                                     pos: [railX, midY, midZ],
                                     rot: [rotX, 0, 0],
                                     scale: [railW, railH, purlinLen]
                                 });
 
-                                // 2. "h" 腳座配置: 沿檁條斜坡 Z 方向以 90cm 為原則分佈，頭尾內縮 5cm
+                                // 2. "h" ??�漣?滨蔭: ?�踵??�脲???Z ?�???90cm ?�??�??��???��???�葬 5cm
                                 const feetSpan = purlinLen - 0.10;
                                 if (feetSpan > 0) {
                                     const numSpans = Math.max(1, Math.floor(feetSpan / 0.90));
@@ -10359,7 +10394,7 @@ const rackBoxes = [];
                                         const distNormal = (footY - yRoof) * Math.cos(rotX);
                                         hFeetDistNormal = distNormal;
 
-                                        // 單一 2D "h" 截面擠出實體腳座
+                                        // ?�? 2D "h" ??��???��??�阡???�漣
                                         const targetArr = (sideSign > 0) ? hFeetLandscapePos : hFeetLandscapeNeg;
                                         targetArr.push({
                                             pos: [railX, footY, footZ],
@@ -10374,7 +10409,7 @@ const rackBoxes = [];
                 }
             });
         } else {
-            // 架高時 (Elevated): 19 的支架高度 (supportH) 代表最高點支架高度
+            // ?????(Elevated): 19 ?��??????(supportH) ????��?????�沲�??�漲
             if (pitchStyle === 'double' || pitchStyle === 'double-v') {
                 const isDoubleV = (pitchStyle === 'double-v');
                 const local_s_outer_neg = s_outer_neg;
@@ -10539,7 +10574,7 @@ const rackBoxes = [];
                 const s_max_pos = s_outer_pos;
                 
                 if (pitchStyle === 'double' || pitchStyle === 'double-v') {
-                    const isGableMountain = (pitchStyle === 'double'); // "雙斜" = Gable/山型(中間高), "雙斜V" = V-shape/谷型(中間下凹)
+                    const isGableMountain = (pitchStyle === 'double'); // "?�?" = Gable/?��??(?��????, "?�?V" = V-shape/?��??(?��???��?�?
                     const maxHalfSpanZ = Math.max(s_max_neg, s_max_pos) * Math.cos(totalTiltRad) + 0.6;
                     const bayStats = getBayPanelStats(xRack, ridgeZ, true, maxHalfSpanZ);
 
@@ -10774,15 +10809,15 @@ const rackBoxes = [];
         const hBase = 0.005;
         const railW = 0.04;
         const railH = 0.04;
-        const wFlange = 0.012; // 12mm 底板延伸翼
-        const depth = 0.04;    // 4cm 擠出長度
+        const wFlange = 0.012; // 12mm ?��?踎撱?��???
+        const depth = 0.04;    // 4cm ??��???�漲
 
         const v0 = GAP;
         const v1 = GAP + hBase;
-        const seatH = 0.026; // 撐托面距浪板屋面固定 2.6cm
+        const seatH = 0.026; // ????�??�芣踎�??��??�? 2.6cm
         const v2 = seatH - t; // 2.1cm
-        const v3 = seatH;     // 2.6cm (撐托面)
-        const v4 = Math.max(v3 + 0.04, distNormal + railH / 2 - GAP); // 背部長側板延伸至檁條頂部
+        const v3 = seatH;     // 2.6cm (?????
+        const v4 = Math.max(v3 + 0.04, distNormal + railH / 2 - GAP); // ?屸�??��?踹辣?��?秐瑼�??��
 
         const u_spine_in = railW / 2 + GAP;
         const u_spine_out = railW / 2 + GAP + t;
@@ -10791,7 +10826,7 @@ const rackBoxes = [];
         const u_front_out = railW / 2 + GAP;
         const wHalfFront = u_front_out + wFlange;
 
-        // 14 點封閉單一連通 2D "h" 截面輪廓 (無內部重疊面，完全水密單一實體)
+        // 14 ?��???��??��??�?2D "h" ??��?��??? (??��????�?𢒰?��???��??��鱓�?��???)
         let pts = [
             [-wHalfFront, v0],
             [-u_front_in, v0],
@@ -10827,11 +10862,11 @@ const rackBoxes = [];
         const ExtrudeGeoClass = THREE.ExtrudeGeometry || THREE.ExtrudeBufferGeometry;
         const geo = new ExtrudeGeoClass(shape, extrudeSettings);
         
-        // 將幾何體原點對齊至檁條中心法線原點，深度置中
+        // ?��?�雿???�??�漤?????�苷?�敹�??��???�痹??��?漲蝵桐�?
         geo.translate(0, -distNormal, -depth / 2);
         
         if (isPortrait) {
-            // 直放模式：檁條沿 X 軸，截面沿 slope Z 軸，旋轉 -Math.PI/2 使擠出深度對齊 X 軸
+            // ?湔�?��????��???�脲�?X ?��????��?��??slope Z ?��???�? -Math.PI/2 ?�踵??箸�??��????X ??
             geo.rotateY(-Math.PI / 2);
         }
         geo.computeVertexNormals();
@@ -11147,25 +11182,25 @@ function animate() {
     if (controls) controls.update();
     updateMeasureLabels();
     
-    // 羅盤 HUD 位置與旋轉更新
+    // ?��𥿢 HUD ?�滨??�??��????
     const curCamera = customActiveCamera || camera;
     if (compassGroup && curCamera && renderer) {
         if (!curCamera.isOrthographicCamera) {
             compassGroup.visible = true;
             const aspect = curCamera.aspect || 1;
-            const distance = 5.0; // 相對於相機的前方距離
+            const distance = 5.0; // ?�??潛㮾?�毺??齿䲮?�嗪𣪧
             const fovRad = ((curCamera.fov || 45) * Math.PI) / 180;
             const visibleHeight = 2 * distance * Math.tan(fovRad / 2);
             const visibleWidth = visibleHeight * aspect;
             
-            // 固定在左上方 (位於 3D 預覽標籤下方，避免遮擋重疊)
+            // ?�???�椰?��?�䲮 (?�齿�?3D ??��??�嗵?��?𧢲䲮�?屸�?漤�?????
             compassGroup.position.set(
                 -visibleWidth / 2 + 0.55,
                 visibleHeight / 2 - 1.10,
                 -distance
             );
             
-            // 使 HUD 羅盤相對於相機反向旋轉以指向世界北向
+            // ??HUD ?��𥿢?�??潛㮾?��??????��?�?�??��?????
             compassGroup.quaternion.copy(curCamera.quaternion).conjugate();
         } else {
             compassGroup.visible = false;
@@ -11182,7 +11217,7 @@ const state = {
     siteName: '',
     siteType: 'ground',
     pitchStyle: 'single',
-    pvOrient: 'portrait', // Ground/Flat roof default to Portrait (直向排列)
+    pvOrient: 'portrait', // Ground/Flat roof default to Portrait (?�????)
     pvPreset: 'preset-vsun450', // Default to VSUN 450W
     pvL: 1722,
     pvW: 1134,
@@ -11309,7 +11344,7 @@ function parseDMS(dmsStr) {
     let str = dmsStr.trim();
     
     // Replace Chinese notation with standard DMS symbols
-    str = str.replace(/度/g, "\u00b0").replace(/分/g, "'").replace(/秒/g, '"');
+    str = str.replace(/??g, "\u00b0").replace(/??g, "'").replace(/??g, '"');
     
     // Replace typographical single/double quotes and prime/double prime symbols
     str = str.replace(/[\u2032\u2035\x27\u2019\u0060]/g, "'");
@@ -11380,7 +11415,7 @@ function convertToDMS(decimal, isLat) {
         direction = decimal >= 0 ? "E" : "W";
     }
     
-    return `${degrees}°${String(minutes).padStart(2, '0')}'${String(seconds).padStart(4, '0')}"${direction}`;
+    return `${degrees}�?{String(minutes).padStart(2, '0')}'${String(seconds).padStart(4, '0')}"${direction}`;
 }
 
 function getCoord(obj) {
@@ -11634,7 +11669,7 @@ function isModuleExcluded(localX, rowZ, params, targetSubBuilding) {
                     if (intersection) {
                         const area = turf.area(intersection);
                         if (poly.isPathway || poly.isSubstation) {
-                            if (area > 0.01) { // Any significant overlap (more than 100 cm²)
+                            if (area > 0.01) { // Any significant overlap (more than 100 cm�?
                                 isExcludedByExclusion = true;
                                 break;
                             }
@@ -11675,12 +11710,12 @@ function isModuleExcluded(localX, rowZ, params, targetSubBuilding) {
     
     if (isExcludedByExclusion) return true;
 
-    // C. Check Building Division Lines (分棟線兩側留白 30cm 排除，地面型完全忽略分棟線)
+    // C. Check Building Division Lines (?�??��?��?�???30cm ??��??���??�??���敹賜裦?�???
     const siteType = config.siteType !== undefined ? config.siteType : state.siteType;
     if (siteType !== 'ground' && !config.ignoreDivisionLines && customSiteBoundary && customSiteBoundary.buildingDivisions) {
         const divSegments = getSiteDivisionLineSegments(customSiteBoundary);
         if (divSegments && divSegments.length > 0) {
-            const margin = 0.30; // 30cm (0.30m) 留白緩衝區
+            const margin = 0.30; // 30cm (0.30m) ??�蒾?�抵??�?
             const boxMinX = localX - halfL - margin;
             const boxMaxX = localX + halfL + margin;
             const boxMinZ = rowZ - halfW_z - margin;
@@ -11743,7 +11778,7 @@ function isModuleExcluded(localX, rowZ, params, targetSubBuilding) {
         }
     }
     
-    // D. Check Ridge Clearance (斜屋頂雙向坡中脊線兩側各預留 50cm / 0.50m 留白空間)
+    // D. Check Ridge Clearance (?𨅯??�??穃辺?��???��?��?�???? 50cm / 0.50m ??�蒾?�粹?)
     const currentPitchStyle = config.pitchStyle || state.pitchStyle || 'single';
     const isDoublePitchRoof = (currentPitchStyle === 'double' || currentPitchStyle === 'double-v');
     if (siteType === 'roof-slope' && isDoublePitchRoof && customSiteBoundary) {
@@ -11975,7 +12010,7 @@ function applyDefaultsIntoDOM(defaults) {
     
     elements.azimuth.value = defaults.azimuth;
     if (elements.azimuthSlider) elements.azimuthSlider.value = defaults.azimuth;
-    elements.coords.value = defaults.coords || '23°52\'12.7"N 120°31\'22.8"E';
+    elements.coords.value = defaults.coords || '23�?2\'12.7"N 120�?1\'22.8"E';
     
     if (elements.sunMonthSlider) elements.sunMonthSlider.value = defaults.sunMonth;
     if (elements.sunHourSlider) elements.sunHourSlider.value = defaults.sunHour;
@@ -12067,9 +12102,9 @@ function updateLogoTheme() {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
-    // 讀取 defaults.json 設定檔
+    // ?��??defaults.json ?��????
     let defaults = {
-        siteName: "??蝬 1?",
+        siteName: "????1?",
         siteType: "ground",
         pitchStyle: "single",
         pvOrient: "portrait",
@@ -12088,31 +12123,31 @@ window.addEventListener('DOMContentLoaded', async () => {
         roofH: 10.0,
         supportH: 2000,
         azimuth: 180.0,
-        coords: "23簞52'12.7\"N 120簞31'22.8\"E",
+        coords: "23??2'12.7\"N 120??1'22.8\"E",
         lat: 23.870194444444444,
         lng: 120.523,
         sunMonth: 12,
         sunHour: 15.0
     };
     
-    // 優先自 defaults.json 檔案讀取預設值，附加 timestamp 避免瀏覽器快取
+    // ?????defaults.json ?��???��????��?��???�? timestamp ?�??讛�???�翰??
     try {
         const fileResponse = await fetch('defaults.json?t=' + Date.now(), { cache: 'no-store' });
         if (fileResponse.ok) {
             const fileDefaults = await fileResponse.json();
             defaults = { ...defaults, ...fileDefaults };
-            // 同步存入 localStorage
+            // ?峕�??��?�?localStorage
             localStorage.setItem('solar_layout_custom_defaults', JSON.stringify(defaults));
             console.log('Loaded defaults from defaults.json', defaults);
         }
     } catch (err) {
         console.log('Cannot fetch defaults.json, falling back to localStorage/static defaults.', err);
-        // 次選讀取 localStorage 內儲存的預設值
+        // ?�⊿��?�??localStorage ??��?�条???�身??
         const saved = localStorage.getItem('solar_layout_custom_defaults');
         if (saved) {
             try {
                 const localDefaults = JSON.parse(saved);
-                // 修正舊版 localStorage 存留之 month: 6，強制改為 12
+                // ?�格�?�? localStorage ?�条???month: 6?��???�㺿??12
                 if (localDefaults.sunMonth === 6) {
                     localDefaults.sunMonth = 12;
                 }
@@ -12123,11 +12158,11 @@ window.addEventListener('DOMContentLoaded', async () => {
         }
     }
     
-    // 套用預設值至 DOM Inputs
+    // ?��????�身?潸�? DOM Inputs
     applyDefaultsIntoDOM(defaults);
     
     syncStateFromDOM();
-    handleSiteTypeChangeUI(); // 確保初次載入即判定各項參數 (包含第13項組列間距) 之 Mute / Readonly 狀態
+    handleSiteTypeChangeUI(); // ??????�活?�匧�??�ế?��???�???(?��???3?�?????? ??Mute / Readonly ?�??
     updateSupportHLockState();
     calculateOutputs();
     
@@ -12137,7 +12172,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     // Initialize Three.js Viewer
     initViewer('three-canvas');
     
-    setupEventListeners(); // 綁定事件監聽器
+    setupEventListeners(); // ?��??�衤�??�??
     
     // Initialize sun simulator text labels and solar position
     if (elements.sunMonthSlider) elements.sunMonthSlider.dispatchEvent(new Event('input'));
@@ -12146,18 +12181,18 @@ window.addEventListener('DOMContentLoaded', async () => {
     updateAllVisuals(true);
     resetCamera();
     setupSplitter(); // Enable resizable panes
-    setupPopoutWindows(); // 初始化 3D 預覽與衛星地圖另開獨立視窗功能
-    initInstructionsHighlight(); // 初始化說明高亮功能
-    updateLogoTheme(); // 依主題更新 Logo (dark/light)
+    setupPopoutWindows(); // ?????3D ??��??�??笔�??硋�??讠�??��???��????
+    initInstructionsHighlight(); // ????�???�???��????
+    updateLogoTheme(); // ?�苷?�憿峕�???Logo (dark/light)
     
-    // 初始化工具箱切換與位置控制
+    // ????硋極??�拳?�??�??�格�??
     updatePlanningControlsSlot();
     window.addEventListener('resize', updatePlanningControlsSlot);
     
-    // 綁定邊線平移微調按鈕
+    // ?��??�??��?宏敺?�矽???
     initDraggablePanels();
     
-    // 初始化模組滑桿
+    // ????�??�蝯�???
     initLockButtons();
 });
 
@@ -12192,7 +12227,7 @@ function applyAllLockedParamsUI() {
         if (btn) {
             btn.classList.toggle('is-locked', isUserLocked);
             btn.innerHTML = isUserLocked ? SVG_LOCK : SVG_UNLOCK;
-            btn.title = isUserLocked ? '已鎖定此參數 (不隨案場變更)' : '鎖定此參數';
+            btn.title = isUserLocked ? '?�脤??��?�迨?��? (?�漤辶獢�聦?��?��?)' : '?�??��????;
             btn.disabled = false;
         }
         
@@ -12443,7 +12478,7 @@ function handleSiteTypeChangeUI() {
         btn.disabled = !isPEnabled;
     });
     
-    // 坡向型式控制: 斜屋頂時將「雙斜V」mute / disable
+    // ????�???��: ?𨅯??�??���屸??𦛼?㤈ute / disable
     if (elements.chkPitchDoubleV) {
         elements.chkPitchDoubleV.disabled = isSlopeRoof;
         const parentLabel = elements.chkPitchDoubleV.closest('label') || elements.chkPitchDoubleV.parentElement;
@@ -12466,7 +12501,7 @@ function handleSiteTypeChangeUI() {
 
 function updateSupportHLockState() {
     const isSlopeRoof = state.siteType === 'roof-slope';
-    // 平鋪時角度鎖定邏輯處理
+    // ?�喲𪊽?�??�阡??��???�航???
     const isFlatLaid = Math.abs(state.tilt - state.roofTilt) < 0.01;
     
     // Locked if Slope Roof AND flat-laid, OR if locked by user (lockedParams['supportH'])
@@ -13650,7 +13685,7 @@ function updateAllVisuals(forceImmediate = false) {
         }
     }
 
-    // 當有彈出視窗在作業中時，保持彈出視窗在最上層
+    // ????��?�閬�??????��???�??�脲??��?�閬�??????�𠰴�?
     keepActivePopoutOnTop();
 }
 
@@ -13742,11 +13777,11 @@ function initTouchScrollProtection() {
             if (is3DUnlocked) {
                 shield3D.classList.remove('active');
                 btnLock3D.classList.add('unlocked');
-                btnLock3D.innerHTML = '🔒 鎖定視圖';
+                btnLock3D.innerHTML = '?? ?�??��??';
             } else {
                 shield3D.classList.add('active');
                 btnLock3D.classList.remove('unlocked');
-                btnLock3D.innerHTML = '🔓 解鎖 (旋轉 3D)';
+                btnLock3D.innerHTML = '?? ??? (?�? 3D)';
             }
         }
         shield3D.addEventListener('click', toggle3D);
@@ -13760,11 +13795,11 @@ function initTouchScrollProtection() {
             if (isMapUnlocked) {
                 shieldMap.classList.remove('active');
                 btnLockMap.classList.add('unlocked');
-                btnLockMap.innerHTML = '🔒 鎖定地圖';
+                btnLockMap.innerHTML = '?? ?�????';
             } else {
                 shieldMap.classList.add('active');
                 btnLockMap.classList.remove('unlocked');
-                btnLockMap.innerHTML = '🔓 解鎖 (平移地圖)';
+                btnLockMap.innerHTML = '?? ??? (?��?�???)';
             }
         }
         shieldMap.addEventListener('click', toggleMap);
@@ -13776,12 +13811,12 @@ function initTouchScrollProtection() {
 }
 
 /* ==========================================================================
-   5. ?啗﹝???UI ?謕??秋撒???祆??鈭佇???(Spreadsheet UI Binding & Event Listeners)
+   5. ??�????UI ?????��?????????????(Spreadsheet UI Binding & Event Listeners)
    ========================================================================== */
 /**
- * ?桀?? Excel ?啗﹝??萄??鈭? UI ??對?????哨?颲??蹓??幡 */
+ * ??��?? Excel ??�???????? UI ??????????????????*/
 function setupEventListeners() {
-    // 當彈出視窗存在時，試算表上任何調整（滑桿拖曳、數值輸入、按鈕點擊、下拉選單）皆確保彈出視窗保持在最上層
+    // ????�??��??????�諹岫�?�??��??��?�雿?�矽?�??��???�????��??潸�??乓��?????�?��???��?�??�Ⅱ?�嘥??�??�𦯀??��??��??��??
     const leftPane = document.querySelector('.workspace-left') || document.querySelector('.spreadsheet-scrollable') || document.body;
     if (leftPane) {
         ['input', 'change', 'mouseup', 'touchend', 'click'].forEach(evtType => {
@@ -14360,16 +14395,16 @@ function setupEventListeners() {
             "", 
             "1/21", 
             "2/21", 
-            "3/21 (春分)", 
+            "3/21 (?�?)", 
             "4/21", 
             "5/21", 
-            "6/21 (夏至)", 
+            "6/21 (?��?�?", 
             "7/21", 
             "8/21", 
-            "9/21 (秋分)", 
+            "9/21 (?��??)", 
             "10/21", 
             "11/21", 
-            "12/21 (冬至)"
+            "12/21 (?祈�?)"
         ];
         elements.sunMonthVal.innerText = seasons[val];
         
@@ -14512,7 +14547,7 @@ function showToast(message, type) {
         document.body.appendChild(toast);
     }
     
-    const icon = type === "success" ? "✅" : (type === "loading" ? "⏳" : "⚠️");
+    const icon = type === "success" ? "?? : (type === "loading" ? "?? : "?�??");
     toast.className = "pv-toast-notification " + type;
     toast.innerHTML = "<span style=\"font-size: 1.1rem;\">" + icon + "</span><span>" + message + "</span>";
     
@@ -14526,7 +14561,7 @@ function showToast(message, type) {
     }, 3200);
 }
 
-function showLoadingOverlay(message = '讀入檔案中...') {
+function showLoadingOverlay(message = '?��?�??��??..') {
     const loader = document.getElementById('viewer-loading');
     if (loader) {
         loader.classList.add('active');
@@ -14571,7 +14606,7 @@ function hideLoadingOverlay() {
 
         // 2. Gather all spreadsheet & site parameters
         const parametersData = {
-            siteName: (elements.siteName ? elements.siteName.value : state.siteName) || "曜昇綠能 No.1",
+            siteName: (elements.siteName ? elements.siteName.value : state.siteName) || "?�??��?�?No.1",
             siteType: elements.siteType ? elements.siteType.value : state.siteType,
             pitchStyle: state.pitchStyle || 'single',
             pvOrient: elements.pvOrient ? elements.pvOrient.value : state.pvOrient,
@@ -14607,7 +14642,7 @@ function hideLoadingOverlay() {
             polygons: polygonsData
         };
 
-        const siteNameStr = parametersData.siteName.trim().replace(/[\/\\:*?"<>|]/g, '_') || 'PV_Super_專案';
+        const siteNameStr = parametersData.siteName.trim().replace(/[\/\\:*?"<>|]/g, '_') || 'PV_Super_?��?';
         const now = new Date();
         const yyyymmdd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
         const hhmmss = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
@@ -14616,13 +14651,13 @@ function hideLoadingOverlay() {
         const jsonContent = JSON.stringify(projectData, null, 2);
         const result = await saveFileWithPicker(jsonContent, fileName, 'application/json');
         if (result !== 'aborted') {
-            showToast("已成功儲存案場專案檔案！", "success");
+            showToast("?�脫??笔�?��??�??��??��?", "success");
         }
     }
 
     function restoreProjectData(projectData) {
         if (!projectData || typeof projectData !== 'object') {
-            showToast("檔案格式錯誤，無法讀取專案資料！", "error");
+            showToast("?��???�???��??�𣬚�?��???�??��??�?", "error");
             return;
         }
 
@@ -14815,7 +14850,7 @@ function hideLoadingOverlay() {
         updateAllVisuals(true);
         updateSiteBoundaryDrawState();
 
-        showToast("已成功讀入案場專案檔案！", "success");
+        showToast("?�脫?????�??�??��??��?", "success");
     }
 
     if (elements.btnSaveProject) {
@@ -14836,7 +14871,7 @@ function hideLoadingOverlay() {
             const file = e.target.files && e.target.files[0];
             if (!file) return;
             
-            showLoadingOverlay(`正在讀入檔案 (${file.name})...`);
+            showLoadingOverlay(`???��?�?�???(${file.name})...`);
             
             const reader = new FileReader();
             reader.onload = (event) => {
@@ -14845,8 +14880,8 @@ function hideLoadingOverlay() {
                         const data = JSON.parse(event.target.result);
                         restoreProjectData(data);
                     } catch (err) {
-                        console.error("讀入專案檔失敗:", err);
-                        showToast("檔案讀取失敗，請確認檔案格式是否正確！", "error");
+                        console.error("?��?�??��??��??:", err);
+                        showToast("?��???��?硋�??�??��??�隤�??��?��?𤩺�?行迤??��?", "error");
                     } finally {
                         hideLoadingOverlay();
                     }
@@ -14854,7 +14889,7 @@ function hideLoadingOverlay() {
             };
             reader.onerror = () => {
                 hideLoadingOverlay();
-                showToast("檔案讀取失敗！", "error");
+                showToast("?��???��?硋�??�?", "error");
             };
             reader.readAsText(file);
             e.target.value = '';
@@ -14862,7 +14897,7 @@ function hideLoadingOverlay() {
     }
     
     elements.btnExportJson.addEventListener('click', async () => {
-        const siteName = (state && state.siteName) ? state.siteName.trim() : '??蝬獢';
+        const siteName = (state && state.siteName) ? state.siteName.trim() : '???祉揢';
         const now = new Date();
         const yyyymmdd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
         const hhmmss = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
@@ -15037,7 +15072,7 @@ function hideLoadingOverlay() {
             if (activeSelectedPolygon && activeSelectedPolygon.isObstacle) {
                 activeSelectedPolygon.obstacleHeight = val;
                 const handle = document.querySelector('.toolbox-drag-handle');
-                if (handle) handle.innerHTML = `障礙物 (${val.toFixed(1)}m) ⋮⋮`;
+                if (handle) handle.innerHTML = `?𦦵???(${val.toFixed(1)}m) ??��?�`;
                 calculateOutputs();
                 updateAllVisuals(true);
             }
@@ -15050,7 +15085,7 @@ function hideLoadingOverlay() {
             if (activeSelectedPolygon && activeSelectedPolygon.isObstacle) {
                 activeSelectedPolygon.obstacleHeight = val;
                 const handle = document.querySelector('.toolbox-drag-handle');
-                if (handle) handle.innerHTML = `障礙物 (${val.toFixed(1)}m) ⋮⋮`;
+                if (handle) handle.innerHTML = `?𦦵???(${val.toFixed(1)}m) ??��?�`;
                 calculateOutputs();
                 updateAllVisuals(true);
             }
@@ -15065,8 +15100,8 @@ function hideLoadingOverlay() {
             if (activeSelectedPolygon && activeSelectedPolygon.isObstacle) {
                 activeSelectedPolygon.obstacleHeight = val;
                 const handle = document.querySelector('.toolbox-drag-handle');
-                const onRoofLabel = (activeSelectedPolygon.isOnRoof !== false && state.siteType !== 'ground') ? ' [建物上]' : '';
-                if (handle) handle.innerHTML = `障礙物 (${val.toFixed(1)}m)${onRoofLabel} ⋮⋮`;
+                const onRoofLabel = (activeSelectedPolygon.isOnRoof !== false && state.siteType !== 'ground') ? ' [?��?��???' : '';
+                if (handle) handle.innerHTML = `?𦦵???(${val.toFixed(1)}m)${onRoofLabel} ??��?�`;
                 calculateOutputs();
                 updateAllVisuals(true);
             }
@@ -15079,9 +15114,9 @@ function hideLoadingOverlay() {
             if (activeSelectedPolygon && activeSelectedPolygon.isObstacle) {
                 activeSelectedPolygon.isOnRoof = obsOnRoofChk.checked;
                 const handle = document.querySelector('.toolbox-drag-handle');
-                const onRoofLabel = (activeSelectedPolygon.isOnRoof && state.siteType !== 'ground') ? ' [建物上]' : '';
+                const onRoofLabel = (activeSelectedPolygon.isOnRoof && state.siteType !== 'ground') ? ' [?��?��???' : '';
                 const hVal = (activeSelectedPolygon.obstacleHeight || 5.0).toFixed(1);
-                if (handle) handle.innerHTML = `障礙物 (${hVal}m)${onRoofLabel} ⋮⋮`;
+                if (handle) handle.innerHTML = `?𦦵???(${hVal}m)${onRoofLabel} ??��?�`;
                 calculateOutputs();
                 updateAllVisuals(true);
             }
@@ -15238,7 +15273,7 @@ function hideLoadingOverlay() {
                         posAttr.needsUpdate = true;
                     }
                     activeMeasureLine.computeLineDistances();
-                    activeMeasureLabel.innerHTML = `<img src="images/length.svg" class="map-measure-icon" alt="" />面到面: ${perpDist.toFixed(2)} m`;
+                    activeMeasureLabel.innerHTML = `<img src="images/length.svg" class="map-measure-icon" alt="" />?Ｗ�?? ${perpDist.toFixed(2)} m`;
                 }
             } else {
                 if (activePlaneHoverHelper) activePlaneHoverHelper.visible = false;
@@ -15298,7 +15333,7 @@ function hideLoadingOverlay() {
                             posAttr.needsUpdate = true;
                         }
                         activeMeasureLine.computeLineDistances();
-                        activeMeasureLabel.innerHTML = `<img src="images/length.svg" class="map-measure-icon" alt="" />點到面: ${perpDist.toFixed(2)} m`;
+                        activeMeasureLabel.innerHTML = `<img src="images/length.svg" class="map-measure-icon" alt="" />?�𧼮�?? ${perpDist.toFixed(2)} m`;
                     }
                 } else {
                     if (activePlaneHoverHelper) activePlaneHoverHelper.visible = false;
@@ -15335,7 +15370,7 @@ function hideLoadingOverlay() {
                     }
                     activeMeasureLine.computeLineDistances();
                     const dist = start.distanceTo(end);
-                    activeMeasureLabel.innerHTML = `📍 ${dist.toFixed(2)} m`;
+                    activeMeasureLabel.innerHTML = `?? ${dist.toFixed(2)} m`;
                 }
             } else {
                 snappedPoint = null;
@@ -15521,12 +15556,12 @@ async function performAddressSearch() {
     if (elements.mapSearchBtn) {
         elements.mapSearchBtn.disabled = true;
         elements.mapSearchBtn.classList.add('loading');
-        elements.mapSearchBtn.title = "正在搜尋地點中...";
+        elements.mapSearchBtn.title = "????𨅯??????..";
     }
     if (elements.mapSearchInput) {
         elements.mapSearchInput.classList.add('searching');
         elements.mapSearchInput.setAttribute('data-prev-placeholder', elements.mapSearchInput.placeholder);
-        elements.mapSearchInput.placeholder = "🔍 搜尋中，請稍候...";
+        elements.mapSearchInput.placeholder = "?? ?𨅯??�哨??��????..";
     }
     
     // 1. Direct Coordinates Parsing (e.g. "23.8732, 120.5264" or "23.8732 120.5264" or DMS)
@@ -15549,7 +15584,7 @@ async function performAddressSearch() {
                 if (elements.mapSearchBtn) {
                     elements.mapSearchBtn.disabled = false;
                     elements.mapSearchBtn.classList.remove('loading');
-                    elements.mapSearchBtn.title = "搜尋";
+                    elements.mapSearchBtn.title = "?𨅯?";
                 }
                 if (elements.mapSearchInput) {
                     elements.mapSearchInput.classList.remove('searching');
@@ -15640,16 +15675,16 @@ async function performAddressSearch() {
                 elements.mapSearchInput.value = displayName;
             }
         } else {
-            alert("查無此地址或關鍵字，請嘗試輸入更完整的行政區與路名，或直接輸入經緯度座標！");
+            alert("?亦�?��?�??�???????�諹??�?岫�?詨�?�??�??��???�?��??�??�???亥�??�??�臬漲摨????);
         }
     } catch (error) {
         console.error("Error during geocoding:", error);
-        alert("地址搜尋服務暫時無法使用，請直接於試算表輸入經緯度或在地圖上手動點擊定位！");
+        alert("????𨅯??�????????�輻?��?�??湔�?潸岫?��?�”�?詨�?�梶楝摨�???��??�??�??����??��????);
     } finally {
         if (elements.mapSearchBtn) {
             elements.mapSearchBtn.disabled = false;
             elements.mapSearchBtn.classList.remove('loading');
-            elements.mapSearchBtn.title = "搜尋";
+            elements.mapSearchBtn.title = "?𨅯?";
         }
         if (elements.mapSearchInput) {
             elements.mapSearchInput.classList.remove('searching');
@@ -15881,10 +15916,10 @@ function setupPopoutWindows() {
         placeholder.innerHTML = `
             <div class="popout-placeholder-content">
                 <img src="${type === '3d' ? 'images/3D_preview.svg' : 'images/map.svg'}" class="popout-placeholder-icon" />
-                <div class="popout-placeholder-title">${type === '3d' ? '3D 預覽' : '衛星地圖'}已於獨立視窗開啟</div>
+                <div class="popout-placeholder-title">${type === '3d' ? '3D ??��?' : '?��?????'}?�脫�????��???�?</div>
                 <button type="button" class="popout-return-btn">
                     <img src="images/new_window.svg" class="btn-icon" style="transform: rotate(180deg);" />
-                    收回至主畫面
+                    ?????��???��??
                 </button>
             </div>
         `;
@@ -16055,7 +16090,7 @@ function setupPopoutWindows() {
 
         popout3dWindow = window.open('', 'PVSuper_3D_Popout', `left=${targetLeft},top=${targetTop},width=${popW},height=${popH},menubar=no,toolbar=no,location=no,status=no,resizable=no`);
         if (!popout3dWindow) {
-            alert('彈出視窗已被瀏覽器封鎖，請允許本網站的彈出式視窗。');
+            alert('?��?�閬�???�脰??讛�????????��???��?𧋦?�脩??�??�??��????);
             return;
         }
 
@@ -16064,7 +16099,7 @@ function setupPopoutWindows() {
             popout3dWindow.focus();
         } catch (e) {}
 
-        popout3dWindow.document.title = 'PV Super - 3D 預覽';
+        popout3dWindow.document.title = 'PV Super - 3D ??��?';
         syncStylesToWindow(popout3dWindow);
 
         savedView3dHeight = viewWrapper3d.style.height;
@@ -16083,7 +16118,7 @@ function setupPopoutWindows() {
             resizeHandleBL = popout3dWindow.document.createElement('div');
             resizeHandleBL.id = 'popout-resize-handle-bl-3d';
             resizeHandleBL.className = 'popout-resize-handle-bl';
-            resizeHandleBL.title = '按住拖曳等比例縮放視窗 (1.5 : 1)';
+            resizeHandleBL.title = '????�????��???��???????(1.5 : 1)';
             resizeHandleBL.innerHTML = `<svg viewBox="0 0 24 24"><path d="M19 19H5V5h2v12h12v2z"/></svg>`;
             viewWrapper3d.appendChild(resizeHandleBL);
         }
@@ -16150,7 +16185,7 @@ function setupPopoutWindows() {
         resizeHandleBL.addEventListener('mousedown', onResizeStart);
         resizeHandleBL.addEventListener('touchstart', onResizeStart, { passive: false });
 
-        if (btnPopout3d) btnPopout3d.title = '收回至主視窗';
+        if (btnPopout3d) btnPopout3d.title = '?????��??��??';
 
         const resizeHandler = () => {
             if (typeof onWindowResize === 'function') onWindowResize();
@@ -16197,7 +16232,7 @@ function setupPopoutWindows() {
             viewWrapper3d.classList.remove('is-popped-out');
             const resizeHandleBL = document.getElementById('popout-resize-handle-bl-3d');
             if (resizeHandleBL) resizeHandleBL.remove();
-            if (btnPopout3d) btnPopout3d.title = '另開視窗';
+            if (btnPopout3d) btnPopout3d.title = '????��??';
         }
         if (popout3dWindow && !popout3dWindow.closed) {
             try { popout3dWindow.close(); } catch (e) {}
@@ -16230,7 +16265,7 @@ function setupPopoutWindows() {
 
         popoutMapWindow = window.open('', 'PVSuper_Map_Popout', `left=${targetLeft},top=${targetTop},width=${popW},height=${popH},menubar=no,toolbar=no,location=no,status=no,resizable=no`);
         if (!popoutMapWindow) {
-            alert('彈出視窗已被瀏覽器封鎖，請允許本網站的彈出式視窗。');
+            alert('?��?�閬�???�脰??讛�????????��???��?𧋦?�脩??�??�??��????);
             return;
         }
 
@@ -16239,7 +16274,7 @@ function setupPopoutWindows() {
             popoutMapWindow.focus();
         } catch (e) {}
 
-        popoutMapWindow.document.title = 'PV Super - 衛星地圖';
+        popoutMapWindow.document.title = 'PV Super - ?��?????';
         syncStylesToWindow(popoutMapWindow);
 
         savedViewMapHeight = viewWrapperMap.style.height;
@@ -16264,7 +16299,7 @@ function setupPopoutWindows() {
             resizeHandleBL = popoutMapWindow.document.createElement('div');
             resizeHandleBL.id = 'popout-resize-handle-bl';
             resizeHandleBL.className = 'popout-resize-handle-bl';
-            resizeHandleBL.title = '按住拖曳等比例縮放視窗 (1.5 : 1)';
+            resizeHandleBL.title = '????�????��???��???????(1.5 : 1)';
             resizeHandleBL.innerHTML = `<svg viewBox="0 0 24 24"><path d="M19 19H5V5h2v12h12v2z"/></svg>`;
             viewWrapperMap.appendChild(resizeHandleBL);
         }
@@ -16381,7 +16416,7 @@ function setupPopoutWindows() {
             viewWrapperMap.style.flex = savedViewMapFlex || '';
             viewWrapperMap.classList.remove('is-popped-out');
             initDraggablePanels();
-            if (btnPopoutMap) btnPopoutMap.title = '另開視窗';
+            if (btnPopoutMap) btnPopoutMap.title = '????��??';
         }
         if (popoutMapWindow && !popoutMapWindow.closed) {
             try { popoutMapWindow.close(); } catch (e) {}
@@ -16432,15 +16467,15 @@ function initInstructionsHighlight() {
         
         const getTargetSelector = () => {
             switch (stepNum) {
-                case 1: // 星期一
+                case 1: // ?�??��
                     return '.map-search-box';
-                case 2: // 星期二
+                case 2: // ?�???
                     return '#btn-site-boundary';
-                case 3: // 星期三
+                case 3: // ?�???
                     return '.spreadsheet-container';
-                case 4: // 星期四
+                case 4: // ?�???
                     return '#btn-exclusion-zone';
-                case 5: // 星期五
+                case 5: // ?�???
                     return '#btn-obstacle-zone';
                 default:
                     return null;
@@ -16457,7 +16492,7 @@ function initInstructionsHighlight() {
             if (active) {
                 el.classList.add('element-flash');
                 
-                // 防止左側 sidebar 水平滾動衝突
+                // ??�迫?��?�?sidebar ?�游?��????��??
                 if (selector.startsWith('#btn-') || selector === '.spreadsheet-container') {
                     el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
@@ -16469,13 +16504,13 @@ function initInstructionsHighlight() {
         step.addEventListener('mouseenter', () => triggerFlash(true));
         step.addEventListener('mouseleave', () => triggerFlash(false));
         
-        // 觸控手勢保護
+        // ?�豢�?见�?�靽?�風
         step.addEventListener('touchstart', (e) => {
-            // 檢查觸控點
+            // ?�Ｘ䰻閫豢�???
             document.querySelectorAll('.element-flash').forEach(el => el.classList.remove('element-flash'));
             triggerFlash(true);
             
-            // 雙指觸控手勢處理
+            // ?�??�豢�?见�????
             setTimeout(() => triggerFlash(false), 2000);
         }, { passive: true });
     });
@@ -16892,7 +16927,7 @@ function checkVertexSnapping(mouseLatLng) {
         }
     }
     
-    // 2. Snap to corners (endpoints) and edge midpoints of coveragePolygon or customSiteBoundary ("範圍"邊線端點與中點)
+    // 2. Snap to corners (endpoints) and edge midpoints of coveragePolygon or customSiteBoundary ("?��?"?�??�舫??��???
     const targetBoundary = customSiteBoundary || coveragePolygon;
     if (targetBoundary) {
         const latlngs = getOuterRingLatLngs(targetBoundary);
@@ -17095,7 +17130,7 @@ function projectLatLng(center, angleDeg, distance) {
 
 
 /* ==========================================================================
-   7. AI ?箸?頛芸?霅 (AI Lasso Contour Detection)
+   7. AI ????�?????(AI Lasso Contour Detection)
    ========================================================================== */
 
 
@@ -17420,43 +17455,43 @@ function showExportModeChoiceModal() {
             <div class="export-mode-modal-card">
                 <div class="export-mode-modal-header">
                     <div class="export-mode-modal-title">
-                        <span>📊</span> 匯出案場評估簡報 (PDF)
+                        <span>??</span> ??��??��?�閰?�摯?�∪�? (PDF)
                     </div>
-                    <button class="export-mode-close-btn" id="btn-export-mode-cancel">✕</button>
+                    <button class="export-mode-close-btn" id="btn-export-mode-cancel">??/button>
                 </div>
                 <div class="export-mode-modal-body">
                     <p class="export-mode-modal-desc">
-                        請選擇簡報第 2 頁 4 張 3D 視角圖片（放大圖、透視圖、上視圖、側視圖）的擷取方式：
+                        ?��?�?��??梁洵 2 ??4 ??3D ?��??�???��𦆮?�批??���??硔��??��???��?��???�厩?????�???
                     </p>
                     <div class="export-mode-options">
                         <button type="button" class="export-mode-opt-card" id="btn-export-mode-auto">
-                            <div class="export-mode-opt-icon">⚡</div>
+                            <div class="export-mode-opt-icon">??/div>
                             <div class="export-mode-opt-content">
                                 <div class="export-mode-opt-header">
-                                    <span class="export-mode-opt-title">自動截圖</span>
-                                    <span class="export-mode-opt-badge badge-recommended">推薦 / 快速</span>
+                                    <span class="export-mode-opt-title">??????</span>
+                                    <span class="export-mode-opt-badge badge-recommended">??�㵽 / ?��?�?/span>
                                 </div>
                                 <div class="export-mode-opt-text">
-                                    由系統全自動最佳化視角並高速擷取 4 張標準工程擬真圖。
+                                    ?梁�??��?�????�雿???��??�阡??��???4 ?��???��?極�?𧢲??�???
                                 </div>
                             </div>
                         </button>
                         <button type="button" class="export-mode-opt-card" id="btn-export-mode-manual">
-                            <div class="export-mode-opt-icon">📷</div>
+                            <div class="export-mode-opt-icon">?𣊭</div>
                             <div class="export-mode-opt-content">
                                 <div class="export-mode-opt-header">
-                                    <span class="export-mode-opt-title">手動截圖</span>
-                                    <span class="export-mode-opt-badge badge-custom">互動取景</span>
+                                    <span class="export-mode-opt-title">?�????</span>
+                                    <span class="export-mode-opt-badge badge-custom">?�鍦??�???/span>
                                 </div>
                                 <div class="export-mode-opt-text">
-                                    進入 3D 視窗取景框，依序手動旋轉、平移、縮放自訂 4 張照片視角（側視圖自動啟用平行投影）。
+                                    ???�� 3D ?��???�??�獢�??�嘥??�??�??��??�颯��???��???4 ?��?�?�??��???�??�???�???��??��???����???
                                 </div>
                             </div>
                         </button>
                     </div>
                 </div>
                 <div class="export-mode-modal-footer">
-                    <button class="export-mode-btn-cancel" id="btn-export-mode-bottom-cancel">取消</button>
+                    <button class="export-mode-btn-cancel" id="btn-export-mode-bottom-cancel">?�??</button>
                 </div>
             </div>
         `;
@@ -17697,14 +17732,14 @@ async function capture3DViewsForPresentation(mode = 'auto') {
     };
 
     // -------------------------------------------------------------
-    // Branch A: AUTO MODE (自動截圖)
+    // Branch A: AUTO MODE (??????)
     // -------------------------------------------------------------
     if (mode === 'auto') {
         renderer.setSize(targetWidth, targetHeight, false);
         camera.aspect = captureAspect;
         camera.updateProjectionMatrix();
         
-        // 1. 放大圖 (Local Top View)
+        // 1. ??��???(Local Top View)
         const localWidth = Math.min(sceneSize.x, 14.0);
         const localDepth = Math.min(sceneSize.z, 7.5);
         const localTopDist = Math.max((localDepth / 2) / Math.tan(fovRad / 2), (localWidth / 2) / (Math.tan(fovRad / 2) * captureAspect)) * 1.10;
@@ -17714,7 +17749,7 @@ async function capture3DViewsForPresentation(mode = 'auto') {
         renderer.render(scene, camera);
         const localTopViewImg = renderer.domElement.toDataURL('image/jpeg', 0.90);
         
-        // 2. 透視圖 (Home View)
+        // 2. ?�???(Home View)
         const isoDir = new THREE.Vector3(0.55, -0.70, 0.50).normalize();
         camera.position.copy(arrayCenter).addScaledVector(isoDir, tightDist);
         controls.target.copy(arrayCenter);
@@ -17722,7 +17757,7 @@ async function capture3DViewsForPresentation(mode = 'auto') {
         renderer.render(scene, camera);
         const homeViewImg = renderer.domElement.toDataURL('image/jpeg', 0.90);
         
-        // 3. 上視圖 (Top View)
+        // 3. ?��????(Top View)
         const topDist = Math.max((sceneSize.z / 2) / Math.tan(fovRad / 2), (sceneSize.x / 2) / (Math.tan(fovRad / 2) * captureAspect)) * 1.10;
         camera.position.set(sceneCenter.x, sceneCenter.y - 0.001, (baseRoofH + maxSupportH + 1.0) + topDist);
         controls.target.copy(arrayCenter);
@@ -17730,7 +17765,7 @@ async function capture3DViewsForPresentation(mode = 'auto') {
         renderer.render(scene, camera);
         const topViewImg = renderer.domElement.toDataURL('image/jpeg', 0.90);
         
-        // 4. 側視圖 (Side View - Orthographic)
+        // 4. ?�???(Side View - Orthographic)
         applySideViewSceneModifications();
         renderer.render(scene, sideOrthoCamera);
         const sideViewImg = renderer.domElement.toDataURL('image/jpeg', 0.92);
@@ -17750,7 +17785,7 @@ async function capture3DViewsForPresentation(mode = 'auto') {
     }
 
     // -------------------------------------------------------------
-    // Branch B: MANUAL MODE (手動截圖互動引導)
+    // Branch B: MANUAL MODE (?�?????�鍦??�訫?)
     // -------------------------------------------------------------
     const view3DWrapper = document.getElementById('view-wrapper-3d');
     if (view3DWrapper) {
@@ -17760,8 +17795,8 @@ async function capture3DViewsForPresentation(mode = 'auto') {
     const steps = [
         {
             key: 'localTop',
-            name: '放大圖 (特寫)',
-            tip: '局部放大特寫視角。請在框內旋轉、平移或縮放至理想畫面，確認後點擊「確認截圖」。',
+            name: '??��???(?孵�?)',
+            tip: '?��??��?�憭?��??��??��?��????????�剹��?��?�??�格𦆮?????��??�??????�屸??�?�𣬚Ⅱ?�齿??硔�溻�?,
             isOrtho: false,
             setDefault: () => {
                 const localWidth = Math.min(sceneSize.x, 14.0);
@@ -17775,8 +17810,8 @@ async function capture3DViewsForPresentation(mode = 'auto') {
         },
         {
             key: 'home',
-            name: '透視圖 (鳥瞰)',
-            tip: '整體案場立體透視圖。可自由旋轉、平移至最具代表性之立體視角。',
+            name: '?�???(?�亦�?',
+            tip: '?�??��?�蝡???�??硔��虾??��??�??��??��?�?�??�誨?�冽�找??��???��???,
             isOrtho: false,
             setDefault: () => {
                 const isoDir = new THREE.Vector3(0.55, -0.70, 0.50).normalize();
@@ -17788,8 +17823,8 @@ async function capture3DViewsForPresentation(mode = 'auto') {
         },
         {
             key: 'top',
-            name: '上視圖 (平面)',
-            tip: '正上方平面俯視圖（右上角將自動疊加指北針）。可平移、縮放對正。',
+            name: '?��????(?�喲𢒰)',
+            tip: '????孵�??Ｖ膳?��???��𢰧?��???��?????�?????�剹��?��??��??�葬?????�?,
             isOrtho: false,
             setDefault: () => {
                 const topDist = Math.max((sceneSize.z / 2) / Math.tan(fovRad / 2), (sceneSize.x / 2) / (Math.tan(fovRad / 2) * captureAspect)) * 1.10;
@@ -17801,8 +17836,8 @@ async function capture3DViewsForPresentation(mode = 'auto') {
         },
         {
             key: 'side',
-            name: '側視圖 (平行投影)',
-            tip: '正交平行投影側視圖，已自動切換正交相機並套用標示色與破裂視圖。可平移或縮放調整。',
+            name: '?�???(?�唾??訫蔣)',
+            tip: '??漱�????訫蔣?�?????�脰??�??�?迤鈭?�㮾?�煺?��??��??�嗵?????�??��???�虾?��?�?�????�矽?氬�?,
             isOrtho: true,
             setDefault: () => {
                 sideOrthoCamera.position.copy(sideTarget).addScaledVector(sideDir, 250);
@@ -17836,39 +17871,39 @@ async function capture3DViewsForPresentation(mode = 'auto') {
         <div class="manual-capture-top-bar">
             <div>
                 <div class="manual-capture-step-title" id="mc-step-title">
-                    <span class="mc-step-badge">第 1/4 步</span> 放大圖 (特寫)
+                    <span class="mc-step-badge">??1/4 ??/span> ??��???(?孵�?)
                 </div>
                 <div class="manual-capture-step-tip" id="mc-step-tip">
-                    💡 提示：局部放大特寫視角。請在框內旋轉、平移或縮放至理想畫面，確認後點擊右側綠色按鈕。
+                    ?????�內?��????��?�憭?��??��??��?��????????�剹��?��?�??�格𦆮?????��??�??????�屸???��𢰧?�?????𨰻�?
                 </div>
             </div>
             <div class="manual-capture-actions">
                 <div class="manual-capture-view-controls">
-                    <button type="button" class="manual-capture-view-btn" id="btn-mc-reset-cam" title="透視視角 (Perspective)">
-                        <img src="images/perspective_view.svg" alt="透視視角" class="btn-icon" />
+                    <button type="button" class="manual-capture-view-btn" id="btn-mc-reset-cam" title="?�??��? (Perspective)">
+                        <img src="images/perspective_view.svg" alt="?�??��?" class="btn-icon" />
                     </button>
-                    <button type="button" class="manual-capture-view-btn" id="btn-mc-top" title="俯視視角 (Top View)">
-                        <img src="images/top_view.svg" alt="俯視視角" class="btn-icon" />
+                    <button type="button" class="manual-capture-view-btn" id="btn-mc-top" title="?�航??��? (Top View)">
+                        <img src="images/top_view.svg" alt="?�航??��?" class="btn-icon" />
                     </button>
-                    <button type="button" class="manual-capture-view-btn" id="btn-mc-side" title="側視視角 (Side View)">
-                        <img src="images/side_view.svg" alt="側視視角" class="btn-icon" />
+                    <button type="button" class="manual-capture-view-btn" id="btn-mc-side" title="?�??��? (Side View)">
+                        <img src="images/side_view.svg" alt="?�??��?" class="btn-icon" />
                     </button>
-                    <button type="button" class="manual-capture-view-btn" id="btn-mc-normal" title="Normal 視角 (點選表面以法向檢視)">
-                        <img src="images/normal_view.svg" alt="法向視角" class="btn-icon" />
+                    <button type="button" class="manual-capture-view-btn" id="btn-mc-normal" title="Normal ?��? (?��?�銵?��?��?�???��???">
+                        <img src="images/normal_view.svg" alt="?�訫??��?" class="btn-icon" />
                     </button>
-                    <button type="button" class="manual-capture-view-btn" id="btn-mc-fit" title="Zoom to Fit (填滿畫面)">
-                        <img src="images/zoom_to_fit.svg" alt="填滿畫面" class="btn-icon" />
+                    <button type="button" class="manual-capture-view-btn" id="btn-mc-fit" title="Zoom to Fit (?�急�???��??">
+                        <img src="images/zoom_to_fit.svg" alt="?�急�???��?? class="btn-icon" />
                     </button>
                     <div class="manual-capture-divider"></div>
-                    <button type="button" class="manual-capture-view-btn" id="btn-mc-zoom-in" title="放大 (Zoom In)">
+                    <button type="button" class="manual-capture-view-btn" id="btn-mc-zoom-in" title="??��? (Zoom In)">
                         <span style="font-size: 1.25rem; font-weight: 700; line-height: 1; color: #38bdf8;">+</span>
                     </button>
-                    <button type="button" class="manual-capture-view-btn" id="btn-mc-zoom-out" title="縮小 (Zoom Out)">
-                        <span style="font-size: 1.25rem; font-weight: 700; line-height: 1; color: #38bdf8;">−</span>
+                    <button type="button" class="manual-capture-view-btn" id="btn-mc-zoom-out" title="?��?? (Zoom Out)">
+                        <span style="font-size: 1.25rem; font-weight: 700; line-height: 1; color: #38bdf8;">??/span>
                     </button>
                 </div>
-                <button type="button" class="manual-capture-btn-confirm" id="btn-mc-confirm">📸 確認截圖並進入下一張 ➔</button>
-                <button type="button" class="manual-capture-btn-cancel" id="btn-mc-cancel">✖ 取消匯出</button>
+                <button type="button" class="manual-capture-btn-confirm" id="btn-mc-confirm">?�? ????????�阡�脣��?�?????/button>
+                <button type="button" class="manual-capture-btn-cancel" id="btn-mc-cancel">???�????��?</button>
             </div>
         </div>
         <div class="manual-capture-framing-box" id="mc-framing-box" style="width: ${frameBoxW}px; height: ${frameBoxH}px;">
@@ -17892,13 +17927,13 @@ async function capture3DViewsForPresentation(mode = 'auto') {
             const confirmBtn = document.getElementById('btn-mc-confirm');
             
             if (titleEl) {
-                titleEl.innerHTML = `<span class="mc-step-badge">第 ${currentStepIndex + 1}/4 步</span> ${step.name}`;
+                titleEl.innerHTML = `<span class="mc-step-badge">??${currentStepIndex + 1}/4 ??/span> ${step.name}`;
             }
             if (tipEl) {
-                tipEl.innerHTML = `💡 提示：${step.tip}`;
+                tipEl.innerHTML = `?????�內??{step.tip}`;
             }
             if (confirmBtn) {
-                confirmBtn.innerHTML = currentStepIndex === 3 ? '📸 確認截圖並生成簡報 ✔' : '📸 確認截圖並進入下一張 ➔';
+                confirmBtn.innerHTML = currentStepIndex === 3 ? '?�? ????????�衣???��????? : '?�? ????????�阡�脣��?�?????;
             }
 
             if (step.isOrtho) {
@@ -18054,7 +18089,7 @@ async function exportSlideshowPDF() {
     if (loader) {
         loader.classList.add('active');
         title = loader.querySelector('.loading-title') || loader;
-        if (title) title.innerText = '正在擷取 3D 視圖與地圖資料...';
+        if (title) title.innerText = '?????? 3D ?��???��??�????..';
     }
     
     try {
@@ -18163,7 +18198,7 @@ async function exportSlideshowPDF() {
         }
         
         try {
-            if (title) title.innerText = '正在擷取高解析度航照影像...';
+            if (title) title.innerText = '???????��???𣂼�??��?��??...';
             const mapCanvas = await html2canvas(document.getElementById('leaflet-map'), {
                 useCORS: true,
                 logging: false,
@@ -18195,7 +18230,7 @@ async function exportSlideshowPDF() {
             ctx.fillStyle = 'rgba(239, 68, 68, 1)';
             ctx.font = 'bold 20px "Noto Serif TC", sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('航照圖截取失敗', 300, 280);
+            ctx.fillText('??��?�???硋�???, 300, 280);
             mapImg = placeholderCanvas.toDataURL('image/jpeg', 0.9);
         } finally {
             hiddenMapLayers.forEach(layer => {
@@ -18213,7 +18248,7 @@ async function exportSlideshowPDF() {
         }
         
         // 3. Generate HTML elements for A4 landscape slides (1120x792)
-        if (title) title.innerText = '正在生成簡報頁面...';
+        if (title) title.innerText = '????�??�∪�??��??..';
         
         const slideWrapper = document.createElement('div');
         slideWrapper.style.position = 'absolute';
@@ -18228,7 +18263,7 @@ async function exportSlideshowPDF() {
             slide.style.height = '792px';
             slide.style.background = 'rgba(15, 23, 42, 1)'; // Deep slate background matching PV Super theme
             slide.style.color = 'rgba(255, 255, 255, 1)';
-            slide.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Microsoft JhengHei", "微軟正黑體", sans-serif';
+            slide.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Microsoft JhengHei", "?�株??????, sans-serif';
             slide.style.boxSizing = 'border-box';
             slide.style.padding = '36px 44px';
             slide.style.position = 'relative';
@@ -18257,109 +18292,109 @@ async function exportSlideshowPDF() {
         `;
         
         // Extract design values for parameters display
-        let siteTypeFriendly = '地面型';
-        if (state.siteType === 'ground') siteTypeFriendly = '地面型';
-        else if (state.siteType === 'roof-flat') siteTypeFriendly = '屋頂型：平屋頂';
+        let siteTypeFriendly = '??��???;
+        if (state.siteType === 'ground') siteTypeFriendly = '??��???;
+        else if (state.siteType === 'roof-flat') siteTypeFriendly = '?��???�??�喳???;
         else if (state.siteType === 'roof-slope') {
             if (Math.abs(state.tilt - state.roofTilt) < 0.01) {
-                siteTypeFriendly = '屋頂型：斜屋頂(平鋪)';
+                siteTypeFriendly = '?��???�??𨅯????�喲𪊽)';
             } else {
-                siteTypeFriendly = '屋頂型：斜屋頂(架高)';
+                siteTypeFriendly = '?��???�??𨅯??????)';
             }
         }
         
-        const pitchStyleFriendly = state.pitchStyle === 'single' ? '單斜' : (state.pitchStyle === 'double-v' ? '雙斜V' : '雙斜');
-        const pvOrientFriendly = state.pvOrient === 'portrait' ? '長向傾斜 (直放)' : '短向傾斜 (橫放)';
-        const selectedModel = elements.pvSelect ? elements.pvSelect.options[elements.pvSelect.selectedIndex].text : '自訂模組規格';
-        const coordsStr = document.getElementById('val-coords') ? document.getElementById('val-coords').value : `${state.lat.toFixed(6)}° N, ${state.lng.toFixed(6)}° E`;
+        const pitchStyleFriendly = state.pitchStyle === 'single' ? '???' : (state.pitchStyle === 'double-v' ? '?�?V' : '?�?');
+        const pvOrientFriendly = state.pvOrient === 'portrait' ? '?????? (?湔�??' : '?????? (?�急�??';
+        const selectedModel = elements.pvSelect ? elements.pvSelect.options[elements.pvSelect.selectedIndex].text : '????��???�𤩺聢';
+        const coordsStr = document.getElementById('val-coords') ? document.getElementById('val-coords').value : `${state.lat.toFixed(6)}�?N, ${state.lng.toFixed(6)}�?E`;
         
         const TAIWAN_DISTRICT_TO_COUNTY = {
-            '中正區': '台北市', '大同區': '台北市', '中山區': '台北市', '松山區': '台北市', '大安區': '台北市',
-            '萬華區': '台北市', '信義區': '台北市', '士林區': '台北市', '北投區': '台北市', '內湖區': '台北市',
-            '南港區': '台北市', '文山區': '台北市',
-            '板橋區': '新北市', '三重區': '新北市', '中和區': '新北市', '永和區': '新北市', '新莊區': '新北市',
-            '新店區': '新北市', '樹林區': '新北市', '鶯歌區': '新北市', '三峽區': '新北市', '淡水區': '新北市',
-            '汐止區': '新北市', '瑞芳區': '新北市', '土城區': '新北市', '蘆洲區': '新北市', '五股區': '新北市',
-            '泰山區': '新北市', '林口區': '新北市', '深坑區': '新北市', '石碇區': '新北市', '坪林區': '新北市',
-            '三芝區': '新北市', '石門區': '新北市', '八里區': '新北市', '平溪區': '新北市', '雙溪區': '新北市',
-            '貢寮區': '新北市', '金山區': '新北市', '萬里區': '新北市', '烏來區': '新北市',
-            '仁愛區': '基隆市', '安樂區': '基隆市', '暖暖區': '基隆市', '七堵區': '基隆市',
-            '桃園區': '桃園市', '中壢區': '桃園市', '大溪區': '桃園市', '楊梅區': '桃園市', '蘆竹區': '桃園市',
-            '大園區': '桃園市', '龜山區': '桃園市', '八德區': '桃園市', '龍潭區': '桃園市', '平鎮區': '桃園市',
-            '新屋區': '桃園市', '觀音區': '桃園市', '復興區': '桃園市',
-            '東區': '新竹市', '北區': '新竹市', '香山區': '新竹市',
-            '竹北市': '新竹縣', '竹東鎮': '新竹縣', '新埔鎮': '新竹縣', '關西鎮': '新竹縣', '湖口鄉': '新竹縣',
-            '新豐鄉': '新竹縣', '芎林鄉': '新竹縣', '橫山鄉': '新竹縣', '北埔鄉': '新竹縣', '寶山鄉': '新竹縣',
-            '峨眉鄉': '新竹縣', '尖石鄉': '新竹縣', '五峰鄉': '新竹縣',
-            '苗栗市': '苗栗縣', '頭份市': '苗栗縣', '竹南鎮': '苗栗縣', '後龍鎮': '苗栗縣', '通霄鎮': '苗栗縣',
-            '苑裡鎮': '苗栗縣', '卓蘭鎮': '苗栗縣', '造橋鄉': '苗栗縣', '西湖鄉': '苗栗縣', '頭屋鄉': '苗栗縣',
-            '公館鄉': '苗栗縣', '銅鑼鄉': '苗栗縣', '三義鄉': '苗栗縣', '大湖鄉': '苗栗縣', '獅潭鄉': '苗栗縣',
-            '三灣鄉': '苗栗縣', '南庄鄉': '苗栗縣', '泰安鄉': '苗栗縣',
-            '中區': '台中市', '南區': '台中市', '西區': '台中市', '北屯區': '台中市', '西屯區': '台中市',
-            '南屯區': '台中市', '太平區': '台中市', '大里區': '台中市', '霧峰區': '台中市', '烏日區': '台中市',
-            '豐原區': '台中市', '后里區': '台中市', '石岡區': '台中市', '東勢區': '台中市', '和平區': '台中市',
-            '新社區': '台中市', '潭子區': '台中市', '大雅區': '台中市', '神岡區': '台中市', '大肚區': '台中市',
-            '沙鹿區': '台中市', '龍井區': '台中市', '梧棲區': '台中市', '清水區': '台中市', '大甲區': '台中市',
-            '外埔區': '台中市',
-            '彰化市': '彰化縣', '員林市': '彰化縣', '和美鎮': '彰化縣', '鹿港鎮': '彰化縣', '溪湖鎮': '彰化縣',
-            '二林鎮': '彰化縣', '田中鎮': '彰化縣', '北斗鎮': '彰化縣', '花壇鄉': '彰化縣', '芬園鄉': '彰化縣',
-            '秀水鄉': '彰化縣', '福興鄉': '彰化縣', '線西鄉': '彰化縣', '伸港鄉': '彰化縣', '埔心鄉': '彰化縣',
-            '大村鄉': '彰化縣', '埔鹽鄉': '彰化縣', '埤頭鄉': '彰化縣', '溪州鄉': '彰化縣', '竹塘鄉': '彰化縣',
-            '田尾鄉': '彰化縣', '二水鄉': '彰化縣', '永靖鄉': '彰化縣', '社頭鄉': '彰化縣', '芳苑鄉': '彰化縣',
-            '大城鄉': '彰化縣',
-            '南投市': '南投縣', '埔里鎮': '南投縣', '草屯鎮': '南投縣', '竹山鎮': '南投縣', '集集鎮': '南投縣',
-            '名間鄉': '南投縣', '鹿谷鄉': '南投縣', '中寮鄉': '南投縣', '魚池鄉': '南投縣', '國姓鄉': '南投縣',
-            '水里鄉': '南投縣', '信義鄉': '南投縣', '仁愛鄉': '南投縣',
-            '斗六市': '雲林縣', '斗南鎮': '雲林縣', '虎尾鎮': '雲林縣', '西螺鎮': '雲林縣', '土庫鎮': '雲林縣',
-            '北港鎮': '雲林縣', '古坑鄉': '雲林縣', '大埤鄉': '雲林縣', '莿桐鄉': '雲林縣', '林內鄉': '雲林縣',
-            '二崙鄉': '雲林縣', '崙背鄉': '雲林縣', '麥寮鄉': '雲林縣', '東勢鄉': '雲林縣', '褒忠鄉': '雲林縣',
-            '臺西鄉': '雲林縣', '台西鄉': '雲林縣', '元長鄉': '雲林縣', '四湖鄉': '雲林縣', '口湖鄉': '雲林縣', '水林鄉': '雲林縣',
-            '太保市': '嘉義縣', '朴子市': '嘉義縣', '布袋鎮': '嘉義縣', '大林鎮': '嘉義縣', '民雄鄉': '嘉義縣',
-            '溪口鄉': '嘉義縣', '新港鄉': '嘉義縣', '六腳鄉': '嘉義縣', '東石鄉': '嘉義縣', '義竹鄉': '嘉義縣',
-            '鹿草鄉': '嘉義縣', '水上鄉': '嘉義縣', '中埔鄉': '嘉義縣', '竹崎鄉': '嘉義縣', '梅山鄉': '嘉義縣',
-            '番路鄉': '嘉義縣', '大埔鄉': '嘉義縣', '阿里山鄉': '嘉義縣',
-            '中西區': '台南市', '安平區': '台南市', '安南區': '台南市', '永康區': '台南市', '歸仁區': '台南市',
-            '新化區': '台南市', '左鎮區': '台南市', '玉井區': '台南市', '楠西區': '台南市', '南化區': '台南市',
-            '仁德區': '台南市', '關廟區': '台南市', '龍崎區': '台南市', '官田區': '台南市', '麻豆區': '台南市',
-            '佳里區': '台南市', '西港區': '台南市', '七股區': '台南市', '將軍區': '台南市', '學甲區': '台南市',
-            '北門區': '台南市', '新營區': '台南市', '後壁區': '台南市', '白河區': '台南市', '東山區': '台南市',
-            '六甲區': '台南市', '下營區': '台南市', '柳營區': '台南市', '鹽水區': '台南市', '善化區': '台南市',
-            '大內區': '台南市', '山上區': '台南市', '新市區': '台南市', '安定區': '台南市',
-            '新興區': '高雄市', '前金區': '高雄市', '苓雅區': '高雄市', '鹽埕區': '高雄市', '鼓山區': '高雄市',
-            '旗津區': '高雄市', '前鎮區': '高雄市', '三民區': '高雄市', '楠梓區': '高雄市', '小港區': '高雄市',
-            '左營區': '高雄市', '仁武區': '高雄市', '大社區': '高雄市', '岡山區': '高雄市', '路竹區': '高雄市',
-            '阿蓮區': '高雄市', '田寮區': '高雄市', '燕巢區': '高雄市', '橋頭區': '高雄市', '梓官區': '高雄市',
-            '彌陀區': '高雄市', '永安區': '高雄市', '湖內區': '高雄市', '鳳山區': '高雄市', '大寮區': '高雄市',
-            '林園區': '高雄市', '鳥松區': '高雄市', '大樹區': '高雄市', '旗山區': '高雄市', '美濃區': '高雄市',
-            '六龜區': '高雄市', '內門區': '高雄市', '杉林區': '高雄市', '甲仙區': '高雄市', '桃源區': '高雄市',
-            '那瑪夏區': '高雄市', '茂林區': '高雄市', '茄萣區': '高雄市',
-            '屏東市': '屏東縣', '潮州鎮': '屏東縣', '東港鎮': '屏東縣', '恆春鎮': '屏東縣', '萬丹鄉': '屏東縣',
-            '長治鄉': '屏東縣', '麟洛鄉': '屏東縣', '九如鄉': '屏東縣', '里港鄉': '屏東縣', '鹽埔鄉': '屏東縣',
-            '高樹鄉': '屏東縣', '萬巒鄉': '屏東縣', '內埔鄉': '屏東縣', '竹田鄉': '屏東縣', '新埤鄉': '屏東縣',
-            '枋寮鄉': '屏東縣', '新園鄉': '屏東縣', '崁頂鄉': '屏東縣', '林邊鄉': '屏東縣', '南州鄉': '屏東縣',
-            '佳冬鄉': '屏東縣', '琉球鄉': '屏東縣', '車城鄉': '屏東縣', '滿州鄉': '屏東縣', '枋山鄉': '屏東縣',
-            '三地門鄉': '屏東縣', '霧臺鄉': '屏東縣', '瑪家鄉': '屏東縣', '泰武鄉': '屏東縣', '來義鄉': '屏東縣',
-            '春日鄉': '屏東縣', '獅子鄉': '屏東縣', '牡丹鄉': '屏東縣',
-            '宜蘭市': '宜蘭縣', '羅東鎮': '宜蘭縣', '蘇澳鎮': '宜蘭縣', '頭城鎮': '宜蘭縣', '礁溪鄉': '宜蘭縣',
-            '壯圍鄉': '宜蘭縣', '員山鄉': '宜蘭縣', '冬山鄉': '宜蘭縣', '五結鄉': '宜蘭縣', '三星鄉': '宜蘭縣',
-            '大同鄉': '宜蘭縣', '南澳鄉': '宜蘭縣',
-            '花蓮市': '花蓮縣', '鳳林鎮': '花蓮縣', '玉里鎮': '花蓮縣', '新城鄉': '花蓮縣', '吉安鄉': '花蓮縣',
-            '壽豐鄉': '花蓮縣', '光復鄉': '花蓮縣', '豐濱鄉': '花蓮縣', '瑞穗鄉': '花蓮縣', '富里鄉': '花蓮縣',
-            '秀林鄉': '花蓮縣', '萬榮鄉': '花蓮縣', '卓溪鄉': '花蓮縣',
-            '台東市': '台東縣', '成功鎮': '台東縣', '關山鎮': '台東縣', '卑南鄉': '台東縣', '大武鄉': '台東縣',
-            '太麻里鄉': '台東縣', '東河鄉': '台東縣', '長濱鄉': '台東縣', '鹿野鄉': '台東縣', '池上鄉': '台東縣',
-            '綠島鄉': '台東縣', '延平鄉': '台東縣', '海端鄉': '台東縣', '達仁鄉': '台東縣', '金峰鄉': '台東縣', '蘭嶼鄉': '台東縣',
-            '馬公市': '澎湖縣', '湖西鄉': '澎湖縣', '白沙鄉': '澎湖縣', '西嶼鄉': '澎湖縣', '望安鄉': '澎湖縣', '七美鄉': '澎湖縣',
-            '金城鎮': '金門縣', '金湖鎮': '金門縣', '金沙鎮': '金門縣', '金寧鄉': '金門縣', '烈嶼鄉': '金門縣', '烏坵鄉': '金門縣',
-            '南竿鄉': '連江縣', '北竿鄉': '連江縣', '莒光鄉': '連江縣', '東引鄉': '連江縣'
+            '?��?�?�?: '?????, '?�批??�?: '?????, '?��???�?: '?????, '??�控?�?: '?????, '?�批??�?: '?????,
+            '?祈虾?�?: '?????, '?��???�?: '?????, '?��??�?: '?????, '????�?: '?????, '????�?: '?????,
+            '??��??�?: '?????, '?�控?�?: '?????,
+            '?�??�?: '?????, '?�厰??�?: '?????, '?��???�?: '?????, '?�詨??�?: '?????, '????�?: '?????,
+            '????�?: '?????, '?��???�?: '?????, '?��???�?: '?????, '?�匧�?�?: '?????, '?�⊥??�?: '?????,
+            '?��?�?�?: '?????, '??��??�?: '?????, '?�??�?: '?????, '?�散?�?: '?????, '?�磰�?�?: '?????,
+            '?�啣??�?: '?????, '??��??�?: '?????, '?��???�?: '?????, '????�?: '?????, '????�?: '?????,
+            '?��???�?: '?????, '????�?: '?????, '????�?: '?????, '?�單�?�?: '?????, '?蹱漯?�?: '?????,
+            '?�Ｗ�?�?: '?????, '?穃控?�?: '?????, '?�??�?: '?????, '?�??�?: '?????,
+            '?��??�?: '?�???, '?��???�?: '?�???, '?�???�?: '?�???, '?��??�?: '?�???,
+            '?��??�?: '?��???, '?��???�?: '?��???, '?�扳�?�?: '?��???, '?��???�?: '?��???, '?��??�?: '?��???,
+            '?�批??�?: '?��???, '樴�?�控?�?: '?��???, '??�噸?�?: '?��???, '樴齿??�?: '?��???, '?�喲�?�?: '?��???,
+            '????�?: '?��???, '?��???': '?��???, '?�抵??�?: '?��???,
+            '???': '??��???, '???': '??��???, '?��???�?: '??��???,
+            '?�孵???: '??��???, '?��?𨭬??: '??��???, '?????: '??��???, '?𡏭�??: '??��???, '?��????: '??��???,
+            '?????: '??��???, '?????: '??��???, '?�怠控??: '??��???, '?????: '??��???, '?��????: '??��???,
+            '?�函???: '??��???, '?��?��??: '??��???, '?�𥪜陸??: '??��???,
+            '?????: '?????, '??�遢??: '?????, '?�孵???: '?????, '?�屸???: '?????, '?𡁻???: '?????,
+            '?𤏸???: '?????, '??�嵰??: '?????, '?�???: '?????, '?�踵???: '?????, '?????: '?????,
+            '?祇尹??: '?????, '?�鐤??: '?????, '?�厩???: '?????, '?�扳???: '?????, '?�蔬??: '?????,
+            '?�厩�??: '?????, '?????: '?????, '?�啣???: '?????,
+            '?��??': '??��???, '???': '??��???, '?�踹?': '??��???, '??��??�?: '??��???, '?�踹??�?: '??��???,
+            '??��??�?: '??��???, '?�芸??�?: '??��???, '?��???�?: '??��???, '??�陸?�?: '??��???, '?𤩺?��?�?: '??��???,
+            '?��???�?: '??��???, '?�???�?: '??��???, '??�瓷?�?: '??��???, '??��??�?: '??��???, '?��??�?: '??��???,
+            '??��??�?: '??��???, '?��???�?: '??��???, '?��???�?: '??��???, '?�𧼮瓷?�?: '??��???, '?�扯??�?: '??��???,
+            '?�䠷?�?�?: '??��???, '樴滢??�?: '??��???, '?�扳??�?: '??��???, '?��??�?: '??��???, '?��???�?: '??��???,
+            '?��???�?: '??��???,
+            '?�啣???: '?�啣???, '?????: '?�啣???, '?�????: '?�啣???, '?�踵???: '?�啣???, '?�芣???: '?�啣???,
+            '?��????: '?�啣???, '??��???: '?�啣???, '?????: '?�啣???, '?????: '?�啣???, '?????: '?�啣???,
+            '?��?�湧?': '?�啣???, '?��????: '?�啣???, '?��?�??: '?�啣???, '?�豢???: '?�啣???, '?�????: '?�啣???,
+            '?�扳???: '?�啣???, '?娪厭??: '?�啣???, '??��??: '?�啣???, '?�芸???: '?�啣???, '?�孵???: '?�啣???,
+            '??????: '?�啣???, '?��????: '?�啣???, '?��????: '?�啣???, '?�暸�??: '?�啣???, '?????: '?�啣???,
+            '?�批???: '?�啣???,
+            '?????: '?????, '?�???: '?????, '??��???: '?????, '?�孵???: '?????, '?�???: '?????,
+            '?�???: '?????, '?�輯???: '?????, '?��?�??: '?????, '?��????: '?????, '?�???: '?????,
+            '?�湧???: '?????, '?��????: '?????, '?��???: '?????,
+            '??��??: '?????, '?????: '?????, '?𤾸???: '?????, '?�輯???: '?????, '?笔�???: '?????,
+            '??��???: '?????, '?????: '?????, '?�批�??: '?????, '?�???: '?????, '??��??: '?????,
+            '?��???: '?????, '?�躰???: '?????, '?��?�??: '?????, '??��???: '?????, '?�鍦???: '?????,
+            '?箄正??: '?????, '??�正??: '?????, '?��???: '?????, '?�????: '?????, '?????: '?????, '?��????: '?????,
+            '?�芯???: '??��???, '?�???: '??��???, '??��???: '??��???, '?�扳???: '??��???, '?�煾???: '??��???,
+            '?�芸???: '??��???, '??��???: '??��???, '??��??: '??��???, '?梁�??: '??��???, '?��?�??: '??��???,
+            '?�輯???: '??��???, '?�港???: '??��???, '?��????: '??��???, '?�孵???: '??��???, '?��???: '??��???,
+            '??��???: '??��???, '?�批???: '??��???, '?�??�梢?': '??��???,
+            '?��?�?�?: '?????, '?�匧??�?: '?????, '?�匧??�?: '?????, '?�詨??�?: '?????, '?�訾??�?: '?????,
+            '????�?: '?????, '?�阡�?�?: '?????, '????�?: '?????, '?��?�?�?: '?????, '????�?: '?????,
+            '?��??�?: '?????, '?𨅯??�?: '?????, '樴�???�?: '?????, '?�条??�?: '?????, '?��???�?: '?????,
+            '?�喲??�?: '?????, '?�踵??�?: '?????, '?���?�?: '?????, '?��??�?: '?????, '?��???�?: '?????,
+            '????�?: '?????, '????�?: '?????, '?��??�?: '?????, '?�?��?�?: '?????, '??�控?�?: '?????,
+            '??�睻?�?: '?????, '?��???�?: '?????, '????�?: '?????, '?�賣??�?: '?????, '?�??�?: '?????,
+            '?�批�?�?: '?????, '?�曹??�?: '?????, '????�?: '?????, '?�匧??�?: '?????,
+            '????�?: '?��????, '?�??�?: '?��????, '?�??�?: '?��????, '?�賢??�?: '?��????, '?��???�?: '?��????,
+            '??��??�?: '?��????, '?漤緤?�?: '?��????, '?��???�?: '?��????, '?�䭾??�?: '?��????, '?�𤩺�??�?: '?��????,
+            '?�衣??�?: '?��????, '?��??�?: '?��????, '?��???�?: '?��????, '?�∪??�?: '?��????, '?��?�?�?: '?��????,
+            '?輯�?�?: '?��????, '?????�?: '?��????, '?訫楷?�?: '?��????, '?��?�?�?: '?��????, '?��???�?: '?��????,
+            '?�屸??�?: '?��????, '?�詨??�?: '?��????, '?��?�?�?: '?��????, '?�喳??�?: '?��????, '?�批�?�?: '?��????,
+            '????�?: '?��????, '?�交?��?�?: '?��????, '?�扳??�?: '?��????, '??�控?�?: '?��????, '?�擧??�?: '?��????,
+            '????�?: '?��????, '????�?: '?��????, '????�?: '?��????, '????�?: '?��????, '?��??�?: '?��????,
+            '??麐憭�?': '?��????, '?�??�?: '?��????, '?�鍫?�?: '?��????,
+            '?�𤩺𨭬撣?: '?�𤩺𨭬蝮?, '?��????: '?�𤩺𨭬蝮?, '??��???: '?�𤩺𨭬蝮?, '?�坾??: '?�𤩺𨭬蝮?, '??��???: '?�𤩺𨭬蝮?,
+            '??�祥??: '?�𤩺𨭬蝮?, '?��???: '?�𤩺𨭬蝮?, '?�嘥???: '?�𤩺𨭬蝮?, '?峕�???: '?�𤩺𨭬蝮?, '?�賢???: '?�𤩺𨭬蝮?,
+            '?�䀹邦??: '?�𤩺𨭬蝮?, '?????: '?�𤩺𨭬蝮?, '?????: '?�𤩺𨭬蝮?, '?�寧???: '?�𤩺𨭬蝮?, '??????: '?�𤩺𨭬蝮?,
+            '?见�???: '?�𤩺𨭬蝮?, '?????: '?�𤩺𨭬蝮?, '?��???: '?�𤩺𨭬蝮?, '?????: '?�𤩺𨭬蝮?, '?????: '?�𤩺𨭬蝮?,
+            '?�喳�??: '?�𤩺𨭬蝮?, '?????: '?�𤩺𨭬蝮?, '?��???: '?�𤩺𨭬蝮?, '?�踹???: '?�𤩺𨭬蝮?, '?见控??: '?�𤩺𨭬蝮?,
+            '?�匧�??�??: '?�𤩺𨭬蝮?, '??��???: '?�𤩺𨭬蝮?, '??�振??: '?�𤩺𨭬蝮?, '?�唳???: '?�𤩺𨭬蝮?, '?��???: '?�𤩺𨭬蝮?,
+            '?交�??: '?�𤩺𨭬蝮?, '?�???: '?�𤩺𨭬蝮?, '??��???: '?�𤩺𨭬蝮?,
+            '?��?�嵰??: '?��?�嵰??, '?��𨭬??: '?��?�嵰??, '?�噫??: '?��?�嵰??, '?????: '?��?�嵰??, '?���??: '?��?�嵰??,
+            '?�臬???: '?��?�嵰??, '??�控??: '?��?�嵰??, '??�控??: '?��?�嵰??, '?��????: '?��?�嵰??, '?��????: '?��?�嵰??,
+            '?�批???: '?��?�嵰??, '??�噫??: '?��?�嵰??,
+            '?梯�?��?: '?梯�?��?, '?�單???: '?梯�?��?, '?????: '?梯�?��?, '?????: '?梯�?��?, '?????: '?梯�?��?,
+            '?�質???: '?梯�?��?, '??��???: '?梯�?��?, '?��????: '?梯�?��?, '?????: '?梯�?��?, '?�屸???: '?梯�?��?,
+            '?��???': '?梯�?��?, '?祆旨??: '?梯�?��?, '?𤘪�??: '?梯�?��?,
+            '??�𨭬撣?: '??�𨭬蝮?, '?𣂼???: '??�𨭬蝮?, '?𨅯???: '??�𨭬蝮?, '?�???: '??�𨭬蝮?, '?�扳???: '??�𨭬蝮?,
+            '?�芷??�?': '??�𨭬蝮?, '??�眾??: '??�𨭬蝮?, '??�膨??: '??�𨭬蝮?, '?�輸???: '??�𨭬蝮?, '?��????: '??�𨭬蝮?,
+            '?�惩?�??: '??�𨭬蝮?, '?��????: '??�𨭬蝮?, '?��????: '??�𨭬蝮?, '?𥪯???: '??�𨭬蝮?, '?穃陸??: '??�𨭬蝮?, '??�飲??: '??�𨭬蝮?,
+            '?��?�撣?: '?�擧???, '?�𤥁正??: '?�擧???, '?�???: '?�擧???, '?�踹�??: '?�擧???, '?𥕦???: '?�擧???, '?��???: '?�擧???,
+            '?�???: '?????, '?????: '?????, '?????: '?????, '?穃�???: '?????, '?�飲??: '?????, '?誩㷫??: '?????,
+            '??�姪??: '?????, '??�姪??: '?????, '?????: '?????, '?????: '?????
         };
 
         const TAIWAN_ENG_MAP = {
-            'zhubei': '竹北市', 'hsinchu': '新竹市', 'taipei': '台北市', 'new taipei': '新北市',
-            'taoyuan': '桃園市', 'taichung': '台中市', 'tainan': '台南市', 'kaohsiung': '高雄市',
-            'keelung': '基隆市', 'chiayi': '嘉義市', 'miaoli': '苗栗縣', 'changhua': '彰化縣',
-            'nantou': '南投縣', 'yunlin': '雲林縣', 'pingtung': '屏東縣', 'yilan': '宜蘭縣',
-            'hualien': '花蓮縣', 'taitung': '台東縣', 'penghu': '澎湖縣', 'kinmen': '金門縣'
+            'zhubei': '?�孵???, 'hsinchu': '??��???, 'taipei': '?????, 'new taipei': '?????,
+            'taoyuan': '?��???, 'taichung': '??��???, 'tainan': '?????, 'kaohsiung': '?��????,
+            'keelung': '?�???, 'chiayi': '??��???, 'miaoli': '?????, 'changhua': '?�啣???,
+            'nantou': '?????, 'yunlin': '?????, 'pingtung': '?�𤩺𨭬蝮?, 'yilan': '?��?�嵰??,
+            'hualien': '?梯�?��?, 'taitung': '??�𨭬蝮?, 'penghu': '?�擧???, 'kinmen': '?????
         };
 
         const extractTaiwanAdminRegion = (text) => {
@@ -18383,12 +18418,12 @@ async function exportSlideshowPDF() {
                 }
             }
             
-            let clean = text.replace(/台灣省|臺灣省|台灣|臺灣|中華民國|Taiwan Province|Taiwan/gi, ' ')
+            let clean = text.replace(/??��?�?箇�?�??��|?箇�|?��??��?�?|Taiwan Province|Taiwan/gi, ' ')
                             .replace(/^\d+/, '')
                             .trim();
-            const match = clean.match(/([^\s,，縣市]+(?:縣|市))([^\s,，鄉鎮市區]+(?:鄉|鎮|市|區))/);
+            const match = clean.match(/([^\s,?�𣬚腦??��+(?:?��???)([^\s,?�屸??桀??�]+(?:?�?徑撣�?�?)/);
             if (match) {
-                let c1 = match[1].replace(/^(省)/, '').trim();
+                let c1 = match[1].replace(/^(??/, '').trim();
                 let c2 = match[2].trim();
                 if (c1 && c2 && c1 !== c2) {
                     return `${c1}${c2}`;
@@ -18401,7 +18436,7 @@ async function exportSlideshowPDF() {
         const currentPosKey = `${state.lat.toFixed(5)}_${state.lng.toFixed(5)}`;
         
         // 1. Check in-memory cache
-        if (addressCache.key === currentPosKey && addressCache.shortAddress && addressCache.shortAddress !== '未指定地址' && !addressCache.shortAddress.includes('台灣省') && !addressCache.shortAddress.includes('Zhubei')) {
+        if (addressCache.key === currentPosKey && addressCache.shortAddress && addressCache.shortAddress !== '????��?��??�? && !addressCache.shortAddress.includes('??��??) && !addressCache.shortAddress.includes('Zhubei')) {
             shortAddressStr = addressCache.shortAddress;
         }
         
@@ -18424,7 +18459,7 @@ async function exportSlideshowPDF() {
                     const revData = await revRes.json();
                     if (revData && revData.address) {
                         const addr = revData.address;
-                        const cleanVal = (v) => (v || '').replace(/台灣省|臺灣省|台灣|臺灣|Taiwan Province|Taiwan/gi, '').trim();
+                        const cleanVal = (v) => (v || '').replace(/??��?�?箇�?�??��|?箇�|Taiwan Province|Taiwan/gi, '').trim();
                         const cityOrCounty = cleanVal(addr.county || addr.city || addr.town || '');
                         const districtOrTown = cleanVal(addr.town || addr.suburb || addr.city_district || addr.district || '');
                         if (cityOrCounty && districtOrTown && cityOrCounty !== districtOrTown) {
@@ -18444,7 +18479,7 @@ async function exportSlideshowPDF() {
         // 4. Try Photon Reverse Geocoding (Fallback)
         if (!shortAddressStr) {
             try {
-                if (title) title.innerText = '正在獲取案場行政區位置...';
+                if (title) title.innerText = '???????��?�銵峕�??�雿滨蔭...';
                 const photonRes = await fetchWithTimeout(`https://photon.komoot.io/reverse?lat=${state.lat}&lon=${state.lng}`, {}, 2500);
                 if (photonRes.ok) {
                     const data = await photonRes.json();
@@ -18464,7 +18499,7 @@ async function exportSlideshowPDF() {
         
         // 5. Fallback formatting
         if (!shortAddressStr) {
-            shortAddressStr = `${state.lat >= 0 ? 'N' : 'S'}${Math.abs(state.lat).toFixed(4)}° / ${state.lng >= 0 ? 'E' : 'W'}${Math.abs(state.lng).toFixed(4)}°`;
+            shortAddressStr = `${state.lat >= 0 ? 'N' : 'S'}${Math.abs(state.lat).toFixed(4)}�?/ ${state.lng >= 0 ? 'E' : 'W'}${Math.abs(state.lng).toFixed(4)}簞`;
         }
         
         addressCache.key = currentPosKey;
@@ -18478,45 +18513,45 @@ async function exportSlideshowPDF() {
         `;
 
         const gridItems = [];
-        gridItems.push(addItem('3', '坡向型式', pitchStyleFriendly));
-        gridItems.push(addItem('4', 'PV 擺放選擇', pvOrientFriendly));
-        gridItems.push(addItem('5', 'PV 模組規格', selectedModel, 2));
-        gridItems.push(addItem('6', 'PV 長度 (L)', `${state.pvL} mm`));
-        gridItems.push(addItem('7', 'PV 寬度 (W)', `${state.pvW} mm`));
-        let azimuthDisplay = `${state.azimuth}°`;
+        gridItems.push(addItem('3', '????�?', pitchStyleFriendly));
+        gridItems.push(addItem('4', 'PV ?箸�??�?', pvOrientFriendly));
+        gridItems.push(addItem('5', 'PV ?��???�𤩺聢', selectedModel, 2));
+        gridItems.push(addItem('6', 'PV ??�漲 (L)', `${state.pvL} mm`));
+        gridItems.push(addItem('7', 'PV ?��?�?(W)', `${state.pvW} mm`));
+        let azimuthDisplay = `${state.azimuth}簞`;
         if (state.pitchStyle === 'double' || state.pitchStyle === 'double-v') {
             const curAz = parseFloat(state.azimuth) || 0;
             const oppAz = (curAz + 180) % 360;
             const a1 = Math.min(curAz, oppAz);
             const a2 = Math.max(curAz, oppAz);
-            azimuthDisplay = `${a1}/${a2}°`;
+            azimuthDisplay = `${a1}/${a2}簞`;
         }
-        gridItems.push(addItem('9', '方位角 (Azimuth)', azimuthDisplay));
+        gridItems.push(addItem('9', '?�???(Azimuth)', azimuthDisplay));
         
         if (state.siteType === 'ground' || (state.siteType === 'roof-flat' && state.arrM > 1)) {
-            gridItems.push(addItem('12', '組列數量 (m)', `${state.arrM} 組`));
+            gridItems.push(addItem('12', '?��??�? (m)', `${state.arrM} ?��));
         }
         if ((state.siteType === 'ground' || state.siteType === 'roof-flat') && state.arrM > 1) {
-            gridItems.push(addItem('13', '組列間距 (p)', `${state.arrP} m`));
+            gridItems.push(addItem('13', '?��???? (p)', `${state.arrP} m`));
         }
         
-        gridItems.push(addItem('14', '橫向間距 x', `${state.spX} mm`));
-        gridItems.push(addItem('15', '縱向間距 y', `${state.spY} mm`));
-        gridItems.push(addItem('16', '安裝傾角 (θ)', `${state.tilt}°`));
+        gridItems.push(addItem('14', '?��???? x', `${state.spX} mm`));
+        gridItems.push(addItem('15', '?��????? y', `${state.spY} mm`));
+        gridItems.push(addItem('16', '?��????? (�?', `${state.tilt}簞`));
         
         if (state.siteType === 'roof-slope') {
-            gridItems.push(addItem('17', '屋頂傾角 (Roof θ)', `${state.roofTilt}°`));
+            gridItems.push(addItem('17', '?��????? (Roof �?', `${state.roofTilt}簞`));
         }
         if (state.siteType === 'roof-flat' || state.siteType === 'roof-slope') {
-            gridItems.push(addItem('18', '屋頂高度 (H)', `${state.roofH} m`));
+            gridItems.push(addItem('18', '?��???��?�?(H)', `${state.roofH} m`));
         }
         if (state.siteType !== 'roof-slope' || Math.abs(state.tilt - state.roofTilt) >= 0.01) {
-            gridItems.push(addItem('19', '支架高度 (h)', `${state.supportH} mm`));
+            gridItems.push(addItem('19', '??�沲�??�漲 (h)', `${state.supportH} mm`));
         }
         
-        gridItems.push(addItem('20', '案場經緯度', coordsStr, 2));
-        gridItems.push(addItem('23', '佔地寬度 (X)', `${state.dimW} m`));
-        gridItems.push(addItem('24', '佔地長度 (Y)', `${state.dimH} m`));
+        gridItems.push(addItem('20', '?��?�蝬梶�???, coordsStr, 2));
+        gridItems.push(addItem('23', '?�𥪜�?��??�漲 (X)', `${state.dimW} m`));
+        gridItems.push(addItem('24', '?�𥪜�???�漲 (Y)', `${state.dimH} m`));
         
         let areaVal = 0;
         if (customSiteBoundary && typeof customSiteBoundary.toGeoJSON === 'function' && window.turf) {
@@ -18526,7 +18561,7 @@ async function exportSlideshowPDF() {
         } else {
             areaVal = parseFloat(state.dimW) * parseFloat(state.dimH);
         }
-        gridItems.push(addItem('25', '佔地面積', `${areaVal.toFixed(2)} m²`));
+        gridItems.push(addItem('25', '?�𥪜�??�?', `${areaVal.toFixed(2)} m簡`));
 
         // Fixed map sizing logic for Slide 3 (1:1 square ratio, aligned to 3:2 layout)
         const mapDisplayW = 570;
@@ -18537,46 +18572,46 @@ async function exportSlideshowPDF() {
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(51, 65, 85, 1); padding-bottom: 18px;">
                 <div style="display: flex; align-items: center; gap: 16px;">
                     <img src="${LOGO_WEB_BASE64}" style="height: 50px; width: auto; object-fit: contain;">
-                    <span style="font-size: 1.4rem; font-weight: bold; color: rgba(16, 185, 129, 1); letter-spacing: 0.5px;">曜昇綠能股份有限公司</span>
+                    <span style="font-size: 1.4rem; font-weight: bold; color: rgba(16, 185, 129, 1); letter-spacing: 0.5px;">?�??��?�??�遢?????�虬</span>
                 </div>
                 <div style="display: flex; align-items: center;">
-                    <span style="font-size: 2.0rem; font-weight: 800; color: rgba(255, 255, 255, 1); letter-spacing: 1px;">案場評估簡報</span>
+                    <span style="font-size: 2.0rem; font-weight: 800; color: rgba(255, 255, 255, 1); letter-spacing: 1px;">?��?�閰?�摯?�∪�?</span>
                 </div>
             </div>
             
             <div style="display: flex; gap: 28px; margin-top: 20px; flex: 1; min-height: 0;">
                 <!-- Left Side: 4 Highlighted Cards (1, 2, 21, 22) -->
                 <div style="width: 300px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;">
-                    <div style="font-size: 0.88rem; font-weight: bold; color: rgba(56, 189, 248, 1); border-left: 3px solid rgba(56, 189, 248, 1); padding-left: 8px;">主要案場資訊</div>
+                    <div style="font-size: 0.88rem; font-weight: bold; color: rgba(56, 189, 248, 1); border-left: 3px solid rgba(56, 189, 248, 1); padding-left: 8px;">?��???��?��?�?</div>
                     
-                    <!-- Card 1: 案場名稱 -->
+                    <!-- Card 1: ?��??滨�? -->
                     <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 10px 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-                        <div style="font-size: 0.72rem; color: rgba(148, 163, 184, 1); margin-bottom: 3px;">1. 案場名稱</div>
+                        <div style="font-size: 0.72rem; color: rgba(148, 163, 184, 1); margin-bottom: 3px;">1. ?��??滨�?</div>
                         <div style="font-size: 1.15rem; font-weight: bold; color: rgba(56, 189, 248, 1); word-break: break-word; line-height: 1.3;" title="${state.siteName}">${state.siteName}</div>
                     </div>
                     
-                    <!-- Card 2: 案場類型 -->
+                    <!-- Card 2: ?��?�憿𧼮? -->
                     <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 10px 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-                        <div style="font-size: 0.72rem; color: rgba(148, 163, 184, 1); margin-bottom: 3px;">2. 案場類型</div>
+                        <div style="font-size: 0.72rem; color: rgba(148, 163, 184, 1); margin-bottom: 3px;">2. ?��?�憿𧼮?</div>
                         <div style="font-size: 1.05rem; font-weight: bold; color: rgba(255, 255, 255, 1); line-height: 1.3;">${siteTypeFriendly}</div>
                     </div>
                     
-                    <!-- Card 21: 總片數 -->
+                    <!-- Card 21: ?��????-->
                     <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9)); border: 1.5px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 10px 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-                        <div style="font-size: 0.72rem; color: rgba(203, 213, 225, 1); margin-bottom: 3px;">21. 總片數</div>
-                        <div style="font-size: 1.3rem; font-weight: 800; color: rgba(16, 185, 129, 1); line-height: 1.2;">${state.totalCount} <span style="font-size: 0.8rem; font-weight: normal; color: rgba(148, 163, 184, 1);">片</span></div>
+                        <div style="font-size: 0.72rem; color: rgba(203, 213, 225, 1); margin-bottom: 3px;">21. ?��????/div>
+                        <div style="font-size: 1.3rem; font-weight: 800; color: rgba(16, 185, 129, 1); line-height: 1.2;">${state.totalCount} <span style="font-size: 0.8rem; font-weight: normal; color: rgba(148, 163, 184, 1);">??/span></div>
                     </div>
                     
-                    <!-- Card 22: 設置量 -->
+                    <!-- Card 22: ?��????-->
                     <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9)); border: 1.5px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 10px 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-                        <div style="font-size: 0.72rem; color: rgba(253, 230, 138, 1); margin-bottom: 3px;">22. 設置量</div>
+                        <div style="font-size: 0.72rem; color: rgba(253, 230, 138, 1); margin-bottom: 3px;">22. ?��????/div>
                         <div style="font-size: 1.35rem; font-weight: 800; color: rgba(245, 158, 11, 1); line-height: 1.2;">${parseFloat(state.totalPower).toFixed(2)} <span style="font-size: 0.8rem; font-weight: normal; color: rgba(148, 163, 184, 1);">kWp</span></div>
                     </div>
                 </div>
                 
                 <!-- Right Side: Grid for remaining 3~25 parameters -->
                 <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
-                    <div style="font-size: 0.88rem; font-weight: bold; color: rgba(16, 185, 129, 1); border-left: 3px solid rgba(16, 185, 129, 1); padding-left: 8px;">設計參數與輸出 (項次 3~25)</div>
+                    <div style="font-size: 0.88rem; font-weight: bold; color: rgba(16, 185, 129, 1); border-left: 3px solid rgba(16, 185, 129, 1); padding-left: 8px;">?��???��??��???(?�活 3~25)</div>
                     
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 12px; background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(51, 65, 85, 0.9); border-radius: 12px; padding: 12px 14px; flex: 1;">
                         ${gridItems.join('')}
@@ -18596,47 +18631,47 @@ async function exportSlideshowPDF() {
         // Slide 2: 3D Views Simulation (2x2 Grid)
         const slide2 = createSlide(`
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(51, 65, 85, 1); padding-bottom: 12px;">
-                <div style="font-size: 1.25rem; font-weight: bold; color: rgba(16, 185, 129, 1);">3D 擬真視角與方位模擬 (3D Simulation)</div>
+                <div style="font-size: 1.25rem; font-weight: bold; color: rgba(16, 185, 129, 1);">3D ?�??��??�䲮?�齿???(3D Simulation)</div>
                 <div style="font-size: 1.15rem; color: rgba(148, 163, 184, 1); font-weight: 500;">${state.siteName}</div>
             </div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 12px 20px; margin-top: 14px; flex: 1; min-height: 0;">
-                <!-- Row 1, Col 1: 放大圖 -->
+                <!-- Row 1, Col 1: ??��???-->
                 <div style="display: flex; flex-direction: column; gap: 6px; align-items: center; min-height: 0;">
-                    <div style="font-weight: bold; color: rgba(56, 189, 248, 1); font-size: 0.95rem; text-align: center;">放大圖</div>
+                    <div style="font-weight: bold; color: rgba(56, 189, 248, 1); font-size: 0.95rem; text-align: center;">??��???/div>
                     <div style="width: 100%; height: 232px; background: rgba(2, 6, 23, 1); border: 1.5px solid rgba(51, 65, 85, 1); border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); position: relative;">
                         <img src="${localTopViewImg}" style="width: 100%; height: 100%; object-fit: contain; display: block;">
                     </div>
                 </div>
                 
-                <!-- Row 1, Col 2: 透視圖 -->
+                <!-- Row 1, Col 2: ?�???-->
                 <div style="display: flex; flex-direction: column; gap: 6px; align-items: center; min-height: 0;">
-                    <div style="font-weight: bold; color: rgba(56, 189, 248, 1); font-size: 0.95rem; text-align: center;">透視圖</div>
+                    <div style="font-weight: bold; color: rgba(56, 189, 248, 1); font-size: 0.95rem; text-align: center;">?�???/div>
                     <div style="width: 100%; height: 232px; background: rgba(2, 6, 23, 1); border: 1.5px solid rgba(51, 65, 85, 1); border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); position: relative;">
                         <img src="${homeViewImg}" style="width: 100%; height: 100%; object-fit: contain; display: block;">
                     </div>
                 </div>
                 
-                <!-- Row 2, Col 1: 上視圖 -->
+                <!-- Row 2, Col 1: ?��????-->
                 <div style="display: flex; flex-direction: column; gap: 6px; align-items: center; min-height: 0;">
-                    <div style="font-weight: bold; color: rgba(56, 189, 248, 1); font-size: 0.95rem; text-align: center;">上視圖</div>
+                    <div style="font-weight: bold; color: rgba(56, 189, 248, 1); font-size: 0.95rem; text-align: center;">?��????/div>
                     <div style="width: 100%; height: 232px; background: rgba(2, 6, 23, 1); border: 1.5px solid rgba(51, 65, 85, 1); border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); position: relative;">
                         <img src="${topViewImg}" style="width: 100%; height: 100%; object-fit: contain; display: block;">
                         ${getCompassSVG(0)}
                     </div>
                 </div>
                 
-                <!-- Row 2, Col 2: 側視圖 -->
+                <!-- Row 2, Col 2: ?�???-->
                 <div style="display: flex; flex-direction: column; gap: 6px; align-items: center; min-height: 0;">
-                    <div style="font-weight: bold; color: rgba(56, 189, 248, 1); font-size: 0.95rem; text-align: center;">側視圖 (平行投影)</div>
+                    <div style="font-weight: bold; color: rgba(56, 189, 248, 1); font-size: 0.95rem; text-align: center;">?�???(?�唾??訫蔣)</div>
                     <div style="width: 100%; height: 232px; background: rgba(2, 6, 23, 1); border: 1.5px solid rgba(51, 65, 85, 1); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); position: relative;">
                         <img src="${sideViewImg}" style="width: 100%; height: 198px; object-fit: contain; display: block;">
-                        <!-- 顏色標示圖例 (模組、支架組件、建物、地面) -->
+                        <!-- ?��??��?�嗵??�? (?��???��?????��?��???����??? -->
                         <div style="width: 100%; display: flex; gap: 10px; justify-content: center; align-items: center; padding: 4px 6px; background: rgba(15, 23, 42, 0.90); font-size: 0.70rem; color: #cbd5e1; border-top: 1px solid rgba(51, 65, 85, 0.6); box-sizing: border-box;">
-                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:#1d4ed8; border:1px solid #60a5fa; border-radius:2px;"></span>模組</span>
-                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:#f59e0b; border:1px solid #fbbf24; border-radius:2px;"></span>支架組件</span>
-                            ${state.siteType !== 'ground' ? '<span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:#94a3b8; border:1px solid #cbd5e1; border-radius:2px;"></span>建物</span>' : ''}
-                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:#22c55e; border:1px solid #4ade80; border-radius:2px;"></span>地面</span>
+                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:#1d4ed8; border:1px solid #60a5fa; border-radius:2px;"></span>?��??</span>
+                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:#f59e0b; border:1px solid #fbbf24; border-radius:2px;"></span>??�沲蝯�辣</span>
+                            ${state.siteType !== 'ground' ? '<span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:#94a3b8; border:1px solid #cbd5e1; border-radius:2px;"></span>?��?�?/span>' : ''}
+                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:#22c55e; border:1px solid #4ade80; border-radius:2px;"></span>??��??/span>
                         </div>
                     </div>
                 </div>
@@ -18655,14 +18690,14 @@ async function exportSlideshowPDF() {
         // Slide 3: Map View Slide
         const slide3 = createSlide(`
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(51, 65, 85, 1); padding-bottom: 15px;">
-                <div style="font-size: 1.25rem; font-weight: bold; color: rgba(16, 185, 129, 1);">衛星地圖案場定位與覆蓋 (Satellite Map Overlay)</div>
+                <div style="font-size: 1.25rem; font-weight: bold; color: rgba(16, 185, 129, 1);">?��??????��?�摰�??�???(Satellite Map Overlay)</div>
                 <div style="font-size: 1.15rem; color: rgba(148, 163, 184, 1); font-weight: 500;">${state.siteName}</div>
             </div>
             
             <div style="display: flex; gap: 40px; margin-top: 25px; flex: 1; min-height: 0; align-items: center; justify-content: center;">
                 <!-- Left Side: Map Capture Image (1:1 square ratio, 3/5 width) -->
                 <div style="display: flex; flex-direction: column; gap: 8px; min-height: 0; align-items: center;">
-                    <div style="font-weight: bold; color: rgba(56, 189, 248, 1); font-size: 1rem; text-align: center;">案場航照圖定位</div>
+                    <div style="font-weight: bold; color: rgba(56, 189, 248, 1); font-size: 1rem; text-align: center;">?��???��?�???/div>
                     <div style="width: ${mapDisplayW}px; height: ${mapDisplayH}px; background: rgba(2, 6, 23, 1); border: 1.5px solid rgba(51, 65, 85, 1); border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); position: relative;">
                         <img src="${mapImg}" style="width: 100%; height: 100%; display: block;">
                         ${getCompassSVG(0)}
@@ -18671,19 +18706,19 @@ async function exportSlideshowPDF() {
                 
                 <!-- Right Side: Address & Coordinates Card (2/5 width, matching map height) -->
                 <div style="width: 380px; height: 570px; display: flex; flex-direction: column; gap: 15px; justify-content: center; flex-shrink: 0; box-sizing: border-box; margin-top: 28px;">
-                    <div style="font-weight: bold; color: rgba(16, 185, 129, 1); font-size: 1.05rem; text-align: center; border-bottom: 1px dashed rgba(51, 65, 85, 1); padding-bottom: 8px; margin-bottom: 6px;">案場地理座標資訊</div>
+                    <div style="font-weight: bold; color: rgba(16, 185, 129, 1); font-size: 1.05rem; text-align: center; border-bottom: 1px dashed rgba(51, 65, 85, 1); padding-bottom: 8px; margin-bottom: 6px;">?��?????�扳??��?</div>
                     
                     <div style="background: rgba(30, 41, 59, 0.6); border: 1.5px solid rgba(51, 65, 85, 1); border-radius: 12px; padding: 25px 30px; display: flex; flex-direction: column; gap: 22px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); flex: 1; justify-content: center;">
                         <div>
-                            <div style="font-size: 0.9rem; color: rgba(148, 163, 184, 1); margin-bottom: 8px; font-weight: 500;">案場中心經緯度</div>
+                            <div style="font-size: 0.9rem; color: rgba(148, 163, 184, 1); margin-bottom: 8px; font-weight: 500;">?��?��????�梶楝摨?/div>
                             <div style="font-size: 1.25rem; font-weight: bold; color: rgba(255, 255, 255, 1); line-height: 1.455;">
-                                緯度 (Lat): <span style="color: rgba(56, 189, 248, 1); font-family: monospace;">${state.lat.toFixed(6)}° N</span><br>
-                                經度 (Lng): <span style="color: rgba(56, 189, 248, 1); font-family: monospace;">${state.lng.toFixed(6)}° E</span>
+                                ?�臬�?(Lat): <span style="color: rgba(56, 189, 248, 1); font-family: monospace;">${state.lat.toFixed(6)}�?N</span><br>
+                                ?��?�?(Lng): <span style="color: rgba(56, 189, 248, 1); font-family: monospace;">${state.lng.toFixed(6)}�?E</span>
                             </div>
                         </div>
                         
                         <div>
-                            <div style="font-size: 0.9rem; color: rgba(148, 163, 184, 1); margin-bottom: 8px; font-weight: 500;">案場地址</div>
+                            <div style="font-size: 0.9rem; color: rgba(148, 163, 184, 1); margin-bottom: 8px; font-weight: 500;">?��????</div>
                             <div style="font-size: 1.25rem; font-weight: bold; color: rgba(16, 185, 129, 1); line-height: 1.5; word-break: break-all;">
                                 ${shortAddressStr}
                             </div>
@@ -18709,7 +18744,7 @@ async function exportSlideshowPDF() {
             format: 'a4'
         });
         
-        if (title) title.innerText = '正在輸出 A4 簡報頁面 (高畫質渲染中)...';
+        if (title) title.innerText = '???��?詨�? A4 ?�∪�??��??(?�条�??�芣??㮖�?)...';
         
         // Parallel capturing of all 3 slides simultaneously using Promise.all & optimized 2.0x scale (3.5x -> 2.0x saves 67% pixels & runs 4x faster)
         const [canvas1, canvas2, canvas3] = await Promise.all([
@@ -18731,7 +18766,7 @@ async function exportSlideshowPDF() {
         pdf.addImage(imgData3, 'JPEG', 0, 0, 297, 210);
         
         // Save PDF using saveFileWithPicker
-        const siteNameClean = (state && state.siteName) ? state.siteName.trim() : '太陽能案場';
+        const siteNameClean = (state && state.siteName) ? state.siteName.trim() : '?�芷??�???;
         const now = new Date();
         const yyyymmdd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
         const hhmmss = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
@@ -18755,4 +18790,6 @@ async function exportSlideshowPDF() {
         }
     }
 }
+
+
 
