@@ -1572,7 +1572,9 @@ function initViewer(canvasId) {
     
     scene = new THREE.Scene();
     
+    THREE.Object3D.DefaultUp.set(0, 0, 1);
     camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.02, 4000);
+    camera.up.set(0, 0, 1);
     camera.position.set(15, 12, 20);
     
     renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
@@ -1583,22 +1585,61 @@ function initViewer(canvasId) {
     
     // Set transparent clear color to reveal the CSS blue sky background
     renderer.setClearColor(0x000000, 0);
+
+    // --- Z-up Wrapper Injection ---
+    window.superScene = new THREE.Scene();
+    scene.matrixAutoUpdate = false;
+    scene.matrix.set(
+        1, 0, 0, 0,
+        0, 0, -1, 0,
+        0, 1, 0, 0,
+        0, 0, 0, 1
+    );
+    window.superScene.add(scene);
+
+    const worldAxes = new THREE.AxesHelper(100);
+    window.superScene.add(worldAxes);
+
+    if (!renderer._zUpPatched) {
+        const origRender = renderer.render.bind(renderer);
+        renderer.render = function(s, c) {
+            if (s === scene && window.superScene) {
+                origRender(window.superScene, c);
+            } else {
+                origRender(s, c);
+            }
+        };
+        renderer._zUpPatched = true;
+    }
+
+    if (typeof THREE !== 'undefined' && THREE.GLTFExporter && !THREE.GLTFExporter.prototype._zUpPatched) {
+        const origParse = THREE.GLTFExporter.prototype.parse;
+        THREE.GLTFExporter.prototype.parse = function(input, onCompleted, onError, options) {
+            if (input === scene && window.superScene) {
+                origParse.call(this, window.superScene, onCompleted, onError, options);
+            } else {
+                origParse.call(this, input, onCompleted, onError, options);
+            }
+        };
+        THREE.GLTFExporter.prototype._zUpPatched = true;
+    }
+    // ------------------------------
     
     // Using UMD OrbitControls from THREE namespace
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.maxPolarAngle = Math.PI / 2 - 0.02;
+    controls.maxPolarAngle = Math.PI;
     controls.minDistance = 0.05;
     controls.maxDistance = 4000;
     controls.enableZoom = false; // Disable default zoom to implement custom zoom-to-cursor
-    controls.target.set(0, 1.5, 0);
+    controls.target.set(0, 0, 0);
     
-    // Map mouse controls: Left button rotates, Middle/Right buttons pan
+    // Map mouse controls to match SketchUp: Middle = Orbit, Shift+Middle = Pan (handled natively by OrbitControls), Left = Orbit, Right = Pan
     controls.mouseButtons = {
-        LEFT: THREE.MOUSE.ROTATE,
-        MIDDLE: THREE.MOUSE.PAN,
-        RIGHT: THREE.MOUSE.PAN
+        LEFT: null,
+        MIDDLE: THREE.MOUSE.ROTATE,
+        RIGHT: null
     };
     
     // Softened ambient light to keep scene well-lit
@@ -1658,55 +1699,49 @@ function initViewer(canvasId) {
     // ------------------------------------------
     compassGroup = new THREE.Group();
     compassGroup.scale.set(0.15, 0.15, 0.15); // 縮放羅盤 HUD 尺寸
-    scene.add(camera); // 將相機加入場景中以容納 HUD 子物件
+    window.superScene.add(camera); // 將相機加入 superScene 場景中以容納 HUD 子物件，並保持在世界座標系
     camera.add(compassGroup); // 綁定至相機
     
     // 1. Compass Flat Ring (羅盤外環圓盤)
     const ringGeo = new THREE.RingGeometry(1.8, 2.0, 32);
     const ringMat = new THREE.MeshStandardMaterial({ color: 0x475569, side: THREE.DoubleSide, depthTest: false, depthWrite: false });
     const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.rotation.x = -Math.PI / 2;
+    ring.rotation.x = 0; // 躺在 XY 平面 (地平面)
     compassGroup.add(ring);
     
-    // 2. North Pointer (紅色北向指針)
-    const coneNorthGeo = new THREE.ConeGeometry(0.3, 1.6, 4);
+    // 2. North Pointer (紅色指南針)
+    const coneNorthGeo = new THREE.CylinderGeometry(0, 0.18, 0.5, 16);
     const coneNorthMat = new THREE.MeshStandardMaterial({ color: 0xef4444, depthTest: false, depthWrite: false });
     const coneNorth = new THREE.Mesh(coneNorthGeo, coneNorthMat);
-    coneNorth.rotation.x = -Math.PI / 2;
-    coneNorth.position.set(0, 0.08, -0.8);
+    coneNorth.position.set(0, 0.8, 0.08); // +Y 為北
     compassGroup.add(coneNorth);
     
-    // 3. South Pointer (白色南向指針)
-    const coneSouthGeo = new THREE.ConeGeometry(0.3, 1.6, 4);
-    const coneSouthMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, depthTest: false, depthWrite: false });
-    const coneSouth = new THREE.Mesh(coneSouthGeo, coneSouthMat);
-    coneSouth.rotation.x = Math.PI / 2;
-    coneSouth.position.set(0, 0.08, 0.8);
-    compassGroup.add(coneSouth);
+    // 3. South Pointer (白色指北針) - 依照使用者要求移除
+    // (已移除)
     
-    // 4. 立體北向文字 "N" (朝向北方)
+    // 4. 立體文字 "N" (正北方向)
     const nLetterGroup = new THREE.Group();
-    nLetterGroup.position.set(0, 0.08, -2.6);
+    nLetterGroup.position.set(0, 2.6, 0.08);
     compassGroup.add(nLetterGroup);
     
     const nMat = new THREE.MeshStandardMaterial({ color: 0xef4444, depthTest: false, depthWrite: false });
     
     // Left vertical bar of "N"
-    const leftBarGeo = new THREE.BoxGeometry(0.1, 0.16, 0.7);
+    const leftBarGeo = new THREE.BoxGeometry(0.1, 0.7, 0.16);
     const leftBar = new THREE.Mesh(leftBarGeo, nMat);
     leftBar.position.set(-0.25, 0, 0);
     nLetterGroup.add(leftBar);
     
     // Right vertical bar of "N"
-    const rightBarGeo = new THREE.BoxGeometry(0.1, 0.16, 0.7);
+    const rightBarGeo = new THREE.BoxGeometry(0.1, 0.7, 0.16);
     const rightBar = new THREE.Mesh(rightBarGeo, nMat);
     rightBar.position.set(0.25, 0, 0);
     nLetterGroup.add(rightBar);
     
     // Diagonal bar of "N"
-    const diagBarGeo = new THREE.BoxGeometry(0.1, 0.16, 0.85);
+    const diagBarGeo = new THREE.BoxGeometry(0.1, 0.85, 0.16);
     const diagBar = new THREE.Mesh(diagBarGeo, nMat);
-    diagBar.rotation.y = 0.65; // Tilt to form diagonal of N (corrected orientation)
+    diagBar.rotation.z = 0.55; // 正值旋轉，使其從左上連到右下 (Top-Left to Bottom-Right)
     diagBar.position.set(0, 0, 0);
     nLetterGroup.add(diagBar);
 
@@ -2468,17 +2503,6 @@ async function export3DGLB() {
                         mesh.receiveShadow = false;
                         mesh.applyMatrix4(child.matrixWorld.clone());
                         targetMainBuildingGroup.add(mesh);
-
-                        // 產生純外框輪廓線 (僅保留表達外型的乾淨外框線，大於 25 度的特徵外角才保留)
-                        try {
-                            const edgeGeo = new THREE.EdgesGeometry(geo, 25);
-                            const edgeLines = new THREE.LineSegments(edgeGeo, exportMats.outlineEdge);
-                            edgeLines.name = `${mesh.name}_Outline`;
-                            edgeLines.applyMatrix4(child.matrixWorld.clone());
-                            targetMainBuildingGroup.add(edgeLines);
-                        } catch (e) {
-                            console.warn('Building outline creation skipped:', e);
-                        }
                     } else {
                         // 其他一般結構網格
                         const cleanMat = Array.isArray(child.material)
@@ -2515,17 +2539,6 @@ async function export3DGLB() {
                     mesh.receiveShadow = false;
                     mesh.applyMatrix4(child.matrixWorld.clone());
                     targetSurroundBuildingGroup.add(mesh);
-
-                    // 僅保留簡化外型外框線 (EdgesGeometry with 25 deg threshold)
-                    try {
-                        const edgeGeo = new THREE.EdgesGeometry(geo, 25);
-                        const edgeLines = new THREE.LineSegments(edgeGeo, exportMats.outlineEdge);
-                        edgeLines.name = `${bldgName}_Outline`;
-                        edgeLines.applyMatrix4(child.matrixWorld.clone());
-                        targetSurroundBuildingGroup.add(edgeLines);
-                    } catch (e) {
-                        console.warn('Surrounding building outline skipped:', e);
-                    }
                 }
             });
         }
@@ -11070,7 +11083,7 @@ function resetCamera() {
 function topView() {
     if (!camera || !controls) return;
     const { center, distance } = getSceneBoundsInfo();
-    camera.position.set(center.x, center.y + distance, center.z + 0.001);
+    camera.position.set(center.x, center.y - 0.001, center.z + distance);
     controls.target.copy(center);
     controls.update();
 }
@@ -11078,7 +11091,7 @@ function topView() {
 function sideView() {
     if (!camera || !controls) return;
     const { center, distance } = getSceneBoundsInfo();
-    camera.position.set(center.x + distance * 0.9, center.y + distance * 0.2, center.z);
+    camera.position.set(center.x + distance * 0.9, center.y - distance * 0.9, center.z + distance * 0.3);
     controls.target.copy(center);
     controls.update();
 }
@@ -15373,7 +15386,7 @@ function hideLoadingOverlay() {
             targetPoint = intersects[0].point.clone();
         } else {
             // Raycast against ground plane (y=0) if no mesh hit
-            const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+            const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
             const intersection = new THREE.Vector3();
             if (raycaster.ray.intersectPlane(plane, intersection)) {
                 targetPoint = intersection.clone();
@@ -15435,7 +15448,7 @@ function hideLoadingOverlay() {
             if (intersects.length > 0) {
                 touchStartMidPoint = intersects[0].point.clone();
             } else {
-                const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+                const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
                 const intersection = new THREE.Vector3();
                 if (raycaster.ray.intersectPlane(plane, intersection)) {
                     touchStartMidPoint = intersection.clone();
@@ -15824,22 +15837,22 @@ function handleGlobalKeydown(e) {
 
 function reinitOrbitControls() {
     if (!camera || !renderer) return;
-    const oldTarget = (controls && controls.target) ? controls.target.clone() : new THREE.Vector3(0, 1.5, 0);
+    const oldTarget = (controls && controls.target) ? controls.target.clone() : new THREE.Vector3(0, 0, 0);
     if (controls) {
         try { controls.dispose(); } catch (e) {}
     }
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.maxPolarAngle = Math.PI / 2 - 0.02;
+    controls.maxPolarAngle = Math.PI;
     controls.minDistance = 0.05;
     controls.maxDistance = 4000;
     controls.enableZoom = false;
     controls.target.copy(oldTarget);
     controls.mouseButtons = {
-        LEFT: THREE.MOUSE.ROTATE,
-        MIDDLE: THREE.MOUSE.PAN,
-        RIGHT: THREE.MOUSE.PAN
+        LEFT: null,
+        MIDDLE: THREE.MOUSE.ROTATE,
+        RIGHT: null
     };
 }
 
@@ -17695,14 +17708,14 @@ async function capture3DViewsForPresentation(mode = 'auto') {
         const localWidth = Math.min(sceneSize.x, 14.0);
         const localDepth = Math.min(sceneSize.z, 7.5);
         const localTopDist = Math.max((localDepth / 2) / Math.tan(fovRad / 2), (localWidth / 2) / (Math.tan(fovRad / 2) * captureAspect)) * 1.10;
-        camera.position.set(sceneCenter.x, (baseRoofH + maxSupportH + 1.0) + localTopDist, sceneCenter.z + 0.001);
+        camera.position.set(sceneCenter.x, sceneCenter.y - 0.001, (baseRoofH + maxSupportH + 1.0) + localTopDist);
         controls.target.copy(arrayCenter);
         camera.lookAt(arrayCenter);
         renderer.render(scene, camera);
         const localTopViewImg = renderer.domElement.toDataURL('image/jpeg', 0.90);
         
         // 2. 透視圖 (Home View)
-        const isoDir = new THREE.Vector3(0.55, 0.50, 0.70).normalize();
+        const isoDir = new THREE.Vector3(0.55, -0.70, 0.50).normalize();
         camera.position.copy(arrayCenter).addScaledVector(isoDir, tightDist);
         controls.target.copy(arrayCenter);
         camera.lookAt(arrayCenter);
@@ -17711,7 +17724,7 @@ async function capture3DViewsForPresentation(mode = 'auto') {
         
         // 3. 上視圖 (Top View)
         const topDist = Math.max((sceneSize.z / 2) / Math.tan(fovRad / 2), (sceneSize.x / 2) / (Math.tan(fovRad / 2) * captureAspect)) * 1.10;
-        camera.position.set(sceneCenter.x, (baseRoofH + maxSupportH + 1.0) + topDist, sceneCenter.z + 0.001);
+        camera.position.set(sceneCenter.x, sceneCenter.y - 0.001, (baseRoofH + maxSupportH + 1.0) + topDist);
         controls.target.copy(arrayCenter);
         camera.lookAt(arrayCenter);
         renderer.render(scene, camera);
@@ -17754,7 +17767,7 @@ async function capture3DViewsForPresentation(mode = 'auto') {
                 const localWidth = Math.min(sceneSize.x, 14.0);
                 const localDepth = Math.min(sceneSize.z, 7.5);
                 const localTopDist = Math.max((localDepth / 2) / Math.tan(fovRad / 2), (localWidth / 2) / (Math.tan(fovRad / 2) * captureAspect)) * 1.10;
-                camera.position.set(sceneCenter.x, (baseRoofH + maxSupportH + 1.0) + localTopDist, sceneCenter.z + 0.001);
+                camera.position.set(sceneCenter.x, sceneCenter.y - 0.001, (baseRoofH + maxSupportH + 1.0) + localTopDist);
                 controls.target.copy(arrayCenter);
                 camera.lookAt(arrayCenter);
                 controls.update();
@@ -17766,7 +17779,7 @@ async function capture3DViewsForPresentation(mode = 'auto') {
             tip: '整體案場立體透視圖。可自由旋轉、平移至最具代表性之立體視角。',
             isOrtho: false,
             setDefault: () => {
-                const isoDir = new THREE.Vector3(0.55, 0.50, 0.70).normalize();
+                const isoDir = new THREE.Vector3(0.55, -0.70, 0.50).normalize();
                 camera.position.copy(arrayCenter).addScaledVector(isoDir, tightDist);
                 controls.target.copy(arrayCenter);
                 camera.lookAt(arrayCenter);
@@ -17780,7 +17793,7 @@ async function capture3DViewsForPresentation(mode = 'auto') {
             isOrtho: false,
             setDefault: () => {
                 const topDist = Math.max((sceneSize.z / 2) / Math.tan(fovRad / 2), (sceneSize.x / 2) / (Math.tan(fovRad / 2) * captureAspect)) * 1.10;
-                camera.position.set(sceneCenter.x, (baseRoofH + maxSupportH + 1.0) + topDist, sceneCenter.z + 0.001);
+                camera.position.set(sceneCenter.x, sceneCenter.y - 0.001, (baseRoofH + maxSupportH + 1.0) + topDist);
                 controls.target.copy(arrayCenter);
                 camera.lookAt(arrayCenter);
                 controls.update();
@@ -17933,7 +17946,7 @@ async function capture3DViewsForPresentation(mode = 'auto') {
         document.getElementById('btn-mc-top').onclick = () => {
             const step = steps[currentStepIndex];
             if (step.isOrtho) {
-                sideOrthoCamera.position.set(sceneCenter.x, sceneCenter.y + 250, sceneCenter.z + 0.001);
+                sideOrthoCamera.position.set(sceneCenter.x, sceneCenter.y - 250, sceneCenter.z + 0.001);
                 sideOrthoCamera.lookAt(sideTarget);
                 sideOrthoCamera.updateProjectionMatrix();
                 controls.target.copy(sideTarget);
@@ -18742,3 +18755,4 @@ async function exportSlideshowPDF() {
         }
     }
 }
+
