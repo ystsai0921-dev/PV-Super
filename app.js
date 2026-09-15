@@ -2805,20 +2805,6 @@ function updateMeasureLabels() {
         }
     });
     
-    // Update summary label position if it exists
-    if (window.activeMeasureSummaryLabel && window.activeMeasureSessionPoints && window.activeMeasureSessionPoints.length > 0) {
-        const lastPt = window.activeMeasureSessionPoints[window.activeMeasureSessionPoints.length - 1];
-        const pos = toScreenPosition(lastPt, camera);
-        if (pos.z <= 1) {
-            window.activeMeasureSummaryLabel.style.display = 'block';
-            window.activeMeasureSummaryLabel.style.position = 'absolute';
-            window.activeMeasureSummaryLabel.style.transform = 'translate(-50%, -100%)';
-            window.activeMeasureSummaryLabel.style.left = `${pos.x}px`;
-            window.activeMeasureSummaryLabel.style.top = `${pos.y}px`;
-        } else {
-            window.activeMeasureSummaryLabel.style.display = 'none';
-        }
-    }
     
     if (activeMeasureLabel) {
         let liveTargetPoint = null;
@@ -3239,24 +3225,11 @@ function createPlaneHelperMesh(point, normal, colorHex = 0x10b981, size = 3.5) {
 
 function handleMeasurePointClick(point) {
     try {
-        if (!window.activeMeasureSessionPoints) window.activeMeasureSessionPoints = [];
-        
-        // Check for double click / click near last point to finish
-        if (window.activeMeasureSessionPoints.length >= 1) {
-            const lastPt = window.activeMeasureSessionPoints[window.activeMeasureSessionPoints.length - 1];
-            if (lastPt.distanceTo(point) < 0.2) {
-                if (typeof finishMeasurePolyline !== 'undefined') finishMeasurePolyline();
-                return;
-            }
-        }
-
         if (measurePoints.length === 0) {
-            // Start of a new segment
+            // Step 1: Set Start Point
             measurePoints.push(point.clone());
-            if (window.activeMeasureSessionPoints.length === 0) {
-                window.activeMeasureSessionPoints.push(point.clone());
-            }
             
+            // Show Aim Start Indicator
             getOrCreateAimIndicators();
             if (aimStartIndicator) {
                 const pos = toScreenPosition(point, camera);
@@ -3265,6 +3238,7 @@ function handleMeasurePointClick(point) {
                 aimStartIndicator.style.display = (pos.z <= 1) ? 'block' : 'none';
             }
             
+            // Create rubberband line & label
             const lineMat = new THREE.LineDashedMaterial({ color: 0x22c55e, dashSize: 0.3, gapSize: 0.15, depthTest: false });
             const lineGeo = new THREE.BufferGeometry();
             const positions = new Float32Array([ point.x, point.y, point.z, point.x, point.y, point.z ]);
@@ -3276,6 +3250,7 @@ function handleMeasurePointClick(point) {
             activeMeasureLine.renderOrder = 1000;
             scene.add(activeMeasureLine);
             
+            // Create label DOM element
             const doc = getActive3DDoc();
             activeMeasureLabel = doc.createElement('div');
             activeMeasureLabel.className = 'map-measure-segment-badge-container';
@@ -3285,27 +3260,39 @@ function handleMeasurePointClick(point) {
             
             updateAxisGuideLine();
         } else {
-            // Finish segment
+            // Step 2: Set End Point and save measurement
             const startPoint = measurePoints[0];
             const endPoint = applyAxisLock(startPoint, point);
             const distance = startPoint.distanceTo(endPoint);
             const labelText = `<div class="map-measure-segment-badge"><img src="images/length.svg" class="map-measure-icon" alt="" />${distance.toFixed(2)} m</div>`;
             const doc = getActive3DDoc();
             
-            if (activeMeasureLine) { scene.remove(activeMeasureLine); activeMeasureLine = null; }
-            if (aimStartIndicator) { aimStartIndicator.style.display = 'none'; }
-            if (activeAxisGuideLine) { scene.remove(activeAxisGuideLine); activeAxisGuideLine = null; }
+            // Remove temporary rubberband line and temporary start markers
+            if (activeMeasureLine) {
+                scene.remove(activeMeasureLine);
+                activeMeasureLine = null;
+            }
+            if (aimStartIndicator) {
+                aimStartIndicator.style.display = 'none';
+            }
+            if (activeAxisGuideLine) {
+                scene.remove(activeAxisGuideLine);
+                activeAxisGuideLine = null;
+            }
             
-            const lineMat = new THREE.LineBasicMaterial({ color: 0xfacc15, linewidth: 2, depthTest: false });
+            // Create permanent dashed dimension line in 3D (green dashed line, like originally)
+            const lineMat = new THREE.LineDashedMaterial({ color: 0x22c55e, dashSize: 0.2, gapSize: 0.1, depthTest: false });
             const lineGeo = new THREE.BufferGeometry();
             const positions = new Float32Array([ startPoint.x, startPoint.y, startPoint.z, endPoint.x, endPoint.y, endPoint.z ]);
             lineGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             
             const permanentLine = new THREE.Line(lineGeo, lineMat);
+            permanentLine.computeLineDistances();
             permanentLine.name = `measure-line-${measureLines.length}`;
             permanentLine.renderOrder = 1000;
             scene.add(permanentLine);
             
+            // Permanent label DOM element
             const labelDom = activeMeasureLabel || doc.createElement('div');
             labelDom.className = 'map-measure-segment-badge-container';
             labelDom.innerHTML = labelText;
@@ -3315,9 +3302,8 @@ function handleMeasurePointClick(point) {
             }
             activeMeasureLabel = null;
             
-            if (!window.activeMeasureSessionLines) window.activeMeasureSessionLines = [];
-            
-            const measureObj = {
+            // Store
+            measureLines.push({
                 lineMesh: permanentLine,
                 helpers: [],
                 start: startPoint,
@@ -3325,79 +3311,13 @@ function handleMeasurePointClick(point) {
                 midPoint: new THREE.Vector3().addVectors(startPoint, endPoint).multiplyScalar(0.5),
                 labelDom: labelDom,
                 mode: 'point'
-            };
+            });
             
-            measureLines.push(measureObj);
-            window.activeMeasureSessionLines.push(measureObj);
-            window.activeMeasureSessionPoints.push(endPoint.clone());
-            
-            // Calculate total distance for the summary badge
-            let totalDist = 0;
-            for(let i=0; i<window.activeMeasureSessionPoints.length - 1; i++) {
-                totalDist += window.activeMeasureSessionPoints[i].distanceTo(window.activeMeasureSessionPoints[i+1]);
-            }
-            
-            if (!window.activeMeasureSummaryLabel) {
-                window.activeMeasureSummaryLabel = doc.createElement('div');
-                window.activeMeasureSummaryLabel.className = 'map-measure-summary-badge-container';
-                if (overlay) overlay.appendChild(window.activeMeasureSummaryLabel);
-            }
-            window.activeMeasureSummaryLabel.innerHTML = `<div class="map-measure-summary-badge">🏁 總長: ${totalDist.toFixed(2)} m (${window.activeMeasureSessionPoints.length}點)</div>`;
-            
-            // Start next segment from endPoint
-            measurePoints = [endPoint.clone()];
-            
-            // Recreate rubberband for next segment
-            const nextLineMat = new THREE.LineDashedMaterial({ color: 0x22c55e, dashSize: 0.3, gapSize: 0.15, depthTest: false });
-            const nextLineGeo = new THREE.BufferGeometry();
-            const nextPositions = new Float32Array([ endPoint.x, endPoint.y, endPoint.z, endPoint.x, endPoint.y, endPoint.z ]);
-            nextLineGeo.setAttribute('position', new THREE.BufferAttribute(nextPositions, 3));
-            activeMeasureLine = new THREE.Line(nextLineGeo, nextLineMat);
-            activeMeasureLine.computeLineDistances();
-            activeMeasureLine.name = 'measure-rubberband';
-            activeMeasureLine.renderOrder = 1000;
-            scene.add(activeMeasureLine);
-            
-            activeMeasureLabel = doc.createElement('div');
-            activeMeasureLabel.className = 'map-measure-segment-badge-container';
-            activeMeasureLabel.innerHTML = `<div class="map-measure-segment-badge"><img src="images/length.svg" class="map-measure-icon" alt="" />0.00 m</div>`;
-            if (overlay) overlay.appendChild(activeMeasureLabel);
-            
-            if (aimStartIndicator) {
-                const pos = toScreenPosition(endPoint, camera);
-                aimStartIndicator.style.left = `${pos.x}px`;
-                aimStartIndicator.style.top = `${pos.y}px`;
-                aimStartIndicator.style.display = (pos.z <= 1) ? 'block' : 'none';
-            }
+            measurePoints = [];
         }
     } catch (err) {
         console.error("Error in handleMeasurePointClick:", err);
     }
-}
-
-function finishMeasurePolyline() {
-    measurePoints = [];
-    if (activeMeasureLine) {
-        scene.remove(activeMeasureLine);
-        activeMeasureLine = null;
-    }
-    if (activeMeasureLabel) {
-        const overlay = getActive3DDoc().getElementById('measure-labels-overlay');
-        if (overlay && activeMeasureLabel.parentNode === overlay) {
-            overlay.removeChild(activeMeasureLabel);
-        }
-        activeMeasureLabel = null;
-    }
-    if (aimStartIndicator) {
-        aimStartIndicator.style.display = 'none';
-    }
-    if (activeAxisGuideLine) {
-        scene.remove(activeAxisGuideLine);
-        activeAxisGuideLine = null;
-    }
-    window.activeMeasureSessionPoints = null;
-    window.activeMeasureSessionLines = null;
-    window.activeMeasureSummaryLabel = null;
 }
 
 function handleMeasureFaceClick(planeInfo) {
@@ -3662,6 +3582,10 @@ function clearPending3DMeasure() {
     measurePoints = [];
     measurePlanes = [];
     measurePointToFace = null;
+    
+    if (window.activeMeasureSummaryLabel && window.activeMeasureSummaryLabel.parentNode) {
+        window.activeMeasureSummaryLabel.parentNode.removeChild(window.activeMeasureSummaryLabel);
+    }
     window.activeMeasureSessionPoints = null;
     window.activeMeasureSessionLines = null;
     window.activeMeasureSummaryLabel = null;
