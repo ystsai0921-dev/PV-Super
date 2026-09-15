@@ -17574,12 +17574,12 @@ async function capture3DViewsForPresentation(mode = 'auto') {
     sideOrthoCamera.lookAt(sideTarget);
     sideOrthoCamera.updateProjectionMatrix();
 
-    // Side view Materials (Wireframe/Line expression, monochrome, focus on PV)
-    const sideMatPanel = new THREE.MeshBasicMaterial({ color: 0x111111, wireframe: true });
-    const sideMatSupport = new THREE.MeshBasicMaterial({ color: 0x444444, wireframe: true });
-    const sideMatBuilding = new THREE.MeshBasicMaterial({ color: 0xaaaaaa, wireframe: true, transparent: true, opacity: 0.6 });
+    // Side view Materials (Solid dark for PV/Supports to simulate thick lines, wireframe for building)
+    const sideMatPanel = new THREE.MeshBasicMaterial({ color: 0x111111, wireframe: false });
+    const sideMatSupport = new THREE.MeshBasicMaterial({ color: 0x333333, wireframe: false });
+    const sideMatBuilding = new THREE.MeshBasicMaterial({ color: 0x888888, wireframe: true, transparent: true, opacity: 0.8 });
     const sideMatGround = new THREE.MeshBasicMaterial({ color: 0xcccccc, wireframe: true });
-    const sideMatBreakLine = new THREE.LineBasicMaterial({ color: 0xaaaaaa, linewidth: 2 });
+    const sideMatBreakLine = new THREE.LineBasicMaterial({ color: 0x888888, linewidth: 2 });
     
     const savedSideMaterials = new Map();
     const savedMeshVisibilities = new Map();
@@ -17682,7 +17682,7 @@ async function capture3DViewsForPresentation(mode = 'auto') {
         
         const groundTopLineMesh = new THREE.Mesh(
             new THREE.BoxGeometry(3000, 0.10, 3000),
-            new THREE.MeshBasicMaterial({ color: 0x4ade80 })
+            new THREE.MeshBasicMaterial({ color: 0x777777 })
         );
         groundTopLineMesh.position.set(sceneCenter.x, groundLevelY - 0.05, sceneCenter.z);
         scene.add(groundTopLineMesh);
@@ -18665,14 +18665,14 @@ async function exportSlideshowPDF() {
                 <!-- Row 2, Col 2: 側視圖 -->
                 <div style="display: flex; flex-direction: column; gap: 6px; align-items: center; min-height: 0;">
                     <div style="font-weight: bold; color: rgba(56, 189, 248, 1); font-size: 0.95rem; text-align: center;">側視圖 (平行投影)</div>
-                    <div style="width: 100%; height: 232px; background: rgba(2, 6, 23, 1); border: 1.5px solid rgba(51, 65, 85, 1); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); position: relative;">
+                    <div style="width: 100%; height: 232px; background: #ffffff; border: 1.5px solid rgba(51, 65, 85, 1); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); position: relative;">
                         <img src="${sideViewImg}" style="width: 100%; height: 198px; object-fit: contain; display: block;">
                         <!-- 顏色標示圖例 (模組、支架組件、建物、地面) -->
                         <div style="width: 100%; display: flex; gap: 10px; justify-content: center; align-items: center; padding: 4px 6px; background: rgba(15, 23, 42, 0.90); font-size: 0.70rem; color: #cbd5e1; border-top: 1px solid rgba(51, 65, 85, 0.6); box-sizing: border-box;">
-                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:#1d4ed8; border:1px solid #60a5fa; border-radius:2px;"></span>模組</span>
-                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:#f59e0b; border:1px solid #fbbf24; border-radius:2px;"></span>支架組件</span>
-                            ${state.siteType !== 'ground' ? '<span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:#94a3b8; border:1px solid #cbd5e1; border-radius:2px;"></span>建物</span>' : ''}
-                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:#22c55e; border:1px solid #4ade80; border-radius:2px;"></span>地面</span>
+                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:transparent; border:2px solid #111111; border-radius:2px;"></span>模組</span>
+                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:transparent; border:2px solid #444444; border-radius:2px;"></span>支架組件</span>
+                            ${state.siteType !== 'ground' ? '<span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:transparent; border:1px solid #aaaaaa; border-radius:2px;"></span>建物</span>' : ''}
+                            ${state.siteType === 'ground' ? '<span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:transparent; border:1px solid #cccccc; border-radius:2px;"></span>地面</span>' : ''}
                         </div>
                     </div>
                 </div>
