@@ -18612,10 +18612,10 @@ async function exportSlideshowPDF() {
                         <img src="${sideViewImg}" style="width: 100%; height: 198px; object-fit: contain; display: block;">
                         <!-- 顏色標示圖例 (模組、支架組件、建物、地面) -->
                         <div style="width: 100%; display: flex; gap: 10px; justify-content: center; align-items: center; padding: 4px 6px; background: rgba(15, 23, 42, 0.90); font-size: 0.70rem; color: #cbd5e1; border-top: 1px solid rgba(51, 65, 85, 0.6); box-sizing: border-box;">
-                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:transparent; border:2px solid #111111; border-radius:2px;"></span>模組</span>
-                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:transparent; border:2px solid #444444; border-radius:2px;"></span>支架組件</span>
-                            ${state.siteType !== 'ground' ? '<span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:transparent; border:1px solid #aaaaaa; border-radius:2px;"></span>建物</span>' : ''}
-                            ${state.siteType === 'ground' ? '<span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:transparent; border:1px solid #cccccc; border-radius:2px;"></span>地面</span>' : ''}
+                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:#000000; border:1px solid #000000; border-radius:2px;"></span>模組</span>
+                            <span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:#111111; border:1px solid #111111; border-radius:2px;"></span>支架組件</span>
+                            ${state.siteType !== 'ground' ? '<span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:transparent; border:2px solid #333333; border-radius:2px;"></span>建物</span>' : ''}
+                            ${state.siteType === 'ground' ? '<span style="display: inline-flex; align-items: center; gap: 3px;"><span style="display:inline-block; width:8px; height:8px; background:transparent; border:2px solid #0f5132; border-radius:2px;"></span>地面</span>' : ''}
                         </div>
                     </div>
                 </div>
