@@ -17526,7 +17526,11 @@ async function capture3DViewsForPresentation(mode = 'auto') {
         if (obstacleGroup) obstacleGroup.visible = false;
         
         // Ensure a white background for crisp CAD-like wireframes
-        scene.background = new THREE.Color(0xf0f0f0);
+        if (window.superScene) {
+            window.superScene.background = new THREE.Color(0xf0f0f0);
+        } else {
+            scene.background = new THREE.Color(0xf0f0f0);
+        }
         
         savedSideMaterials.clear();
         savedMeshVisibilities.clear();
@@ -17627,6 +17631,9 @@ async function capture3DViewsForPresentation(mode = 'auto') {
 
     const restoreSideViewSceneModifications = () => {
         // Restore transparent background
+        if (window.superScene) {
+            window.superScene.background = null;
+        }
         scene.background = null;
         
         temporarySideObjects.forEach(obj => {
