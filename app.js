@@ -3100,6 +3100,7 @@ function applyAxisLock(startPoint, currentPoint) {
     return currentPoint.clone();
 }
 function setMeasure3DLockedAxis(axis) {}
+function updateAxisGuideLine() {}
 
 
 function createPlaneHelperMesh(point, normal, colorHex = 0x10b981, size = 3.5) {
