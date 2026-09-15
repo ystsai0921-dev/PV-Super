@@ -1643,11 +1643,11 @@ function initViewer(canvasId) {
     };
     
     // Softened ambient light to keep scene well-lit
-    ambientLight = new THREE.AmbientLight(0xffffff, 0.70);
+    ambientLight = new THREE.AmbientLight(0xffffff, 0.40);
     scene.add(ambientLight);
     
     // Balanced sunlight to reduce glare
-    sunLight = new THREE.DirectionalLight(0xfffdf0, 0.85);
+    sunLight = new THREE.DirectionalLight(0xfffdf0, 0.55);
     sunLight.position.set(40, 60, 30);
     sunLight.castShadow = true;
     
@@ -2798,6 +2798,8 @@ function updateMeasureLabels() {
             item.labelDom.style.display = 'none';
         } else {
             item.labelDom.style.display = 'inline-flex';
+            item.labelDom.style.position = 'absolute';
+            item.labelDom.style.transform = 'translate(-50%, -50%)';
             item.labelDom.style.left = `${pos.x}px`;
             item.labelDom.style.top = `${pos.y}px`;
         }
@@ -2809,6 +2811,8 @@ function updateMeasureLabels() {
         const pos = toScreenPosition(lastPt, camera);
         if (pos.z <= 1) {
             window.activeMeasureSummaryLabel.style.display = 'block';
+            window.activeMeasureSummaryLabel.style.position = 'absolute';
+            window.activeMeasureSummaryLabel.style.transform = 'translate(-50%, -100%)';
             window.activeMeasureSummaryLabel.style.left = `${pos.x}px`;
             window.activeMeasureSummaryLabel.style.top = `${pos.y}px`;
         } else {
@@ -2843,6 +2847,8 @@ function updateMeasureLabels() {
                 activeMeasureLabel.style.display = 'none';
             } else {
                 activeMeasureLabel.style.display = 'inline-flex';
+                activeMeasureLabel.style.position = 'absolute';
+                activeMeasureLabel.style.transform = 'translate(-50%, -50%)';
                 activeMeasureLabel.style.left = `${pos.x}px`;
                 activeMeasureLabel.style.top = `${pos.y}px`;
             }
