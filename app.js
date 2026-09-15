@@ -1951,7 +1951,7 @@ async function saveFileWithPicker(content, defaultFilename, mimeType) {
             
             if (mimeType === 'application/json' || defaultFilename.endsWith('.pvs') || defaultFilename.endsWith('.json')) {
                 pickerOptions.types.push({
-                    description: 'PV Super 專案檔案 (*.pvs, *.json)',
+                    description: 'PV Super 專案 (*.pvs, *.json)',
                     accept: { 'application/json': ['.pvs', '.json'] }
                 });
             } else if (mimeType === 'application/pdf') {
@@ -14556,7 +14556,7 @@ function showToast(message, type) {
     }, 3200);
 }
 
-function showLoadingOverlay(message = '讀入檔案中...') {
+function showLoadingOverlay(message = '讀入專案中...') {
     const loader = document.getElementById('viewer-loading');
     if (loader) {
         loader.classList.add('active');
@@ -14646,13 +14646,13 @@ function hideLoadingOverlay() {
         const jsonContent = JSON.stringify(projectData, null, 2);
         const result = await saveFileWithPicker(jsonContent, fileName, 'application/json');
         if (result !== 'aborted') {
-            showToast("已成功儲存案場專案檔案！", "success");
+            showToast("已成功儲存專案！", "success");
         }
     }
 
     function restoreProjectData(projectData) {
         if (!projectData || typeof projectData !== 'object') {
-            showToast("檔案格式錯誤，無法讀取專案資料！", "error");
+            showToast("專案格式錯誤，無法讀取專案資料！", "error");
             return;
         }
 
@@ -14845,7 +14845,7 @@ function hideLoadingOverlay() {
         updateAllVisuals(true);
         updateSiteBoundaryDrawState();
 
-        showToast("已成功讀入案場專案檔案！", "success");
+        showToast("已成功讀入專案！", "success");
     }
 
     if (elements.btnSaveProject) {
@@ -14866,7 +14866,7 @@ function hideLoadingOverlay() {
             const file = e.target.files && e.target.files[0];
             if (!file) return;
             
-            showLoadingOverlay(`正在讀入檔案 (${file.name})...`);
+            showLoadingOverlay(`正在讀入專案 (${file.name})...`);
             
             const reader = new FileReader();
             reader.onload = (event) => {
@@ -14876,7 +14876,7 @@ function hideLoadingOverlay() {
                         restoreProjectData(data);
                     } catch (err) {
                         console.error("讀入專案檔失敗:", err);
-                        showToast("檔案讀取失敗，請確認檔案格式是否正確！", "error");
+                        showToast("專案讀取失敗，請確認檔案格式是否正確！", "error");
                     } finally {
                         hideLoadingOverlay();
                     }
@@ -14884,7 +14884,7 @@ function hideLoadingOverlay() {
             };
             reader.onerror = () => {
                 hideLoadingOverlay();
-                showToast("檔案讀取失敗！", "error");
+                showToast("專案讀取失敗！", "error");
             };
             reader.readAsText(file);
             e.target.value = '';
