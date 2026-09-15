@@ -17511,11 +17511,11 @@ async function capture3DViewsForPresentation(mode = 'auto') {
     sideOrthoCamera.updateProjectionMatrix();
 
     // Side view Materials (Solid dark for PV/Supports to simulate thick lines, wireframe for building)
-    const sideMatPanel = new THREE.MeshBasicMaterial({ color: 0x111111, wireframe: false });
-    const sideMatSupport = new THREE.MeshBasicMaterial({ color: 0x333333, wireframe: false });
-    const sideMatBuilding = new THREE.MeshBasicMaterial({ color: 0x888888, wireframe: true, transparent: true, opacity: 0.8 });
-    const sideMatGround = new THREE.MeshBasicMaterial({ color: 0xcccccc, wireframe: true });
-    const sideMatBreakLine = new THREE.LineBasicMaterial({ color: 0x888888, linewidth: 2 });
+    const sideMatPanel = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: false });
+    const sideMatSupport = new THREE.MeshBasicMaterial({ color: 0x111111, wireframe: false });
+    const sideMatBuilding = new THREE.MeshBasicMaterial({ color: 0x333333, wireframe: true, wireframeLinewidth: 2, transparent: true, opacity: 0.9 });
+    const sideMatGround = new THREE.MeshBasicMaterial({ color: 0x0f5132, wireframe: true, wireframeLinewidth: 2 });
+    const sideMatBreakLine = new THREE.LineBasicMaterial({ color: 0x333333, linewidth: 3 });
     
     const savedSideMaterials = new Map();
     const savedMeshVisibilities = new Map();
@@ -17526,7 +17526,7 @@ async function capture3DViewsForPresentation(mode = 'auto') {
         if (obstacleGroup) obstacleGroup.visible = false;
         
         // Ensure a white background for crisp CAD-like wireframes
-        scene.background = new THREE.Color(0xffffff);
+        scene.background = new THREE.Color(0xf0f0f0);
         
         savedSideMaterials.clear();
         savedMeshVisibilities.clear();
@@ -17617,8 +17617,8 @@ async function capture3DViewsForPresentation(mode = 'auto') {
         temporarySideObjects.push(groundElevationBox);
         
         const groundTopLineMesh = new THREE.Mesh(
-            new THREE.BoxGeometry(3000, 0.10, 3000),
-            new THREE.MeshBasicMaterial({ color: 0x777777 })
+            new THREE.BoxGeometry(3000, 0.15, 3000),
+            new THREE.MeshBasicMaterial({ color: 0x0f5132 })
         );
         groundTopLineMesh.position.set(sceneCenter.x, groundLevelY - 0.05, sceneCenter.z);
         scene.add(groundTopLineMesh);
