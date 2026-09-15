@@ -3239,7 +3239,7 @@ function handleMeasurePointClick(point) {
             }
             
             // Create rubberband line & label
-            const lineMat = new THREE.LineBasicMaterial({ color: 0x22c55e, linewidth: 2, depthTest: false });
+            const lineMat = new THREE.LineBasicMaterial({ color: 0xfacc15, linewidth: 2, depthTest: false });
             const lineGeo = new THREE.BufferGeometry();
             const positions = new Float32Array([ point.x, point.y, point.z, point.x, point.y, point.z ]);
             lineGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -3279,8 +3279,8 @@ function handleMeasurePointClick(point) {
                 activeAxisGuideLine = null;
             }
             
-            // Create permanent dashed dimension line in 3D (green line, like originally)
-            const lineMat = new THREE.LineBasicMaterial({ color: 0x22c55e, linewidth: 2, depthTest: false });
+            // Create permanent dashed dimension line in 3D (yellow line)
+            const lineMat = new THREE.LineBasicMaterial({ color: 0xfacc15, linewidth: 2, depthTest: false });
             const lineGeo = new THREE.BufferGeometry();
             const positions = new Float32Array([ startPoint.x, startPoint.y, startPoint.z, endPoint.x, endPoint.y, endPoint.z ]);
             lineGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
