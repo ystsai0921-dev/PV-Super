@@ -2809,7 +2809,7 @@ function updateMeasureLabels() {
     if (activeMeasureLabel) {
         let liveTargetPoint = null;
         if (measure3DMode === 'point' && measurePoints.length === 1 && snappedPoint) {
-            const lockedPt = applyAxisLock(measurePoints[0], snappedPoint);
+            const lockedPt = snappedPoint.clone();
             liveTargetPoint = new THREE.Vector3().addVectors(measurePoints[0], lockedPt).multiplyScalar(0.5);
         } else if (measure3DMode === 'face' && measurePlanes.length === 1 && activePlaneHoverHelper && activePlaneHoverHelper.visible) {
             const P1 = measurePlanes[0].point;
@@ -3095,12 +3095,7 @@ function findFaceAndPlane(mouse) {
     }
 }
 
-function applyAxisLock(startPoint, currentPoint) {
-    if (!currentPoint) return null;
-    return currentPoint.clone();
-}
-function setMeasure3DLockedAxis(axis) {}
-function updateAxisGuideLine() {}
+
 
 
 function createPlaneHelperMesh(point, normal, colorHex = 0x10b981, size = 3.5) {
@@ -3188,7 +3183,7 @@ function handleMeasurePointClick(point) {
         } else {
             // Step 2: Set End Point and save measurement
             const startPoint = measurePoints[0];
-            const endPoint = applyAxisLock(startPoint, point);
+            const endPoint = point.clone();
             const distance = startPoint.distanceTo(endPoint);
             const labelText = `<div class="map-measure-segment-badge"><img src="images/length.svg" class="map-measure-icon" alt="" />${distance.toFixed(2)} m</div>`;
             const doc = getActive3DDoc();
@@ -15280,7 +15275,7 @@ function hideLoadingOverlay() {
                 
                 if (measurePoints.length === 1 && activeMeasureLine && activeMeasureLabel) {
                     const start = measurePoints[0];
-                    const end = applyAxisLock(start, snappedPoint);
+                    const end = snappedPoint.clone();
                     const posAttr = activeMeasureLine.geometry.attributes.position;
                     if (posAttr) {
                         const locStart = scene.worldToLocal(start.clone());
