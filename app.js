@@ -3096,86 +3096,11 @@ function findFaceAndPlane(mouse) {
 }
 
 function applyAxisLock(startPoint, currentPoint) {
-    if (!startPoint || !currentPoint) return currentPoint;
-    if (!measure3DLockedAxis) return currentPoint.clone();
-    
-    if (measure3DLockedAxis === 'x') {
-        // Red axis (X)
-        return new THREE.Vector3(currentPoint.x, startPoint.y, startPoint.z);
-    } else if (measure3DLockedAxis === 'y') {
-        // Green axis (Y in real world / Z in Three.js longitudinal depth)
-        return new THREE.Vector3(startPoint.x, startPoint.y, currentPoint.z);
-    } else if (measure3DLockedAxis === 'z') {
-        // Blue axis (Z in real world / Y in Three.js height)
-        return new THREE.Vector3(startPoint.x, currentPoint.y, startPoint.z);
-    }
+    if (!currentPoint) return null;
     return currentPoint.clone();
 }
+function setMeasure3DLockedAxis(axis) {}
 
-function updateAxisGuideLine() {
-    if (!scene) return;
-    if (activeAxisGuideLine) {
-        scene.remove(activeAxisGuideLine);
-        activeAxisGuideLine = null;
-    }
-    if (!isMeasureMode || !measure3DLockedAxis) return;
-    
-    let origin = null;
-    if (measure3DMode === 'point' && measurePoints.length === 1) {
-        origin = measurePoints[0];
-    } else if (measure3DMode === 'p2f' && measurePointToFace) {
-        origin = measurePointToFace.point;
-    }
-    if (!origin) return;
-    
-    let dir = new THREE.Vector3();
-    let colorHex = 0xef4444;
-    if (measure3DLockedAxis === 'x') {
-        dir.set(1, 0, 0);
-        colorHex = 0xef4444; // Red
-    } else if (measure3DLockedAxis === 'y') {
-        dir.set(0, 0, 1);
-        colorHex = 0x22c55e; // Green
-    } else if (measure3DLockedAxis === 'z') {
-        dir.set(0, 1, 0);
-        colorHex = 0x3b82f6; // Blue
-    }
-    
-    const p1 = origin.clone().sub(dir.clone().multiplyScalar(300));
-    const p2 = origin.clone().add(dir.clone().multiplyScalar(300));
-    
-    const lineGeo = new THREE.BufferGeometry();
-    lineGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
-        p1.x, p1.y, p1.z,
-        p2.x, p2.y, p2.z
-    ]), 3));
-    
-    const lineMat = new THREE.LineDashedMaterial({
-        color: colorHex,
-        dashSize: 0.5,
-        gapSize: 0.25,
-        depthTest: false
-    });
-    
-    activeAxisGuideLine = new THREE.Line(lineGeo, lineMat);
-    activeAxisGuideLine.computeLineDistances();
-    activeAxisGuideLine.name = 'measure-axis-guide';
-    activeAxisGuideLine.renderOrder = 999;
-    scene.add(activeAxisGuideLine);
-}
-
-function setMeasure3DLockedAxis(axis) {
-    measure3DLockedAxis = axis;
-    const doc = getActive3DDoc();
-    const pillX = doc.getElementById('pill-axis-x');
-    const pillY = doc.getElementById('pill-axis-y');
-    const pillZ = doc.getElementById('pill-axis-z');
-    if (pillX) pillX.classList.toggle('active', axis === 'x');
-    if (pillY) pillY.classList.toggle('active', axis === 'y');
-    if (pillZ) pillZ.classList.toggle('active', axis === 'z');
-    
-    updateAxisGuideLine();
-}
 
 function createPlaneHelperMesh(point, normal, colorHex = 0x10b981, size = 3.5) {
     const group = new THREE.Group();
