@@ -3167,7 +3167,8 @@ function handleMeasurePointClick(point) {
             // Create rubberband line & label
             const lineMat = new THREE.LineBasicMaterial({ color: 0xfacc15, linewidth: 2, depthTest: false });
             const lineGeo = new THREE.BufferGeometry();
-            const positions = new Float32Array([ point.x, point.y, point.z, point.x, point.y, point.z ]);
+            const locPt = scene.worldToLocal(point.clone());
+            const positions = new Float32Array([ locPt.x, locPt.y, locPt.z, locPt.x, locPt.y, locPt.z ]);
             lineGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             
             activeMeasureLine = new THREE.Line(lineGeo, lineMat);
@@ -3208,7 +3209,9 @@ function handleMeasurePointClick(point) {
             // Create permanent dashed dimension line in 3D (yellow line)
             const lineMat = new THREE.LineBasicMaterial({ color: 0xfacc15, linewidth: 2, depthTest: false });
             const lineGeo = new THREE.BufferGeometry();
-            const positions = new Float32Array([ startPoint.x, startPoint.y, startPoint.z, endPoint.x, endPoint.y, endPoint.z ]);
+            const locStart = scene.worldToLocal(startPoint.clone());
+            const locEnd = scene.worldToLocal(endPoint.clone());
+            const positions = new Float32Array([ locStart.x, locStart.y, locStart.z, locEnd.x, locEnd.y, locEnd.z ]);
             lineGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             
             const permanentLine = new THREE.Line(lineGeo, lineMat);
@@ -15280,8 +15283,10 @@ function hideLoadingOverlay() {
                     const end = applyAxisLock(start, snappedPoint);
                     const posAttr = activeMeasureLine.geometry.attributes.position;
                     if (posAttr) {
-                        posAttr.setXYZ(0, start.x, start.y, start.z);
-                        posAttr.setXYZ(1, end.x, end.y, end.z);
+                        const locStart = scene.worldToLocal(start.clone());
+                        const locEnd = scene.worldToLocal(end.clone());
+                        posAttr.setXYZ(0, locStart.x, locStart.y, locStart.z);
+                        posAttr.setXYZ(1, locEnd.x, locEnd.y, locEnd.z);
                         posAttr.needsUpdate = true;
                     }
                     activeMeasureLine.computeLineDistances();
