@@ -11043,7 +11043,19 @@ function topView() {
 function sideView() {
     if (!camera || !controls) return;
     const { center, distance } = getSceneBoundsInfo();
-    camera.position.set(center.x + distance * 0.9, center.y - distance * 0.9, center.z + distance * 0.3);
+    
+    // Calculate a direction perpendicular to the solar panels' azimuth
+    // Assuming Azimuth 0 = North (+Y), 90 = East (+X)
+    const azimuth = state.azimuth !== undefined ? state.azimuth : 180;
+    const azimuthRad = (azimuth * Math.PI) / 180;
+    
+    // The direction perpendicular to the facing direction
+    const sideDirX = Math.cos(azimuthRad);
+    const sideDirY = -Math.sin(azimuthRad);
+    
+    // Position the camera horizontally from the side
+    camera.position.set(center.x + sideDirX * distance, center.y + sideDirY * distance, center.z);
+    
     controls.target.copy(center);
     controls.update();
 }
