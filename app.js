@@ -7,6 +7,9 @@
  * Unauthorized copying, distribution, or modification is strictly prohibited.
  */
 
+function setMeasure3DLockedAxis(axis) {}
+function updateAxisGuideLine() {}
+
 /**
  * 繪製多邊形完成後之 (確定保留 / 刪除) 浮動確認對話框
  * @param {string} typeName - 物件類型名稱 (如 '案場邊界', '排除區域', '障礙物')
