@@ -17574,12 +17574,12 @@ async function capture3DViewsForPresentation(mode = 'auto') {
     sideOrthoCamera.lookAt(sideTarget);
     sideOrthoCamera.updateProjectionMatrix();
 
-    // Side view Materials
-    const sideMatPanel = new THREE.MeshBasicMaterial({ color: 0x1d4ed8 });
-    const sideMatSupport = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
-    const sideMatBuilding = new THREE.MeshBasicMaterial({ color: 0x94a3b8 });
-    const sideMatGround = new THREE.MeshBasicMaterial({ color: 0x22c55e });
-    const sideMatBreakLine = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
+    // Side view Materials (Wireframe/Line expression, monochrome, focus on PV)
+    const sideMatPanel = new THREE.MeshBasicMaterial({ color: 0x111111, wireframe: true });
+    const sideMatSupport = new THREE.MeshBasicMaterial({ color: 0x444444, wireframe: true });
+    const sideMatBuilding = new THREE.MeshBasicMaterial({ color: 0xaaaaaa, wireframe: true, transparent: true, opacity: 0.6 });
+    const sideMatGround = new THREE.MeshBasicMaterial({ color: 0xcccccc, wireframe: true });
+    const sideMatBreakLine = new THREE.LineBasicMaterial({ color: 0xaaaaaa, linewidth: 2 });
     
     const savedSideMaterials = new Map();
     const savedMeshVisibilities = new Map();
@@ -17588,6 +17588,9 @@ async function capture3DViewsForPresentation(mode = 'auto') {
 
     const applySideViewSceneModifications = () => {
         if (obstacleGroup) obstacleGroup.visible = false;
+        
+        // Ensure a white background for crisp CAD-like wireframes
+        scene.background = new THREE.Color(0xffffff);
         
         savedSideMaterials.clear();
         savedMeshVisibilities.clear();
@@ -17687,6 +17690,9 @@ async function capture3DViewsForPresentation(mode = 'auto') {
     };
 
     const restoreSideViewSceneModifications = () => {
+        // Restore transparent background
+        scene.background = null;
+        
         temporarySideObjects.forEach(obj => {
             scene.remove(obj);
             if (obj.geometry) obj.geometry.dispose();
